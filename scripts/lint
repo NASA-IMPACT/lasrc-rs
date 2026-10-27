@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Check formatting and lints without modifying files (suitable for CI).
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+cargo fmt --all --check
+cargo fmt --manifest-path lasrc_cref/Cargo.toml --check
+cargo clippy --workspace --all-targets -- -D warnings
+
+uv run ruff format --check .
+uv run ruff check .

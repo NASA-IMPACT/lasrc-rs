@@ -61,25 +61,12 @@ cargo test --manifest-path lasrc_cref/Cargo.toml
 For `lasrc_cref` stage 1+ (pixi on Linux, or Docker on macOS), see
 [`lasrc_cref/README.md`](lasrc_cref/README.md).
 
-### Lint and format
-
-> TODO: wrap these in a single entry point (pre-commit hooks or a `scripts/lint` script) so local
-> runs and CI stay in sync.
-
-Rust:
+### Lint, format, and type check
 
 ```bash
-cargo fmt --all
-cargo fmt --manifest-path lasrc_cref/Cargo.toml
-cargo clippy --workspace --all-targets -- -D warnings
-```
-
-Python:
-
-```bash
-uv run ruff format lasrc_py
-uv run ruff check --fix lasrc_py
-uv run mypy lasrc_py/python
+scripts/format     # apply cargo fmt + ruff format, and ruff auto-fixes, in place
+scripts/lint       # check-only: cargo fmt --check, clippy -D warnings, ruff (use in CI)
+scripts/typecheck  # mypy on lasrc_py/python
 ```
 
 ## References
