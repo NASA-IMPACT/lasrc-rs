@@ -1,0 +1,21 @@
+[project]
+name = "lasrc-rs-dev"
+version = "0"
+requires-python = ">=3.10"
+dependencies = ["lasrc"]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["lasrc_py"]
+
+[tool.uv.sources]
+lasrc = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.1",
+    "pytest>=9.1.1",
+    "ruff>=0.16.8",
+]
