@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 
+import lasrc as _lasrc
 from lasrc.aux import load_auxiliary_data, load_dem, load_lut, load_ratio_file
 from lasrc.io import (
     read_landsat_scene,
@@ -13,8 +14,6 @@ from lasrc.io import (
     write_numpy,
 )
 from lasrc.sensors import SENSORS
-
-import lasrc as _lasrc
 
 
 @dataclass
@@ -46,7 +45,7 @@ def _espa_solar_zenith(sun_elevation: float) -> float:
     is reproduced exactly.
     """
     zenith = np.float32(90.0 - float(np.float32(sun_elevation)))
-    return float(np.float32(float("%f" % zenith)))
+    return float(np.float32(float(f"{zenith:f}")))
 
 
 def process_scene(

@@ -23,7 +23,6 @@ import sys
 from pathlib import Path
 
 import numpy as np
-
 from lasrc.aux import load_lut
 from lasrc.sensors import SENSORS
 

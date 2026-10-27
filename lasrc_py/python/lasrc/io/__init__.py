@@ -13,7 +13,7 @@ from lasrc.io.sentinel import read_sentinel_safe
 __all__ = [
     "read_landsat_scene",
     "read_sentinel_safe",
-    "write_espa_output",
     "write_cog_output",
+    "write_espa_output",
     "write_numpy",
 ]

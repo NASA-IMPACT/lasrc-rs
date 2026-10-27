@@ -1,10 +1,10 @@
 """Compare Rust and C ESPA output .img files."""
 
 import argparse
-import numpy as np
 import os
 import sys
 
+import numpy as np
 
 DEFAULT_RUST_DIR = os.path.join(
     os.path.dirname(__file__), "..", "test_data", "output_espa"

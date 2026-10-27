@@ -1,9 +1,8 @@
 """Tests for input validation at the Python/Rust binding boundary."""
 
+import lasrc
 import numpy as np
 import pytest
-
-import lasrc
 
 NSOLAR_ZEN_VALS = 22
 

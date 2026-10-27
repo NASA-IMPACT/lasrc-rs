@@ -92,9 +92,12 @@ def write_espa_output(
     )
 
 
-_COG_CREATION_OPTS = dict(
-    compress="deflate", tiled=True, blockxsize=512, blockysize=512
-)
+_COG_CREATION_OPTS = {
+    "compress": "deflate",
+    "tiled": True,
+    "blockxsize": 512,
+    "blockysize": 512,
+}
 
 
 def write_cog_output(

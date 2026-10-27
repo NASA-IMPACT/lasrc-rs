@@ -4,7 +4,6 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-
 from lasrc.io.sentinel import (
     _dn_to_toa,
     _fill_mask,

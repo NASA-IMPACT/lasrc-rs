@@ -5,11 +5,10 @@ from pathlib import Path
 from rasterio.crs import CRS
 from rasterio.transform import from_origin
 
+import lasrc as _lasrc
 from lasrc.aux import load_auxiliary_data, load_dem, load_lut, load_ratio_file
 from lasrc.io import read_sentinel_safe, write_espa_output, write_numpy
 from lasrc.sensors import SENSORS
-
-import lasrc as _lasrc
 
 
 def process_sentinel_scene(
@@ -31,7 +30,6 @@ def process_sentinel_scene(
     ``num_threads`` sets the Rayon worker pool; 0 or None lets Rayon choose.
     """
     sensor_config = SENSORS[sensor_name]
-    nsr_bands = sensor_config["nsr_bands"]  # 13
 
     # Product ID prefix for output filenames (SAFE directory name, sans .SAFE)
     product_id = Path(safe_dir).name

@@ -1,11 +1,8 @@
 """Run LaSRC Sentinel-2 surface reflectance on the S2B test granule."""
 
 import argparse
-import sys
 import time
 from pathlib import Path
-
-import numpy as np
 
 TEST_DATA = Path(__file__).resolve().parent.parent / "test_data"
 SAFE_DIR = (

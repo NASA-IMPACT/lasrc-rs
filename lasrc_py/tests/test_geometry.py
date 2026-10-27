@@ -1,7 +1,5 @@
 """Validate geometry functions via Python bindings."""
 
-import numpy as np
-import pytest
 
 
 def test_import():
