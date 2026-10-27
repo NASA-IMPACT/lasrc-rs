@@ -29,6 +29,12 @@ jobs:
 
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
 
+      # lasrc_py links against Python via PyO3; scripts/ point it at uv's .python-version interpreter
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+
+      - name: Install Python (from .python-version)
+        run: uv python install
+
       - name: Lint
         run: scripts/lint rust
 
