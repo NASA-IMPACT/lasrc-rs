@@ -45,7 +45,10 @@ def read_landsat_scene(scene_dir: str | Path) -> dict:
         if band_file is not None:
             with rasterio.open(band_file) as src:
                 data = src.read(1).astype(np.float32)
-                radiance = data * metadata["rad_mult"][band_num] + metadata["rad_add"][band_num]
+                radiance = (
+                    data * metadata["rad_mult"][band_num]
+                    + metadata["rad_add"][band_num]
+                )
                 k1 = metadata["k1"][band_num]
                 k2 = metadata["k2"][band_num]
                 bt = np.where(radiance > 0, k2 / np.log(k1 / radiance + 1.0), 0.0)
@@ -81,8 +84,14 @@ def _find_band_file(band_files, band_id):
 
 def _parse_landsat_mtl(mtl_path):
     """Parse Landsat MTL metadata file. Returns dict of calibration params."""
-    metadata = {"refl_mult": {}, "refl_add": {}, "rad_mult": {}, "rad_add": {},
-                "k1": {}, "k2": {}}
+    metadata = {
+        "refl_mult": {},
+        "refl_add": {},
+        "rad_mult": {},
+        "rad_add": {},
+        "k1": {},
+        "k2": {},
+    }
     with open(mtl_path) as f:
         for line in f:
             line = line.strip()
@@ -100,7 +109,7 @@ def _parse_landsat_mtl(mtl_path):
                 ("K2_CONSTANT_BAND_", "k2"),
             ]:
                 if key.startswith(prefix):
-                    band_num = int(key[len(prefix):])
+                    band_num = int(key[len(prefix) :])
                     metadata[target][band_num] = float(val)
             if key == "SUN_ELEVATION":
                 metadata["sun_elevation"] = float(val)
@@ -116,7 +125,12 @@ def _read_landsat_angles(scene_dir, metadata):
     angle_files = list(scene_dir.glob("*_SZA.TIF"))
     if angle_files:
         angles = {}
-        for name, suffix in [("sza", "SZA"), ("saa", "SAA"), ("vza", "VZA"), ("vaa", "VAA")]:
+        for name, suffix in [
+            ("sza", "SZA"),
+            ("saa", "SAA"),
+            ("vza", "VZA"),
+            ("vaa", "VAA"),
+        ]:
             f = list(scene_dir.glob(f"*_{suffix}.TIF"))
             if f:
                 with rasterio.open(f[0]) as src:

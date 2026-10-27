@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Run the Rust and Python test suites.
+# Usage: scripts/test [rust|python] [pytest args...]   (default: both)
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+target=all
+if [[ "${1:-}" == "rust" || "${1:-}" == "python" ]]; then
+    target="$1"
+    shift
+fi
+
+if [[ "$target" == "all" || "$target" == "rust" ]]; then
+    # PyO3 builds against this interpreter; default to the one uv selects from .python-version
+    PYO3_PYTHON="${PYO3_PYTHON:-$(uv python find)}"
+    export PYO3_PYTHON
+    cargo test --workspace --locked
+fi
+
+if [[ "$target" == "all" || "$target" == "python" ]]; then
+    uv run pytest lasrc_py "$@"
+fi

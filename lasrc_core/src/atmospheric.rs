@@ -2,7 +2,7 @@
 //! in C `lut_subr.c`.
 
 use crate::constants::*;
-use crate::gas_transmission::{GasCoefficients, compute_gas_transmission};
+use crate::gas_transmission::{compute_gas_transmission, GasCoefficients};
 use crate::lut::{LookupTables, LutIndices};
 use crate::rayleigh::rayleigh_reflectance;
 
@@ -45,10 +45,7 @@ fn eval_cubic(c: &[f64; NCOEF], x: f64) -> f64 {
     let xf = x as f32;
     let xf_sq = xf * xf;
     let xf_cube = xf_sq * xf;
-    let result = c[3] as f32
-        + c[2] as f32 * xf
-        + c[1] as f32 * xf_sq
-        + c[0] as f32 * xf_cube;
+    let result = c[3] as f32 + c[2] as f32 * xf + c[1] as f32 * xf_sq + c[0] as f32 * xf_cube;
     result as f64
 }
 
@@ -92,7 +89,7 @@ pub fn atmcorlamb2_new(
         // then the result (double) is multiplied with the float quotient (promoted
         // to double), and the final result truncated back to float.
         let base = (lambda[iband] as f32 * lambda_sf) as f64;
-        let power = base.powf(-(eps as f64));
+        let power = base.powf(-eps);
         ((raot550nm as f32 / normext_ib_0_3 as f32) as f64 * power) as f32
     };
 
@@ -141,7 +138,6 @@ pub fn atmcorlamb2_new(
 ///
 /// # Returns
 /// [`AtmCorrResult`] with surface reflectance and intermediate quantities.
-#[allow(clippy::too_many_arguments)]
 pub fn atmcorlamb2(
     lut: &LookupTables,
     gas_coeff: &GasCoefficients,
@@ -174,7 +170,7 @@ pub fn atmcorlamb2(
     } else {
         let normext_idx = iband * NPRES_VALS * NAOT_VALS + 3;
         let normext_val: f32 = if normext_idx < lut.normext.len() {
-            lut.normext[normext_idx] as f32
+            lut.normext[normext_idx]
         } else {
             1.0f32
         };
@@ -197,20 +193,40 @@ pub fn atmcorlamb2(
     // Find pressure and AOT indices into the LUT using modified AOT
     let indices: LutIndices = lut.find_indices(pres as f64, mraot550nm as f64);
 
-    let satm: f32 = lut.interp_spherical_albedo(&indices, iband, pres as f64, mraot550nm as f64) as f32;
+    let satm: f32 =
+        lut.interp_spherical_albedo(&indices, iband, pres as f64, mraot550nm as f64) as f32;
     let roatm_raw: f32 = lut.interp_atmospheric_reflectance(
-        &indices, iband, pres as f64, mraot550nm as f64, xts as f64, xtv as f64,
-        xmus as f64, xmuv as f64, cosxfi,
+        &indices,
+        iband,
+        pres as f64,
+        mraot550nm as f64,
+        xts as f64,
+        xtv as f64,
+        xmus as f64,
+        xmuv as f64,
+        cosxfi,
     ) as f32;
 
     // Downward and upward transmittances. C calls comptrans with the solar
     // (xtsmin, xtsstep) grid for xts but the view (xtvmin, xtvstep) grid for xtv,
     // while indexing the same tts table.
     let xtts: f32 = lut.interp_transmission(
-        &indices, iband, pres as f64, mraot550nm as f64, xts as f64, XTS_MIN as f32, XTS_STEP as f32,
+        &indices,
+        iband,
+        pres as f64,
+        mraot550nm as f64,
+        xts as f64,
+        XTS_MIN as f32,
+        XTS_STEP as f32,
     ) as f32;
     let xttv: f32 = lut.interp_transmission(
-        &indices, iband, pres as f64, mraot550nm as f64, xtv as f64, XTV_MIN as f32, XTV_STEP_C,
+        &indices,
+        iband,
+        pres as f64,
+        mraot550nm as f64,
+        xtv as f64,
+        XTV_MIN as f32,
+        XTV_STEP_C,
     ) as f32;
     let ttatm: f32 = xtts * xttv;
 
@@ -251,9 +267,7 @@ mod tests {
             ttatmg_coef: [0.0, 0.0, -0.1, 0.9],
             satm_coef: [0.0, 0.0, 0.05, 0.01],
         };
-        let roslamb = atmcorlamb2_new(
-            &coeff, 0.95, 0, 0.05, 1.0, 0.15, &LAMBDA_LANDSAT, 1.5,
-        );
+        let roslamb = atmcorlamb2_new(&coeff, 0.95, 0, 0.05, 1.0, 0.15, &LAMBDA_LANDSAT, 1.5);
         // With tgo=0.95 the gas-absorption correction inflates the result slightly
         // above rotoa=0.15; allow up to 0.20 while still bounding it to a physically
         // reasonable small positive range.
@@ -271,6 +285,9 @@ mod tests {
         };
         let sr1 = atmcorlamb2_new(&coeff, 0.95, 0, 0.05, 1.0, 0.15, &LAMBDA_LANDSAT, 1.5);
         let sr2 = atmcorlamb2_new(&coeff, 0.95, 0, 0.50, 1.0, 0.15, &LAMBDA_LANDSAT, 1.5);
-        assert!((sr1 - sr2).abs() > 0.001, "Different AOT should give different SR");
+        assert!(
+            (sr1 - sr2).abs() > 0.001,
+            "Different AOT should give different SR"
+        );
     }
 }

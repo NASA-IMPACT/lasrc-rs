@@ -1,14 +1,13 @@
 """Run LaSRC Sentinel-2 surface reflectance on the S2B test granule."""
 
 import argparse
-import sys
 import time
 from pathlib import Path
 
-import numpy as np
-
 TEST_DATA = Path(__file__).resolve().parent.parent / "test_data"
-SAFE_DIR = TEST_DATA / "S2B_MSIL1C_20260124T073109_N0511_R049_T38PNC_20260124T092241.SAFE"
+SAFE_DIR = (
+    TEST_DATA / "S2B_MSIL1C_20260124T073109_N0511_R049_T38PNC_20260124T092241.SAFE"
+)
 AUX_DIR = TEST_DATA / "aux_data"
 LUT_DIR = AUX_DIR / "MSILUT"
 LADS_DIR = AUX_DIR / "LADS" / "2026"
@@ -16,6 +15,7 @@ LADS_DIR = AUX_DIR / "LADS" / "2026"
 
 def find_viirs_aux(lads_dir: Path, year: str, doy: str) -> Path:
     import glob as globmod
+
     pattern = str(lads_dir / f"V*04ANC.A{year}{doy}.*.h5")
     matches = sorted(globmod.glob(pattern))
     if not matches:

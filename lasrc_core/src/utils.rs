@@ -250,8 +250,16 @@ mod tests {
         // arithmetic (matching C's float precision).
         assert!(coeff[0].abs() < 1e-4, "a3 should be ~0: {}", coeff[0]);
         assert!(coeff[1].abs() < 1e-4, "a2 should be ~0: {}", coeff[1]);
-        assert!((coeff[2] - 2.0).abs() < 1e-4, "a1 should be ~2: {}", coeff[2]);
-        assert!((coeff[3] - 1.0).abs() < 1e-4, "a0 should be ~1: {}", coeff[3]);
+        assert!(
+            (coeff[2] - 2.0).abs() < 1e-4,
+            "a1 should be ~2: {}",
+            coeff[2]
+        );
+        assert!(
+            (coeff[3] - 1.0).abs() < 1e-4,
+            "a0 should be ~1: {}",
+            coeff[3]
+        );
     }
 
     #[test]

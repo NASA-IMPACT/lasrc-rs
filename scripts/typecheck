@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Type check the Python package.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+uv run mypy lasrc_py/python

@@ -13,6 +13,8 @@ use crate::constants::DEG2RAD;
 /// * `xmuv` - Cosine of view zenith angle
 /// * `xmus` - Cosine of solar zenith angle
 /// * `xtau` - Rayleigh optical depth
+// Coefficients are kept verbatim from the C source
+#[allow(clippy::excessive_precision)]
 pub fn rayleigh_reflectance(xphi: f64, xmuv: f64, xmus: f64, xtau: f64) -> f64 {
     let xphi = xphi as f32;
     let xmuv = xmuv as f32;
@@ -27,9 +29,8 @@ pub fn rayleigh_reflectance(xphi: f64, xmuv: f64, xmus: f64, xtau: f64) -> f64 {
     // Phase function components. C literals 1.0, 3.0 and 0.125 are double, so
     // these expressions are evaluated in double and stored as float.
     // C: xph1 = 1.0 + (3.0*xmus2 - 1.0) * (3.0*xmuv2 - 1.0) * xfd * 0.125;
-    let xph1: f32 = (1.0
-        + (3.0 * xmus2 as f64 - 1.0) * (3.0 * xmuv2 as f64 - 1.0) * xfd as f64 * 0.125)
-        as f32;
+    let xph1: f32 =
+        (1.0 + (3.0 * xmus2 as f64 - 1.0) * (3.0 * xmuv2 as f64 - 1.0) * xfd as f64 * 0.125) as f32;
     // C: xph3 = (1.0 - xmus2) * (1.0 - xmuv2);
     let xph3_base: f32 = ((1.0 - xmus2 as f64) * (1.0 - xmuv2 as f64)) as f32;
     // C: xph2 = -xmus * xmuv * sqrt(xph3); (float*float, then * double sqrt)
@@ -62,9 +63,16 @@ pub fn rayleigh_reflectance(xphi: f64, xmuv: f64, xmus: f64, xtau: f64) -> f64 {
     let xlntau: f32 = (xtau as f64).ln() as f32;
 
     let as0: [f32; 10] = [
-        0.33243832, -6.777104e-02, 0.16285370, 1.577425e-03,
-        -0.30924818, -1.240906e-02, -0.10324388, 3.241678e-02,
-        0.11493334, -3.503695e-02,
+        0.33243832,
+        -6.777104e-02,
+        0.16285370,
+        1.577425e-03,
+        -0.30924818,
+        -1.240906e-02,
+        -0.10324388,
+        3.241678e-02,
+        0.11493334,
+        -3.503695e-02,
     ];
     let as1: [f32; 2] = [0.19666292, -5.439061e-02];
     let as2: [f32; 2] = [0.14545937, -2.910845e-02];
@@ -104,14 +112,20 @@ mod tests {
     #[test]
     fn test_rayleigh_positive() {
         let rray = rayleigh_reflectance(90.0, 0.95, 0.5, 0.17);
-        assert!(rray > 0.0, "Rayleigh reflectance should be positive: {rray}");
+        assert!(
+            rray > 0.0,
+            "Rayleigh reflectance should be positive: {rray}"
+        );
     }
 
     #[test]
     fn test_rayleigh_increases_with_tau() {
         let r1 = rayleigh_reflectance(90.0, 0.95, 0.5, 0.05);
         let r2 = rayleigh_reflectance(90.0, 0.95, 0.5, 0.25);
-        assert!(r2 > r1, "More optical depth = more scattering: r1={r1}, r2={r2}");
+        assert!(
+            r2 > r1,
+            "More optical depth = more scattering: r1={r1}, r2={r2}"
+        );
     }
 
     #[test]

@@ -1,0 +1,27 @@
+[project]
+name = "lasrc-rs-dev"
+version = "0"
+requires-python = ">=3.10"
+dependencies = ["lasrc"]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["lasrc_py"]
+
+[tool.uv.sources]
+lasrc = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.1",
+    "pytest>=9.1.1",
+    "ruff>=0.16.8",
+    "types-rasterio>=1.5.0 ; python_full_version >= '3.12'",
+]
+
+[[tool.mypy.overrides]]
+# Third-party packages and the compiled extension without type information
+module = ["h5py.*", "pyhdf.*", "lasrc.lasrc"]
+ignore_missing_imports = true

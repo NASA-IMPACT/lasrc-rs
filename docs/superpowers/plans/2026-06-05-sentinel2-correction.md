@@ -1301,15 +1301,36 @@ import numpy as np
 # Band ordering matching the 13-band Rust layout
 # (B01, B02, B03, B04, B05, B06, B07, B08, B8A, B09, B10, B11, B12)
 SENTINEL_BAND_ORDER = [
-    "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08",
-    "B8A", "B09", "B10", "B11", "B12",
+    "B01",
+    "B02",
+    "B03",
+    "B04",
+    "B05",
+    "B06",
+    "B07",
+    "B08",
+    "B8A",
+    "B09",
+    "B10",
+    "B11",
+    "B12",
 ]
 
 # Native resolutions (meters)
 BAND_RESOLUTION = {
-    "B01": 60, "B02": 10, "B03": 10, "B04": 10,
-    "B05": 20, "B06": 20, "B07": 20, "B08": 10,
-    "B8A": 20, "B09": 60, "B10": 60, "B11": 20, "B12": 20,
+    "B01": 60,
+    "B02": 10,
+    "B03": 10,
+    "B04": 10,
+    "B05": 20,
+    "B06": 20,
+    "B07": 20,
+    "B08": 10,
+    "B8A": 20,
+    "B09": 60,
+    "B10": 60,
+    "B11": 20,
+    "B12": 20,
 }
 
 
@@ -1695,9 +1716,18 @@ def _load_sentinel_luts(lut_dir: Path, nsr_bands: int) -> dict:
     # Band name mapping for RES_LUT dataset names
     # Order must match the 13-band Rust layout
     band_ds_names = [
-        "NRLUT_BAND_1", "NRLUT_BAND_2", "NRLUT_BAND_3", "NRLUT_BAND_4",
-        "NRLUT_BAND_5", "NRLUT_BAND_6", "NRLUT_BAND_7", "NRLUT_BAND_8",
-        "NRLUT_BAND_8a", "NRLUT_BAND_9", "NRLUT_BAND_10", "NRLUT_BAND_11",
+        "NRLUT_BAND_1",
+        "NRLUT_BAND_2",
+        "NRLUT_BAND_3",
+        "NRLUT_BAND_4",
+        "NRLUT_BAND_5",
+        "NRLUT_BAND_6",
+        "NRLUT_BAND_7",
+        "NRLUT_BAND_8",
+        "NRLUT_BAND_8a",
+        "NRLUT_BAND_9",
+        "NRLUT_BAND_10",
+        "NRLUT_BAND_11",
         "NRLUT_BAND_12",
     ]
 
@@ -1705,7 +1735,9 @@ def _load_sentinel_luts(lut_dir: Path, nsr_bands: int) -> dict:
     hdf = SD(str(lut_dir / "ANGLE_NEW.hdf"), SDC.READ)
     angle_data = {}
     for name in ["TSMAX", "TSMIN", "NBFIC", "TTV", "TTS"]:
-        angle_data[name.lower()] = hdf.select(name).get().astype(np.float64).ravel().tolist()
+        angle_data[name.lower()] = (
+            hdf.select(name).get().astype(np.float64).ravel().tolist()
+        )
     angle_data["nbfi"] = hdf.select("NBFI").get().astype(np.int32).ravel().tolist()
     angle_data["indts"] = hdf.select("INDTS").get().astype(np.int32).ravel().tolist()
     hdf.end()
@@ -1718,7 +1750,7 @@ def _load_sentinel_luts(lut_dir: Path, nsr_bands: int) -> dict:
         for ip in range(NPRES):
             for ia in range(NAOT):
                 base = ib * NPRES * NAOT * NSOLAR + ip * NAOT * NSOLAR + ia * NSOLAR
-                rolutt[base:base + NSOLAR] = data[:, ia, ip]
+                rolutt[base : base + NSOLAR] = data[:, ia, ip]
     hdf.end()
 
     # AERO LUT (sphalbt, normext) — ASCII format
@@ -1787,9 +1819,12 @@ def _load_trans_ascii(path: Path, nsr_bands: int) -> list:
             for isun in range(NSUNANGLE_FILE):
                 parts = lines[idx].split()
                 for ia in range(NAOT):
-                    base = (ib * NPRES * NAOT * NSUNANGLE
-                            + ip * NAOT * NSUNANGLE
-                            + isun + ia * NSUNANGLE)
+                    base = (
+                        ib * NPRES * NAOT * NSUNANGLE
+                        + ip * NAOT * NSUNANGLE
+                        + isun
+                        + ia * NSUNANGLE
+                    )
                     transt[base] = float(parts[1 + ia])
                 idx += 1
 
@@ -1825,7 +1860,9 @@ from pathlib import Path
 import numpy as np
 
 TEST_DATA = Path(__file__).resolve().parent.parent / "test_data"
-SAFE_DIR = TEST_DATA / "S2B_MSIL1C_20260124T073109_N0511_R049_T38PNC_20260124T092241.SAFE"
+SAFE_DIR = (
+    TEST_DATA / "S2B_MSIL1C_20260124T073109_N0511_R049_T38PNC_20260124T092241.SAFE"
+)
 AUX_DIR = TEST_DATA / "aux_data"
 LUT_DIR = AUX_DIR / "MSILUT"
 LADS_DIR = AUX_DIR / "LADS" / "2026"
@@ -1833,6 +1870,7 @@ LADS_DIR = AUX_DIR / "LADS" / "2026"
 
 def find_viirs_aux(lads_dir: Path, year: str, doy: str) -> Path:
     import glob as globmod
+
     pattern = str(lads_dir / f"V*04ANC.A{year}{doy}.*.h5")
     matches = sorted(globmod.glob(pattern))
     if not matches:

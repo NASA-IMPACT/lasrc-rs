@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Apply formatting and auto-fixable lint fixes in place.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+cargo fmt --all
+
+uv run ruff format .
+uv run ruff check --fix .

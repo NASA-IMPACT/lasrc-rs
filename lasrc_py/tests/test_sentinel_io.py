@@ -4,7 +4,6 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-
 from lasrc.io.sentinel import (
     _dn_to_toa,
     _fill_mask,
@@ -42,7 +41,9 @@ VIEW = """<Mean_Viewing_Incidence_Angle bandId="0">
         </Mean_Viewing_Incidence_Angle>"""
 
 
-def _make_safe(tmp_path: Path, granules: list[str], sun: str = SUN, view: str = VIEW) -> Path:
+def _make_safe(
+    tmp_path: Path, granules: list[str], sun: str = SUN, view: str = VIEW
+) -> Path:
     safe = tmp_path / "S2C_MSIL1C_TEST.SAFE"
     safe.mkdir()
     (safe / "MTD_MSIL1C.xml").write_text("<root/>")
@@ -90,8 +91,11 @@ def test_parse_angles_matches_espa_metadata_chain(tmp_path):
     "sun,view,missing",
     [
         ("", VIEW, "Mean_Sun_Angle"),
-        (SUN.replace("<ZENITH_ANGLE unit=\"deg\">66.3360005107259</ZENITH_ANGLE>", ""),
-         VIEW, "Mean_Sun_Angle"),
+        (
+            SUN.replace('<ZENITH_ANGLE unit="deg">66.3360005107259</ZENITH_ANGLE>', ""),
+            VIEW,
+            "Mean_Sun_Angle",
+        ),
         (SUN, "", "Mean_Viewing_Incidence_Angle"),
     ],
 )
@@ -162,11 +166,14 @@ QUANT = '<QUANTIFICATION_VALUE unit="none">10000</QUANTIFICATION_VALUE>'
 
 def _offsets(band_ids) -> str:
     return "\n".join(
-        f'<RADIO_ADD_OFFSET band_id="{i}">{-1000 - i}</RADIO_ADD_OFFSET>' for i in band_ids
+        f'<RADIO_ADD_OFFSET band_id="{i}">{-1000 - i}</RADIO_ADD_OFFSET>'
+        for i in band_ids
     )
 
 
-def _write_mtd(tmp_path: Path, quant: str = QUANT, offsets: str = _offsets(range(13))) -> Path:
+def _write_mtd(
+    tmp_path: Path, quant: str = QUANT, offsets: str = _offsets(range(13))
+) -> Path:
     path = tmp_path / "MTD_MSIL1C.xml"
     path.write_text(MTD_MSIL1C_TEMPLATE.format(quant=quant, offsets=offsets))
     return path

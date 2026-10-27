@@ -15,3 +15,6 @@ ndarray = "0.16"
 
 [build-dependencies]
 pyo3-build-config = "0.23"
+
+[lints]
+workspace = true
