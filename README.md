@@ -49,6 +49,8 @@ uv sync --reinstall-package lasrc
 
 ```bash
 scripts/test                 # cargo test --workspace, then pytest lasrc_py
+scripts/test rust            # Rust tests only
+scripts/test python          # Python tests only
 scripts/test -k geometry     # extra arguments are passed to pytest
 ```
 
@@ -65,10 +67,14 @@ For `lasrc_cref` stage 1+ (pixi on Linux, or Docker on macOS), see
 ### Lint, format, and type check
 
 ```bash
-scripts/format     # apply cargo fmt + ruff format, and ruff auto-fixes, in place
-scripts/lint       # check-only: cargo fmt --check, clippy -D warnings, ruff (use in CI)
-scripts/typecheck  # mypy on lasrc_py/python
+scripts/format         # apply cargo fmt + ruff format, and ruff auto-fixes, in place
+scripts/lint           # check-only: cargo fmt --check, clippy -D warnings, ruff
+scripts/lint rust      # Rust checks only
+scripts/lint python    # Python checks only
+scripts/typecheck      # mypy on lasrc_py/python
 ```
+
+CI (`.github/workflows/ci.yml`) runs these same scripts in separate `rust` and `python` jobs.
 
 ## References
 

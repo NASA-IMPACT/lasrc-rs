@@ -1,8 +1,19 @@
 #!/usr/bin/env bash
-# Run the Rust and Python test suites. Extra arguments are passed to pytest.
+# Run the Rust and Python test suites.
+# Usage: scripts/test [rust|python] [pytest args...]   (default: both)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-cargo test --workspace
+target=all
+if [[ "${1:-}" == "rust" || "${1:-}" == "python" ]]; then
+    target="$1"
+    shift
+fi
 
-uv run pytest lasrc_py "$@"
+if [[ "$target" == "all" || "$target" == "rust" ]]; then
+    cargo test --workspace --locked
+fi
+
+if [[ "$target" == "all" || "$target" == "python" ]]; then
+    uv run pytest lasrc_py "$@"
+fi

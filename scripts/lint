@@ -1,11 +1,18 @@
 #!/usr/bin/env bash
 # Check formatting and lints without modifying files (suitable for CI).
+# Usage: scripts/lint [rust|python]   (default: both)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-cargo fmt --all --check
-cargo fmt --manifest-path lasrc_cref/Cargo.toml --check
-cargo clippy --workspace --all-targets -- -D warnings
+target="${1:-all}"
 
-uv run ruff format --check .
-uv run ruff check .
+if [[ "$target" == "all" || "$target" == "rust" ]]; then
+    cargo fmt --all --check
+    cargo fmt --manifest-path lasrc_cref/Cargo.toml --check
+    cargo clippy --workspace --all-targets --locked -- -D warnings
+fi
+
+if [[ "$target" == "all" || "$target" == "python" ]]; then
+    uv run ruff format --check .
+    uv run ruff check .
+fi
