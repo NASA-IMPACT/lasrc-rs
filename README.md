@@ -17,7 +17,8 @@ This repo contains a Rust port of LaSRC with Python bindings:
 
 Required:
 
-- [rustup](https://rustup.rs/) - installs the stable Rust toolchain (`cargo`, `rustfmt`, `clippy`)
+- [rustup](https://rustup.rs/) - Rust toolchain manager. The toolchain version and components
+  are pinned in `rust-toolchain.toml`; run `rustup install` from the repo root to install them
 - [uv](https://docs.astral.sh/uv/) - Python version, virtualenv, and package management
 
 Optional (only for `lasrc_cref` stage 1+ tests, which compile C code against the ESPA/HDF
