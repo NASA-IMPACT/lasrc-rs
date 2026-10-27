@@ -4,7 +4,6 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 cargo fmt --all
-cargo fmt --manifest-path lasrc_cref/Cargo.toml
 
 uv run ruff format .
 uv run ruff check --fix .

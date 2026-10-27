@@ -11,22 +11,12 @@ This repo contains a Rust port of LaSRC with Python bindings:
 |--------------------|--------------------------------------------------------------------------------|
 | `lasrc_core/`      | Pure Rust LaSRC algorithms (no Python)                                         |
 | `lasrc_py/`        | PyO3 bindings + Python package `lasrc` (I/O, CLI: `lasrc-landsat`, `lasrc-sentinel`) |
-| `lasrc_cref/`      | C-vs-Rust differential test harness (separate Cargo workspace)                 |
 
 ### Prerequisites
-
-Required:
 
 - [rustup](https://rustup.rs/) - Rust toolchain manager. The toolchain version and components
   are pinned in `rust-toolchain.toml`; run `rustup install` from the repo root to install them
 - [uv](https://docs.astral.sh/uv/) - Python version, virtualenv, and package management
-
-Optional (only for `lasrc_cref` stage 1+ tests, which compile C code against the ESPA/HDF
-libraries):
-
-- [pixi](https://pixi.sh/) on linux-64, **or** Docker on macOS (the conda C packages are linux-64
-  only)
-- AWS credentials that can read the private `s3://hls-conda-channels` conda channel
 
 ### Set up the environment
 
@@ -54,16 +44,6 @@ scripts/test rust            # Rust tests only
 scripts/test python          # Python tests only
 scripts/test -k geometry     # extra arguments are passed to pytest
 ```
-
-`lasrc_cref` is a separate Cargo workspace and is not run by `scripts/test`:
-
-```bash
-# C-vs-Rust differential tests, stage 0 (no conda needed)
-cargo test --manifest-path lasrc_cref/Cargo.toml
-```
-
-For `lasrc_cref` stage 1+ (pixi on Linux, or Docker on macOS), see
-[`lasrc_cref/README.md`](lasrc_cref/README.md).
 
 ### Lint, format, and type check
 
