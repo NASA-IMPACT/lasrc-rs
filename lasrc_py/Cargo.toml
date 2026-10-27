@@ -9,12 +9,12 @@ crate-type = ["cdylib"]
 
 [dependencies]
 lasrc_core = { path = "../lasrc_core" }
-pyo3 = { version = "0.29", features = ["extension-module"] }
-numpy = "0.29"
+pyo3 = { version = "0.30", features = ["extension-module"] }
+numpy = "0.30"
 ndarray = "0.17"
 
 [build-dependencies]
-pyo3-build-config = "0.29"
+pyo3-build-config = "0.30"
 
 [lints]
 workspace = true
