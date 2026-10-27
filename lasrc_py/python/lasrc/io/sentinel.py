@@ -65,34 +65,31 @@ def read_sentinel_safe(safe_dir: str | Path) -> dict:
     angles = _parse_angles(_find_tile_metadata(safe_dir))
     quantification_value, radiometric_offsets = _parse_quantification(mtd_msil1c)
 
+    # 10m reference grid from B02. Read before the band loop because the 20m/60m
+    # bands (including B01, which comes first) are trimmed to these dimensions.
+    with rasterio.open(_find_band_file(safe_dir, "B02")) as src:
+        nlines_10m: int = src.height
+        nsamps_10m: int = src.width
+        transform = src.transform
+        profile = {
+            "epsg": src.crs.to_epsg(),
+            "ul_x": transform.c,
+            "ul_y": transform.f,
+            "pixel_size_x": transform.a,
+            "pixel_size_y": abs(transform.e),
+            "nlines": nlines_10m,
+            "nsamps": nsamps_10m,
+        }
+
     # Read bands
     toa_bands = []
-    nlines_10m = None
-    nsamps_10m = None
-    profile = {}
 
     # Fill in any band (see _fill_mask) marks the pixel as fill (bit 0 of QA)
-    fill_mask = None
+    fill_mask: np.ndarray | None = None
 
     for band_name, radiometric_offset in zip(SENTINEL_BAND_ORDER, radiometric_offsets):
         with rasterio.open(_find_band_file(safe_dir, band_name)) as src:
             dn = src.read(1).astype(np.float32)
-
-            # Get 10m reference dimensions from B02
-            if band_name == "B02":
-                nlines_10m = src.height
-                nsamps_10m = src.width
-                transform = src.transform
-                crs = src.crs
-                profile = {
-                    "epsg": crs.to_epsg(),
-                    "ul_x": transform.c,
-                    "ul_y": transform.f,
-                    "pixel_size_x": transform.a,
-                    "pixel_size_y": abs(transform.e),
-                    "nlines": nlines_10m,
-                    "nsamps": nsamps_10m,
-                }
 
         toa = _dn_to_toa(dn, radiometric_offset, quantification_value)
 
@@ -211,6 +208,12 @@ def _espa_angle(text: str) -> float:
     return _c_float(float(f"{angle:f}"))  # printf("%f"), atof, stored in a float
 
 
+def _element_text(e: ElementTree.Element) -> str:
+    if e.text is None:
+        raise ValueError(f"Empty <{e.tag}> element")
+    return e.text
+
+
 def _parse_angles(mtd_tl: Path) -> dict:
     """Extract scene-center sun and view angles from a granule MTD_TL.xml.
 
@@ -221,7 +224,7 @@ def _parse_angles(mtd_tl: Path) -> dict:
     root = ElementTree.parse(mtd_tl).getroot()
 
     def _find_all(path: str) -> list[float]:
-        return [_espa_angle(e.text) for e in root.iterfind(path)]
+        return [_espa_angle(_element_text(e)) for e in root.iterfind(path)]
 
     sun_zen = _find_all(".//{*}Mean_Sun_Angle/{*}ZENITH_ANGLE")
     sun_az = _find_all(".//{*}Mean_Sun_Angle/{*}AZIMUTH_ANGLE")
@@ -253,7 +256,9 @@ def _parse_quantification(mtd_msil1c: Path) -> tuple[float, list[float]]:
     """
     root = ElementTree.parse(mtd_msil1c).getroot()
 
-    quant = [float(e.text) for e in root.iterfind(".//{*}QUANTIFICATION_VALUE")]
+    quant = [
+        float(_element_text(e)) for e in root.iterfind(".//{*}QUANTIFICATION_VALUE")
+    ]
     if len(quant) != 1:
         raise ValueError(
             f"Expected one QUANTIFICATION_VALUE in {mtd_msil1c}, found {len(quant)}"
@@ -261,12 +266,12 @@ def _parse_quantification(mtd_msil1c: Path) -> tuple[float, list[float]]:
 
     offsets: dict[int, float] = {}
     for e in root.iterfind(".//{*}RADIO_ADD_OFFSET"):
-        band_id = int(e.get("band_id"))
+        band_id = int(e.attrib["band_id"])
         if band_id in offsets or not 0 <= band_id < len(SENTINEL_BAND_ORDER):
             raise ValueError(
                 f"Duplicate or out-of-range RADIO_ADD_OFFSET band_id={band_id} in {mtd_msil1c}"
             )
-        offsets[band_id] = float(e.text)
+        offsets[band_id] = float(_element_text(e))
     if len(offsets) != len(SENTINEL_BAND_ORDER):
         raise ValueError(
             f"Expected RADIO_ADD_OFFSET for {len(SENTINEL_BAND_ORDER)} bands in "

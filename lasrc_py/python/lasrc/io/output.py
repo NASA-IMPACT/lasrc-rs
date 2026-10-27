@@ -20,6 +20,7 @@ import numpy as np
 import rasterio
 
 from lasrc.lasrc import AERO_FILL, SR_FILL_VALUE
+from lasrc.sensors import SensorConfig
 
 
 def _write_band(
@@ -46,7 +47,7 @@ def _write_band(
 def write_espa_output(
     output_dir: str | Path,
     result: dict,
-    sensor_config: dict,
+    sensor_config: SensorConfig,
     crs,
     transform,
     product_id: str = "",
@@ -103,7 +104,7 @@ _COG_CREATION_OPTS = {
 def write_cog_output(
     output_dir: str | Path,
     result: dict,
-    sensor_config: dict,
+    sensor_config: SensorConfig,
     crs,
     transform,
     product_id: str = "",
@@ -150,7 +151,10 @@ def write_cog_output(
 
 
 def write_numpy(
-    output_dir: str | Path, result: dict, sensor_config: dict, product_id: str = ""
+    output_dir: str | Path,
+    result: dict,
+    sensor_config: SensorConfig,
+    product_id: str = "",
 ) -> None:
     """Write raw headerless flat binary ``.bin`` files (ndarray.tofile)."""
     output_dir = Path(output_dir)

@@ -1,6 +1,25 @@
 """Sensor configuration dictionaries for I/O and metadata."""
 
-SENSORS = {
+from typing import TypedDict
+
+
+class _SensorConfigRequired(TypedDict):
+    name: str
+    satellite: str
+    instrument: str
+    refl_band_names: list[str]
+    thm_band_names: list[str]
+    input_band_names: list[str]
+    resolution_m: float
+    nsr_bands: int
+    lut_band_names: list[str]
+
+
+class SensorConfig(_SensorConfigRequired, total=False):
+    input_thm_names: list[str]  # Landsat only
+
+
+SENSORS: dict[str, SensorConfig] = {
     "LANDSAT_8": {
         "name": "LANDSAT_8",
         "satellite": "LANDSAT_8",
