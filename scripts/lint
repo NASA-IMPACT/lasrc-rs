@@ -7,6 +7,9 @@ cd "$(dirname "$0")/.."
 target="${1:-all}"
 
 if [[ "$target" == "all" || "$target" == "rust" ]]; then
+    # PyO3 builds against this interpreter; default to the one uv selects from .python-version
+    PYO3_PYTHON="${PYO3_PYTHON:-$(uv python find)}"
+    export PYO3_PYTHON
     cargo fmt --all --check
     cargo clippy --workspace --all-targets --locked -- -D warnings
 fi
