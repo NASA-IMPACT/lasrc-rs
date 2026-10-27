@@ -3139,13 +3139,25 @@ SENSORS = {
         "satellite": "LANDSAT_8",
         "instrument": "OLI_TIRS",
         "refl_band_names": [
-            "sr_band1", "sr_band2", "sr_band3", "sr_band4",
-            "sr_band5", "sr_band6", "sr_band7", "sr_band9",
+            "sr_band1",
+            "sr_band2",
+            "sr_band3",
+            "sr_band4",
+            "sr_band5",
+            "sr_band6",
+            "sr_band7",
+            "sr_band9",
         ],
         "thm_band_names": ["bt_band10", "bt_band11"],
         "input_band_names": [
-            "band1", "band2", "band3", "band4",
-            "band5", "band6", "band7", "band9",
+            "band1",
+            "band2",
+            "band3",
+            "band4",
+            "band5",
+            "band6",
+            "band7",
+            "band9",
         ],
         "input_thm_names": ["band10", "band11"],
         "resolution_m": 30.0,
@@ -3156,13 +3168,25 @@ SENSORS = {
         "satellite": "LANDSAT_9",
         "instrument": "OLI_TIRS",
         "refl_band_names": [
-            "sr_band1", "sr_band2", "sr_band3", "sr_band4",
-            "sr_band5", "sr_band6", "sr_band7", "sr_band9",
+            "sr_band1",
+            "sr_band2",
+            "sr_band3",
+            "sr_band4",
+            "sr_band5",
+            "sr_band6",
+            "sr_band7",
+            "sr_band9",
         ],
         "thm_band_names": ["bt_band10", "bt_band11"],
         "input_band_names": [
-            "band1", "band2", "band3", "band4",
-            "band5", "band6", "band7", "band9",
+            "band1",
+            "band2",
+            "band3",
+            "band4",
+            "band5",
+            "band6",
+            "band7",
+            "band9",
         ],
         "input_thm_names": ["band10", "band11"],
         "resolution_m": 30.0,
@@ -3173,14 +3197,31 @@ SENSORS = {
         "satellite": "SENTINEL-2A",
         "instrument": "MSI",
         "refl_band_names": [
-            "sr_band1", "sr_band2", "sr_band3", "sr_band4",
-            "sr_band5", "sr_band6", "sr_band7", "sr_band8",
-            "sr_band8a", "sr_band11", "sr_band12",
+            "sr_band1",
+            "sr_band2",
+            "sr_band3",
+            "sr_band4",
+            "sr_band5",
+            "sr_band6",
+            "sr_band7",
+            "sr_band8",
+            "sr_band8a",
+            "sr_band11",
+            "sr_band12",
         ],
         "thm_band_names": [],
         "input_band_names": [
-            "B01", "B02", "B03", "B04", "B05", "B06",
-            "B07", "B08", "B8A", "B11", "B12",
+            "B01",
+            "B02",
+            "B03",
+            "B04",
+            "B05",
+            "B06",
+            "B07",
+            "B08",
+            "B8A",
+            "B11",
+            "B12",
         ],
         "resolution_m": 10.0,
         "nsr_bands": 11,
@@ -3196,9 +3237,13 @@ SENSORS = {
 import numpy as np
 
 
-def load_lut_from_hdf(angle_hdf_path: str, intref_path: str,
-                      transm_path: str, sphera_path: str,
-                      nsr_bands: int) -> dict:
+def load_lut_from_hdf(
+    angle_hdf_path: str,
+    intref_path: str,
+    transm_path: str,
+    sphera_path: str,
+    nsr_bands: int,
+) -> dict:
     """Load 6S lookup tables from HDF files.
 
     Returns dict with keys matching PyLookupTables constructor args.
@@ -3292,10 +3337,19 @@ def load_ratio_file(ratio_path: str) -> dict:
 
     hdf = SD(ratio_path, SDC.READ)
     result = {}
-    for name in ["ratiob1", "ratiob2", "ratiob7",
-                  "intratiob1", "intratiob2", "intratiob7",
-                  "slpratiob1", "slpratiob2", "slpratiob7",
-                  "andwi", "sndwi"]:
+    for name in [
+        "ratiob1",
+        "ratiob2",
+        "ratiob7",
+        "intratiob1",
+        "intratiob2",
+        "intratiob7",
+        "slpratiob1",
+        "slpratiob2",
+        "slpratiob7",
+        "andwi",
+        "sndwi",
+    ]:
         result[name] = np.array(hdf.select(name).get(), dtype=np.int16).ravel().tolist()
     hdf.end()
     return result
@@ -3370,7 +3424,10 @@ def read_landsat_scene(scene_dir: str | Path) -> dict:
         if band_file is not None:
             with rasterio.open(band_file) as src:
                 data = src.read(1).astype(np.float32)
-                radiance = data * metadata["rad_mult"][band_num] + metadata["rad_add"][band_num]
+                radiance = (
+                    data * metadata["rad_mult"][band_num]
+                    + metadata["rad_add"][band_num]
+                )
                 k1 = metadata["k1"][band_num]
                 k2 = metadata["k2"][band_num]
                 bt = np.where(radiance > 0, k2 / np.log(k1 / radiance + 1.0), 0.0)
@@ -3405,8 +3462,14 @@ def _find_band_file(band_files, band_id):
 
 def _parse_landsat_mtl(mtl_path):
     """Parse Landsat MTL metadata file. Returns dict of calibration params."""
-    metadata = {"refl_mult": {}, "refl_add": {}, "rad_mult": {}, "rad_add": {},
-                "k1": {}, "k2": {}}
+    metadata = {
+        "refl_mult": {},
+        "refl_add": {},
+        "rad_mult": {},
+        "rad_add": {},
+        "k1": {},
+        "k2": {},
+    }
     with open(mtl_path) as f:
         for line in f:
             line = line.strip()
@@ -3425,7 +3488,7 @@ def _parse_landsat_mtl(mtl_path):
                 ("K2_CONSTANT_BAND_", "k2"),
             ]:
                 if key.startswith(prefix):
-                    band_num = int(key[len(prefix):])
+                    band_num = int(key[len(prefix) :])
                     metadata[target][band_num] = float(val)
             if key == "SUN_ELEVATION":
                 metadata["sun_elevation"] = float(val)
@@ -3439,7 +3502,12 @@ def _read_landsat_angles(scene_dir, metadata):
     angle_files = list(scene_dir.glob("*_SZA.TIF"))
     if angle_files:
         angles = {}
-        for name, suffix in [("sza", "SZA"), ("saa", "SAA"), ("vza", "VZA"), ("vaa", "VAA")]:
+        for name, suffix in [
+            ("sza", "SZA"),
+            ("saa", "SAA"),
+            ("vza", "VZA"),
+            ("vaa", "VAA"),
+        ]:
             f = list(scene_dir.glob(f"*_{suffix}.TIF"))
             if f:
                 with rasterio.open(f[0]) as src:
@@ -3449,9 +3517,13 @@ def _read_landsat_angles(scene_dir, metadata):
         return {"sun_elevation": metadata.get("sun_elevation", 45.0)}
 
 
-def write_espa_output(output_dir: str | Path, result: dict,
-                      metadata: dict, profile: dict,
-                      sensor_config: dict) -> None:
+def write_espa_output(
+    output_dir: str | Path,
+    result: dict,
+    metadata: dict,
+    profile: dict,
+    sensor_config: dict,
+) -> None:
     """Write output in ESPA internal format (flat binary + XML)."""
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -3467,9 +3539,13 @@ def write_espa_output(output_dir: str | Path, result: dict,
     result["qa"].tofile(output_dir / "sr_aerosol_qa.img")
 
 
-def write_cog_output(output_path: str | Path, result: dict,
-                     metadata: dict, profile: dict,
-                     sensor_config: dict) -> None:
+def write_cog_output(
+    output_path: str | Path,
+    result: dict,
+    metadata: dict,
+    profile: dict,
+    sensor_config: dict,
+) -> None:
     """Write output as Cloud-Optimized GeoTIFF."""
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -3576,7 +3652,9 @@ def process_scene(
         vza = angles["vza"]
         vaa = angles["vaa"]
     else:
-        sza = np.full((nlines, nsamps), 90.0 - angles["sun_elevation"], dtype=np.float32)
+        sza = np.full(
+            (nlines, nsamps), 90.0 - angles["sun_elevation"], dtype=np.float32
+        )
         saa = np.full((nlines, nsamps), 0.0, dtype=np.float32)
         vza = np.full((nlines, nsamps), 0.0, dtype=np.float32)
         vaa = np.full((nlines, nsamps), 0.0, dtype=np.float32)
@@ -3606,7 +3684,9 @@ def process_scene(
 
     # Write output
     if output_format == "espa":
-        write_espa_output(output_path, result, scene["metadata"], profile, sensor_config)
+        write_espa_output(
+            output_path, result, scene["metadata"], profile, sensor_config
+        )
     else:
         write_cog_output(output_path, result, scene["metadata"], profile, sensor_config)
 ```
@@ -3620,22 +3700,55 @@ import click
 
 
 @click.command()
-@click.option("--input", "input_path", required=True, type=click.Path(exists=True),
-              help="Path to input scene directory")
-@click.option("--aux-dir", required=True, type=click.Path(exists=True),
-              help="Path to auxiliary data directory")
-@click.option("--output", "output_path", required=True, type=click.Path(),
-              help="Path for output file or directory")
-@click.option("--sensor", default=None,
-              type=click.Choice(["LANDSAT_8", "LANDSAT_9", "SENTINEL_2A", "SENTINEL_2B", "SENTINEL_2C"]),
-              help="Sensor name (auto-detected if omitted)")
-@click.option("--output-format", default="cog", type=click.Choice(["cog", "espa"]),
-              help="Output format (default: cog)")
-@click.option("--use-orig-aero", is_flag=True, default=False,
-              help="Use original aerosol algorithm (slower)")
-@click.option("--aux-source", default="VIIRS", type=click.Choice(["VIIRS", "MODIS"]),
-              help="Auxiliary data source (default: VIIRS)")
-def main(input_path, aux_dir, output_path, sensor, output_format, use_orig_aero, aux_source):
+@click.option(
+    "--input",
+    "input_path",
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to input scene directory",
+)
+@click.option(
+    "--aux-dir",
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to auxiliary data directory",
+)
+@click.option(
+    "--output",
+    "output_path",
+    required=True,
+    type=click.Path(),
+    help="Path for output file or directory",
+)
+@click.option(
+    "--sensor",
+    default=None,
+    type=click.Choice(
+        ["LANDSAT_8", "LANDSAT_9", "SENTINEL_2A", "SENTINEL_2B", "SENTINEL_2C"]
+    ),
+    help="Sensor name (auto-detected if omitted)",
+)
+@click.option(
+    "--output-format",
+    default="cog",
+    type=click.Choice(["cog", "espa"]),
+    help="Output format (default: cog)",
+)
+@click.option(
+    "--use-orig-aero",
+    is_flag=True,
+    default=False,
+    help="Use original aerosol algorithm (slower)",
+)
+@click.option(
+    "--aux-source",
+    default="VIIRS",
+    type=click.Choice(["VIIRS", "MODIS"]),
+    help="Auxiliary data source (default: VIIRS)",
+)
+def main(
+    input_path, aux_dir, output_path, sensor, output_format, use_orig_aero, aux_source
+):
     """LaSRC: Compute surface reflectance from satellite imagery."""
     from lasrc.pipeline import process_scene
 
@@ -3658,6 +3771,7 @@ def main(input_path, aux_dir, output_path, sensor, output_format, use_orig_aero,
 def _detect_sensor(input_path: str) -> str:
     """Auto-detect sensor from input scene metadata."""
     from pathlib import Path
+
     p = Path(input_path)
     name = p.name.upper()
     if "LC08" in name or "LO08" in name:
@@ -3671,7 +3785,9 @@ def _detect_sensor(input_path: str) -> str:
     elif "S2C" in name:
         return "SENTINEL_2C"
     else:
-        raise click.ClickException(f"Cannot detect sensor from {name}. Use --sensor flag.")
+        raise click.ClickException(
+            f"Cannot detect sensor from {name}. Use --sensor flag."
+        )
 
 
 if __name__ == "__main__":
@@ -3681,7 +3797,12 @@ if __name__ == "__main__":
 - [ ] **Step 4: Update __init__.py**
 
 ```python
-from lasrc.lasrc import __version__, PyLookupTables, PyAuxiliaryData, process_surface_reflectance
+from lasrc.lasrc import (
+    __version__,
+    PyLookupTables,
+    PyAuxiliaryData,
+    process_surface_reflectance,
+)
 
 __all__ = [
     "__version__",
@@ -3727,8 +3848,12 @@ def small_scene():
     nlines, nsamps = 10, 10
     rng = np.random.default_rng(42)
 
-    toa_bands = [rng.uniform(0.05, 0.3, (nlines, nsamps)).astype(np.float32) for _ in range(8)]
-    bt_bands = [rng.uniform(270.0, 310.0, (nlines, nsamps)).astype(np.float32) for _ in range(2)]
+    toa_bands = [
+        rng.uniform(0.05, 0.3, (nlines, nsamps)).astype(np.float32) for _ in range(8)
+    ]
+    bt_bands = [
+        rng.uniform(270.0, 310.0, (nlines, nsamps)).astype(np.float32) for _ in range(2)
+    ]
     qa_band = np.ones((nlines, nsamps), dtype=np.uint16)
     sza = np.full((nlines, nsamps), 30.0, dtype=np.float32)
     saa = np.full((nlines, nsamps), 150.0, dtype=np.float32)
@@ -3760,11 +3885,13 @@ import pytest
 def test_import():
     """Verify the lasrc package imports correctly."""
     import lasrc
+
     assert hasattr(lasrc, "__version__")
 
 
 def test_version():
     import lasrc
+
     assert lasrc.__version__ == "0.1.0"
 ```
 
@@ -3781,7 +3908,11 @@ import pytest
 from pathlib import Path
 
 TEST_DATA_DIR = Path(__file__).parent / "data"
-HAS_TEST_DATA = TEST_DATA_DIR.exists() and any(TEST_DATA_DIR.iterdir()) if TEST_DATA_DIR.exists() else False
+HAS_TEST_DATA = (
+    TEST_DATA_DIR.exists() and any(TEST_DATA_DIR.iterdir())
+    if TEST_DATA_DIR.exists()
+    else False
+)
 
 
 @pytest.mark.skipif(not HAS_TEST_DATA, reason="Test data not available")

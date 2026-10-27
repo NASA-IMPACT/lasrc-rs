@@ -37,19 +37,25 @@ def find_viirs_aux(lads_dir: Path, year: str, doy: str) -> Path:
 def main():
     parser = argparse.ArgumentParser(description="Run LaSRC on test Landsat 9 granule")
     parser.add_argument(
-        "--format", choices=["espa", "cog", "numpy"], default="espa",
+        "--format",
+        choices=["espa", "cog", "numpy"],
+        default="espa",
         help="Output format: 'espa' for ENVI .img/.hdr (default), 'cog' for GeoTIFF, "
-             "'numpy' for raw flat binary .img files",
+        "'numpy' for raw flat binary .img files",
     )
     parser.add_argument(
-        "--aux", type=Path, default=None,
+        "--aux",
+        type=Path,
+        default=None,
         help="Path to VIIRS auxiliary HDF5 file (auto-detected from LADS dir if omitted)",
     )
     args = parser.parse_args()
 
     from lasrc.pipeline import AuxFilePaths, process_scene
 
-    viirs_path = args.aux if args.aux is not None else find_viirs_aux(LADS_DIR, "2026", "073")
+    viirs_path = (
+        args.aux if args.aux is not None else find_viirs_aux(LADS_DIR, "2026", "073")
+    )
     print(f"Scene:     {SCENE_DIR.name}")
     print(f"VIIRS aux: {viirs_path.name}")
     print(f"Format:    {args.format}")
@@ -86,8 +92,10 @@ def main():
     sr0 = result["sr_bands"][0]
     aerosol = result["aerosol"]
     print(f"  SR band 1 stats: min={sr0.min()}, max={sr0.max()}, mean={sr0.mean():.1f}")
-    print(f"  Aerosol stats:   min={aerosol.min()}, max={aerosol.max()}, "
-          f"mean={aerosol.mean():.1f}")
+    print(
+        f"  Aerosol stats:   min={aerosol.min()}, max={aerosol.max()}, "
+        f"mean={aerosol.mean():.1f}"
+    )
     print(f"Output written to {output_path}")
     print("Done!")
 

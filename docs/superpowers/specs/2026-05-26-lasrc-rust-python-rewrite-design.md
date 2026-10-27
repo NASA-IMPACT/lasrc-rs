@@ -170,9 +170,7 @@ def process_scene(input_path, aux_dir, output_path, sensor_name, output_format="
     lut = load_lut(aux_dir, sensor)
     aux_data = load_auxiliary(aux_dir, metadata)
 
-    result = lasrc.compute_surface_reflectance(
-        sensor, toa_bands, angles, lut, aux_data
-    )
+    result = lasrc.compute_surface_reflectance(sensor, toa_bands, angles, lut, aux_data)
 
     if output_format == "cog":
         write_cog(output_path, result, metadata)

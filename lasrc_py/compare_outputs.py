@@ -1,4 +1,5 @@
 """Compare Rust and C ESPA output .img files."""
+
 import argparse
 import numpy as np
 import os
@@ -8,9 +9,7 @@ import sys
 DEFAULT_RUST_DIR = os.path.join(
     os.path.dirname(__file__), "..", "test_data", "output_espa"
 )
-DEFAULT_C_DIR = os.path.join(
-    os.path.dirname(__file__), "..", "test_data", "c_output"
-)
+DEFAULT_C_DIR = os.path.join(os.path.dirname(__file__), "..", "test_data", "c_output")
 DEFAULT_PREFIX = "LC09_L1TP_001066_20260314_20260314_02_T1_"
 
 BANDS = [
@@ -73,11 +72,31 @@ def compare(rust_dir, c_dir, c_prefix, bands=None, nrows=None, ncols=None):
     valid = (c_aero != -9999) & (rust_aero != -9999)
     n_valid = valid.sum()
     n_total = len(c_aero)
-    print(f"Scene: {nrows} x {ncols} = {n_total} pixels, {n_valid} valid ({100*n_valid/n_total:.1f}%)")
+    print(
+        f"Scene: {nrows} x {ncols} = {n_total} pixels, {n_valid} valid ({100 * n_valid / n_total:.1f}%)"
+    )
     print()
 
     header = f"| {'Band':<18} | {'% differ':>8} | {'Median':>7} | {'Mean':>7} | {'P95':>7} | {'P99':>7} | {'Max':>7} | {'Center':>7} |"
-    sep = "|" + "-" * 20 + "|" + "-" * 10 + "|" + "-" * 9 + "|" + "-" * 9 + "|" + "-" * 9 + "|" + "-" * 9 + "|" + "-" * 9 + "|" + "-" * 9 + "|"
+    sep = (
+        "|"
+        + "-" * 20
+        + "|"
+        + "-" * 10
+        + "|"
+        + "-" * 9
+        + "|"
+        + "-" * 9
+        + "|"
+        + "-" * 9
+        + "|"
+        + "-" * 9
+        + "|"
+        + "-" * 9
+        + "|"
+        + "-" * 9
+        + "|"
+    )
     print(header)
     print(sep)
 
@@ -112,14 +131,18 @@ def compare(rust_dir, c_dir, c_prefix, bands=None, nrows=None, ncols=None):
         nonzero_v = vdiff[vdiff > 0]
 
         if len(nonzero_v) == 0:
-            print(f"| {fname:<18} | {'0.00%':>8} | {'—':>7} | {'—':>7} | {'—':>7} | {'—':>7} | {'—':>7} | {center_diff:>7} |")
+            print(
+                f"| {fname:<18} | {'0.00%':>8} | {'—':>7} | {'—':>7} | {'—':>7} | {'—':>7} | {'—':>7} | {center_diff:>7} |"
+            )
         else:
             median = int(np.median(nonzero_v))
             mean = nonzero_v.mean()
             p95 = int(np.percentile(nonzero_v, 95))
             p99 = int(np.percentile(nonzero_v, 99))
             mx = int(nonzero_v.max())
-            print(f"| {fname:<18} | {pct:>7.2f}% | {median:>7} | {mean:>7.1f} | {p95:>7} | {p99:>7} | {mx:>7} | {center_diff:>7} |")
+            print(
+                f"| {fname:<18} | {pct:>7.2f}% | {median:>7} | {mean:>7.1f} | {p95:>7} | {p99:>7} | {mx:>7} | {center_diff:>7} |"
+            )
 
     print()
     print("Stats are absolute differences on valid (non-fill) pixels.")
@@ -128,14 +151,21 @@ def compare(rust_dir, c_dir, c_prefix, bands=None, nrows=None, ncols=None):
 
 def main():
     parser = argparse.ArgumentParser(description="Compare Rust and C ESPA outputs")
-    parser.add_argument("--sensor", choices=["landsat", "sentinel"], default="landsat",
-                        help="Sensor type: landsat (default) or sentinel")
-    parser.add_argument("--rust-dir", default=None,
-                        help="Directory with Rust output .img files")
-    parser.add_argument("--c-dir", default=None,
-                        help="Directory with C output .img files")
-    parser.add_argument("--c-prefix", default=None,
-                        help="Filename prefix on C output files")
+    parser.add_argument(
+        "--sensor",
+        choices=["landsat", "sentinel"],
+        default="landsat",
+        help="Sensor type: landsat (default) or sentinel",
+    )
+    parser.add_argument(
+        "--rust-dir", default=None, help="Directory with Rust output .img files"
+    )
+    parser.add_argument(
+        "--c-dir", default=None, help="Directory with C output .img files"
+    )
+    parser.add_argument(
+        "--c-prefix", default=None, help="Filename prefix on C output files"
+    )
     args = parser.parse_args()
 
     if args.sensor == "sentinel":

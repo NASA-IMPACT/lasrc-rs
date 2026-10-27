@@ -9,15 +9,36 @@ import numpy as np
 # Band ordering matching the 13-band Rust layout
 # (B01, B02, B03, B04, B05, B06, B07, B08, B8A, B09, B10, B11, B12)
 SENTINEL_BAND_ORDER = [
-    "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08",
-    "B8A", "B09", "B10", "B11", "B12",
+    "B01",
+    "B02",
+    "B03",
+    "B04",
+    "B05",
+    "B06",
+    "B07",
+    "B08",
+    "B8A",
+    "B09",
+    "B10",
+    "B11",
+    "B12",
 ]
 
 # Native resolutions (meters)
 BAND_RESOLUTION = {
-    "B01": 60, "B02": 10, "B03": 10, "B04": 10,
-    "B05": 20, "B06": 20, "B07": 20, "B08": 10,
-    "B8A": 20, "B09": 60, "B10": 60, "B11": 20, "B12": 20,
+    "B01": 60,
+    "B02": 10,
+    "B03": 10,
+    "B04": 10,
+    "B05": 20,
+    "B06": 20,
+    "B07": 20,
+    "B08": 10,
+    "B8A": 20,
+    "B09": 60,
+    "B10": 60,
+    "B11": 20,
+    "B12": 20,
 }
 
 
@@ -80,9 +101,12 @@ def read_sentinel_safe(safe_dir: str | Path) -> dict:
         band_fill = _fill_mask(dn, toa)
         native_res = BAND_RESOLUTION[band_name]
         if native_res != 10:
-            band_fill = _resample_to_10m(
-                band_fill.astype(np.float32), native_res, nlines_10m, nsamps_10m
-            ) > 0.5
+            band_fill = (
+                _resample_to_10m(
+                    band_fill.astype(np.float32), native_res, nlines_10m, nsamps_10m
+                )
+                > 0.5
+            )
 
         # A pixel is fill if any band is fill
         if fill_mask is None:
@@ -123,7 +147,9 @@ def _resample_to_10m(
     return resampled[:nlines_10m, :nsamps_10m]
 
 
-def _dn_to_toa(dn: np.ndarray, offset: float, quantification_value: float) -> np.ndarray:
+def _dn_to_toa(
+    dn: np.ndarray, offset: float, quantification_value: float
+) -> np.ndarray:
     """Convert L1C DN to TOA reflectance with C LaSRC's float arithmetic.
 
     C computes (DN + add_offset) * scale_factor in float, with scale_factor =

@@ -15,14 +15,15 @@ inputs. The on-disk formats are:
 import numpy as np
 
 # 6S LUT grid dimensions (shared by all sensors).
-NSOLAR = 8000     # solar/view geometry samples per (band, pressure, aot)
-NAOT = 22         # aerosol optical thickness steps
-NPRES = 7         # pressure levels
-NSUNANGLE = 22    # sun-angle slots allocated for the transmission table
+NSOLAR = 8000  # solar/view geometry samples per (band, pressure, aot)
+NAOT = 22  # aerosol optical thickness steps
+NPRES = 7  # pressure levels
+NSUNANGLE = 22  # sun-angle slots allocated for the transmission table
 NSUNANGLE_FILE = 21  # sun-angle lines actually present per pressure block
 
 
 # -- 6S look-up tables -----------------------------------------------------------
+
 
 def load_angle_lut(path: str) -> dict:
     """Load the angle LUT (ANGLE_NEW.hdf) from HDF4.
@@ -35,9 +36,7 @@ def load_angle_lut(path: str) -> dict:
     hdf = SD(str(path), SDC.READ)
     result = {}
     for name in ["TSMAX", "TSMIN", "NBFIC", "TTV", "TTS"]:
-        result[name.lower()] = (
-            hdf.select(name).get().astype(np.float64).ravel()
-        )
+        result[name.lower()] = hdf.select(name).get().astype(np.float64).ravel()
     result["nbfi"] = hdf.select("NBFI").get().astype(np.int32).ravel()
     result["indts"] = hdf.select("INDTS").get().astype(np.int32).ravel()
     hdf.end()
@@ -61,10 +60,8 @@ def load_rolutt(path: str, band_names: list[str]) -> np.ndarray:
         data = hdf.select(ds_name).get().astype(np.float64)  # [NSOLAR, NAOT, NPRES]
         for ip in range(NPRES):
             for ia in range(NAOT):
-                base = (ib * NPRES * NAOT * NSOLAR
-                        + ip * NAOT * NSOLAR
-                        + ia * NSOLAR)
-                rolutt[base:base + NSOLAR] = data[:, ia, ip]
+                base = ib * NPRES * NAOT * NSOLAR + ip * NAOT * NSOLAR + ia * NSOLAR
+                rolutt[base : base + NSOLAR] = data[:, ia, ip]
 
     hdf.end()
     return rolutt
@@ -121,18 +118,25 @@ def load_trans_ascii(path: str, nsr_bands: int) -> np.ndarray:
                 parts = lines[idx].split()
                 # parts[0] is the sun angle; parts[1:] are per-AOT transmission.
                 for ia in range(NAOT):
-                    base = (ib * NPRES * NAOT * NSUNANGLE
-                            + ip * NAOT * NSUNANGLE
-                            + ia * NSUNANGLE
-                            + isun)
+                    base = (
+                        ib * NPRES * NAOT * NSUNANGLE
+                        + ip * NAOT * NSUNANGLE
+                        + ia * NSUNANGLE
+                        + isun
+                    )
                     transt[base] = float(parts[1 + ia])
                 idx += 1
 
     return transt
 
 
-def load_lut(angle_path: str, intref_path: str, transm_path: str,
-             sphera_path: str, band_names: list[str]) -> dict:
+def load_lut(
+    angle_path: str,
+    intref_path: str,
+    transm_path: str,
+    sphera_path: str,
+    band_names: list[str],
+) -> dict:
     """Load all 6S look-up tables and return PyLookupTables constructor kwargs.
 
     Parameters
@@ -160,6 +164,7 @@ def load_lut(angle_path: str, intref_path: str, transm_path: str,
 
 
 # -- Atmospheric ancillary data --------------------------------------------------
+
 
 def load_auxiliary_data(aux_path: str, aux_source: str = "VIIRS") -> dict:
     """Load water vapor and ozone grids.

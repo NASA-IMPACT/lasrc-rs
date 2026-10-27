@@ -60,8 +60,10 @@ def compare(name, c_arr, py_arr):
         return True
     diff = np.flatnonzero(c_arr != py_arr)
     i = int(diff[0])
-    print(f"  FAIL {name}: {diff.size}/{c_arr.size} differ; "
-          f"first at [{i}] C={c_arr[i]} Python={py_arr[i]}")
+    print(
+        f"  FAIL {name}: {diff.size}/{c_arr.size} differ; "
+        f"first at [{i}] C={c_arr[i]} Python={py_arr[i]}"
+    )
     return False
 
 

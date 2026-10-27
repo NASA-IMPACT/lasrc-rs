@@ -6,7 +6,12 @@ from pathlib import Path
 import numpy as np
 
 from lasrc.aux import load_auxiliary_data, load_dem, load_lut, load_ratio_file
-from lasrc.io import read_landsat_scene, write_cog_output, write_espa_output, write_numpy
+from lasrc.io import (
+    read_landsat_scene,
+    write_cog_output,
+    write_espa_output,
+    write_numpy,
+)
 from lasrc.sensors import SENSORS
 
 import lasrc as _lasrc
@@ -102,13 +107,17 @@ def process_scene(
         vza = angles["vza"]
         vaa = angles["vaa"]
     else:
-        sza = np.full((nlines, nsamps), 90.0 - angles["sun_elevation"], dtype=np.float32)
+        sza = np.full(
+            (nlines, nsamps), 90.0 - angles["sun_elevation"], dtype=np.float32
+        )
         saa = np.full((nlines, nsamps), 0.0, dtype=np.float32)
         vza = np.full((nlines, nsamps), 0.0, dtype=np.float32)
         vaa = np.full((nlines, nsamps), 0.0, dtype=np.float32)
 
     sun_elevation = scene["metadata"].get("sun_elevation")
-    scene_solar_zenith = None if sun_elevation is None else _espa_solar_zenith(sun_elevation)
+    scene_solar_zenith = (
+        None if sun_elevation is None else _espa_solar_zenith(sun_elevation)
+    )
 
     # Extract UTM geotransform for per-pixel coordinate conversion
     # transform.c = UL x, transform.f = UL y, transform.a = pixel width, transform.e = pixel height (neg)
@@ -146,14 +155,24 @@ def process_scene(
 
     product_id = scene.get("product_id", "")
     if output_format == "espa":
-        write_espa_output(output_path, result, sensor_config,
-                          crs=profile["crs"], transform=transform,
-                          product_id=product_id)
+        write_espa_output(
+            output_path,
+            result,
+            sensor_config,
+            crs=profile["crs"],
+            transform=transform,
+            product_id=product_id,
+        )
     elif output_format == "numpy":
         write_numpy(output_path, result, sensor_config, product_id=product_id)
     else:
-        write_cog_output(output_path, result, sensor_config,
-                         crs=profile["crs"], transform=transform,
-                         product_id=product_id)
+        write_cog_output(
+            output_path,
+            result,
+            sensor_config,
+            crs=profile["crs"],
+            transform=transform,
+            product_id=product_id,
+        )
 
     return result

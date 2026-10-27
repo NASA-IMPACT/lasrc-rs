@@ -10,8 +10,12 @@ def small_scene():
     nlines, nsamps = 10, 10
     rng = np.random.default_rng(42)
 
-    toa_bands = [rng.uniform(0.05, 0.3, (nlines, nsamps)).astype(np.float32) for _ in range(8)]
-    bt_bands = [rng.uniform(270.0, 310.0, (nlines, nsamps)).astype(np.float32) for _ in range(2)]
+    toa_bands = [
+        rng.uniform(0.05, 0.3, (nlines, nsamps)).astype(np.float32) for _ in range(8)
+    ]
+    bt_bands = [
+        rng.uniform(270.0, 310.0, (nlines, nsamps)).astype(np.float32) for _ in range(2)
+    ]
     qa_band = np.ones((nlines, nsamps), dtype=np.uint16)
     sza = np.full((nlines, nsamps), 30.0, dtype=np.float32)
     saa = np.full((nlines, nsamps), 150.0, dtype=np.float32)

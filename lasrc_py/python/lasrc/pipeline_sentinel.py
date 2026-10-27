@@ -47,7 +47,10 @@ def process_sentinel_scene(
 
     # Load LUTs (HDF4 angle + intref, ASCII transm + sphera)
     lut_data = load_lut(
-        str(angle_hdf), str(intref_hdf), str(transm_hdf), str(sphera_hdf),
+        str(angle_hdf),
+        str(intref_hdf),
+        str(transm_hdf),
+        str(sphera_hdf),
         band_names=sensor_config["lut_band_names"],
     )
     lut = _lasrc.PyLookupTables(**lut_data)
@@ -92,13 +95,20 @@ def process_sentinel_scene(
     if output_format == "espa":
         crs = CRS.from_epsg(profile["epsg"])
         transform = from_origin(
-            profile["ul_x"], profile["ul_y"],
-            profile["pixel_size_x"], profile["pixel_size_y"],
+            profile["ul_x"],
+            profile["ul_y"],
+            profile["pixel_size_x"],
+            profile["pixel_size_y"],
         )
-        write_espa_output(output_path, result, sensor_config,
-                          crs=crs, transform=transform, product_id=product_id)
+        write_espa_output(
+            output_path,
+            result,
+            sensor_config,
+            crs=crs,
+            transform=transform,
+            product_id=product_id,
+        )
     elif output_format == "numpy":
         write_numpy(output_path, result, sensor_config, product_id=product_id)
 
     return result
-

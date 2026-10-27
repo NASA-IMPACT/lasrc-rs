@@ -8,7 +8,11 @@ import pytest
 from pathlib import Path
 
 TEST_DATA_DIR = Path(__file__).parent / "data"
-HAS_TEST_DATA = TEST_DATA_DIR.exists() and any(TEST_DATA_DIR.iterdir()) if TEST_DATA_DIR.exists() else False
+HAS_TEST_DATA = (
+    TEST_DATA_DIR.exists() and any(TEST_DATA_DIR.iterdir())
+    if TEST_DATA_DIR.exists()
+    else False
+)
 
 
 @pytest.mark.skipif(not HAS_TEST_DATA, reason="Test data not available")
