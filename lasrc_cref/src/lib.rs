@@ -6,11 +6,11 @@
 //! Rust-shaped call so they can feed identical inputs to both implementations
 //! and assert agreement.
 
-use std::os::raw::c_int;
 #[cfg(feature = "lut")]
 use std::ffi::CString;
 #[cfg(feature = "lut")]
 use std::os::raw::c_char;
+use std::os::raw::c_int;
 
 // ---- Stage 0: zero-dependency leaves ----
 
@@ -79,9 +79,18 @@ pub fn c_atmcorlamb2_new(
     // `roslamb` is a valid out-pointer.
     unsafe {
         atmcorlamb2_new(
-            sat, tgo, roatm_upper,
-            roatm_coef.as_ptr(), ttatmg_coef.as_ptr(), satm_coef.as_ptr(),
-            raot550nm, iband, normext_ib_0_3, rotoa, &mut roslamb, eps,
+            sat,
+            tgo,
+            roatm_upper,
+            roatm_coef.as_ptr(),
+            ttatmg_coef.as_ptr(),
+            satm_coef.as_ptr(),
+            raot550nm,
+            iband,
+            normext_ib_0_3,
+            rotoa,
+            &mut roslamb,
+            eps,
         );
     }
     roslamb
@@ -92,18 +101,16 @@ pub fn c_atmcorlamb2_new(
 /// values, so the test maps `AOT550NM[idx]` when feeding the Rust side.
 #[cfg(feature = "lut")]
 pub const AOT550NM: [f32; 22] = [
-    0.01, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8,
-    2.0, 2.3, 2.6, 3.0, 3.5, 4.0, 4.5, 5.0,
+    0.01, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.3, 2.6, 3.0,
+    3.5, 4.0, 4.5, 5.0,
 ];
 
 /// Landsat `tth` thresholds hardcoded in C `subaeroret_new` (land / water).
 /// C selects internally from sat+water; the Rust port takes `tth` explicitly.
 #[cfg(feature = "lut")]
-pub const LANDSAT_TTH: [f32; 8] =
-    [1.0e-3, 1.0e-3, 0.0, 1.0e-3, 0.0, 0.0, 1.0e-4, 0.0];
+pub const LANDSAT_TTH: [f32; 8] = [1.0e-3, 1.0e-3, 0.0, 1.0e-3, 0.0, 0.0, 1.0e-4, 0.0];
 #[cfg(feature = "lut")]
-pub const LANDSAT_TTH_WATER: [f32; 8] =
-    [1.0e-3, 1.0e-3, 0.0, 1.0e-3, 1.0e-3, 0.0, 1.0e-4, 0.0];
+pub const LANDSAT_TTH_WATER: [f32; 8] = [1.0e-3, 1.0e-3, 0.0, 1.0e-3, 1.0e-3, 0.0, 1.0e-4, 0.0];
 
 #[cfg(feature = "lut")]
 extern "C" {
@@ -133,12 +140,7 @@ extern "C" {
 extern "C" {
     /// C `get_3rd_order_poly_coeff` from poly_coeff.c. Fits a cubic to
     /// (aot[i], atm[i]) via LU-solved normal equations; writes coeff[NCOEF=4].
-    fn get_3rd_order_poly_coeff(
-        aot: *const f32,
-        atm: *const f32,
-        n_atm: c_int,
-        coeff: *mut f32,
-    );
+    fn get_3rd_order_poly_coeff(aot: *const f32, atm: *const f32, n_atm: c_int, coeff: *mut f32);
 }
 
 /// Cubic fit coefficients via the original C `get_3rd_order_poly_coeff`.
@@ -148,7 +150,12 @@ pub fn c_get_3rd_order_poly_coeff(aot: &[f32], atm: &[f32]) -> [f32; 4] {
     let mut coeff = [0.0f32; 4];
     // SAFETY: aot/atm are n_atm long; coeff is NCOEF=4 as C writes.
     unsafe {
-        get_3rd_order_poly_coeff(aot.as_ptr(), atm.as_ptr(), aot.len() as c_int, coeff.as_mut_ptr());
+        get_3rd_order_poly_coeff(
+            aot.as_ptr(),
+            atm.as_ptr(),
+            aot.len() as c_int,
+            coeff.as_mut_ptr(),
+        );
     }
     coeff
 }
@@ -164,7 +171,9 @@ extern "C" {
 pub fn c_local_chand(xphi: f32, xmuv: f32, xmus: f32, xtau: f32) -> f32 {
     let mut xrray = 0.0f32;
     // SAFETY: xrray is a valid out-pointer; all other args are by-value.
-    unsafe { local_chand(xphi, xmuv, xmus, xtau, &mut xrray); }
+    unsafe {
+        local_chand(xphi, xmuv, xmus, xtau, &mut xrray);
+    }
     xrray
 }
 
@@ -202,17 +211,28 @@ pub fn c_subaeroret_new(
     // coef slices are row-major [N][NCOEF]; out-pointers are valid.
     unsafe {
         subaeroret_new(
-            sat, water, iband1,
-            erelc.as_ptr(), troatm.as_ptr(), tgo_arr.as_ptr(),
+            sat,
+            water,
+            iband1,
+            erelc.as_ptr(),
+            troatm.as_ptr(),
+            tgo_arr.as_ptr(),
             roatm_ia_max.as_ptr(),
             roatm_coef.as_ptr() as *const f32,
             ttatmg_coef.as_ptr() as *const f32,
             satm_coef.as_ptr() as *const f32,
             normext_p0a3.as_ptr(),
-            &mut raot, &mut residual, &mut iaots, eps,
+            &mut raot,
+            &mut residual,
+            &mut iaots,
+            eps,
         );
     }
-    CAeroResult { raot, residual, iaots }
+    CAeroResult {
+        raot,
+        residual,
+        iaots,
+    }
 }
 
 #[cfg(feature = "lut")]
@@ -246,9 +266,13 @@ pub fn c_aerosol_interp_landsat(
     // SAFETY: all three arrays are nlines*nsamps long, matching the C contract.
     unsafe {
         cref_aerosol_interp_landsat(
-            aero_window as c_int, half_aero_window as c_int,
-            qaband.as_ptr(), ipflag.as_mut_ptr(), taero.as_mut_ptr(),
-            nlines as c_int, nsamps as c_int,
+            aero_window as c_int,
+            half_aero_window as c_int,
+            qaband.as_ptr(),
+            ipflag.as_mut_ptr(),
+            taero.as_mut_ptr(),
+            nlines as c_int,
+            nsamps as c_int,
         );
     }
 }
@@ -347,12 +371,23 @@ pub fn c_readluts(
     let status = unsafe {
         readluts(
             SAT_LANDSAT_8,
-            o.tsmax.as_mut_ptr(), o.tsmin.as_mut_ptr(), o.ttv.as_mut_ptr(),
-            o.tts.as_mut_ptr(), o.nbfic.as_mut_ptr(), o.nbfi.as_mut_ptr(),
-            o.indts.as_mut_ptr(), o.rolutt.as_mut_ptr(), o.transt.as_mut_ptr(),
-            o.sphalbt.as_mut_ptr(), o.normext.as_mut_ptr(),
-            xtsstep, xtsmin,
-            ca.as_ptr(), ci.as_ptr(), ct.as_ptr(), cs.as_ptr(),
+            o.tsmax.as_mut_ptr(),
+            o.tsmin.as_mut_ptr(),
+            o.ttv.as_mut_ptr(),
+            o.tts.as_mut_ptr(),
+            o.nbfic.as_mut_ptr(),
+            o.nbfi.as_mut_ptr(),
+            o.indts.as_mut_ptr(),
+            o.rolutt.as_mut_ptr(),
+            o.transt.as_mut_ptr(),
+            o.sphalbt.as_mut_ptr(),
+            o.normext.as_mut_ptr(),
+            xtsstep,
+            xtsmin,
+            ca.as_ptr(),
+            ci.as_ptr(),
+            ct.as_ptr(),
+            cs.as_ptr(),
         )
     };
     assert_eq!(status, 0, "C readluts failed (status {status})");

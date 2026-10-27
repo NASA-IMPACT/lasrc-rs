@@ -3,10 +3,12 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
 use lasrc_core::constants::{AERO_FILL, NSOLAR_ZEN_VALS, SR_FILL_VALUE};
-use lasrc_core::correction::{AuxiliaryData, compute_surface_reflectance, compute_sentinel_surface_reflectance};
+use lasrc_core::correction::{
+    compute_sentinel_surface_reflectance, compute_surface_reflectance, AuxiliaryData,
+};
 use lasrc_core::geometry::SpaceDef;
 use lasrc_core::lut::LookupTables;
-use lasrc_core::sensor::{Landsat8, Landsat9, Sentinel2A, Sentinel2B, Sentinel2C, Sensor};
+use lasrc_core::sensor::{Landsat8, Landsat9, Sensor, Sentinel2A, Sentinel2B, Sentinel2C};
 
 #[pyclass]
 struct PyLookupTables {
@@ -285,9 +287,11 @@ fn process_sentinel_surface_reflectance<'py>(
         "SENTINEL_2A" => Box::new(Sentinel2A),
         "SENTINEL_2B" => Box::new(Sentinel2B),
         "SENTINEL_2C" => Box::new(Sentinel2C),
-        _ => return Err(PyValueError::new_err(format!(
-            "Unknown Sentinel sensor: {sensor_name}"
-        ))),
+        _ => {
+            return Err(PyValueError::new_err(format!(
+                "Unknown Sentinel sensor: {sensor_name}"
+            )))
+        }
     };
 
     if qa_band.as_slice().is_err() {
@@ -321,10 +325,14 @@ fn process_sentinel_surface_reflectance<'py>(
 
     let dict = pyo3::types::PyDict::new(py);
 
-    let sr_list: Vec<Bound<'py, PyArray1<u16>>> = result.sr_bands.into_iter().map(|a| {
-        let (v, _) = a.into_raw_vec_and_offset();
-        v.into_pyarray(py)
-    }).collect();
+    let sr_list: Vec<Bound<'py, PyArray1<u16>>> = result
+        .sr_bands
+        .into_iter()
+        .map(|a| {
+            let (v, _) = a.into_raw_vec_and_offset();
+            v.into_pyarray(py)
+        })
+        .collect();
     dict.set_item("sr_bands", sr_list)?;
     dict.set_item("bt_bands", Vec::<Bound<'py, PyArray1<u16>>>::new())?;
 

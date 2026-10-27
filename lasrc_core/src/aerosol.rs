@@ -2,7 +2,7 @@
 //!
 //! Implements `subaeroret_new`, `aerosol_interp`, and `fix_invalid_aerosols`.
 
-use crate::atmospheric::{AtmCorrCoefficients, atmcorlamb2_new};
+use crate::atmospheric::{atmcorlamb2_new, AtmCorrCoefficients};
 use crate::constants::*;
 
 use rayon::prelude::*;
@@ -73,7 +73,16 @@ pub fn subaeroret_new(
         };
         // atmcorlamb2_new already uses f32 internally and returns f64;
         // truncate back to f32 to match C's `float roslamb`.
-        atmcorlamb2_new(&coeff, tgo_arr[ib], ib, raot as f64, normext_p0a3[ib], troatm[ib], lambda, eps) as f32
+        atmcorlamb2_new(
+            &coeff,
+            tgo_arr[ib],
+            ib,
+            raot as f64,
+            normext_p0a3[ib],
+            troatm[ib],
+            lambda,
+            eps,
+        ) as f32
     };
 
     // Helper to compute residual at a given raot550nm value.
@@ -159,7 +168,7 @@ pub fn subaeroret_new(
         iaot2 = iaot1;
         raot2 = raot1;
         residual1 = residual as f64; // C: residual1 = *residual (float→double)
-        raot1 = raot550nm as f64;    // C: raot1 = raot550nm (float→double)
+        raot1 = raot550nm as f64; // C: raot1 = raot550nm (float→double)
         iaot1 = iaot;
 
         raot550nm = AOT550NM[iaot] as f32;
@@ -194,7 +203,8 @@ pub fn subaeroret_new(
         let xb_fit = (residual2 - residual as f64) * (raot1 - final_raot as f64);
         let denom = xa_fit - xb_fit;
         let raotmin = if denom.abs() > 1e-20 {
-            0.5 * (xa_fit * (raot2 + final_raot as f64) - xb_fit * (raot1 + final_raot as f64)) / denom
+            0.5 * (xa_fit * (raot2 + final_raot as f64) - xb_fit * (raot1 + final_raot as f64))
+                / denom
         } else {
             final_raot as f64
         };
@@ -301,7 +311,11 @@ impl InterpAxis {
                 c1
             }
         };
-        Self { center, neighbor, frac: frac.abs() }
+        Self {
+            center,
+            neighbor,
+            frac: frac.abs(),
+        }
     }
 }
 
@@ -391,8 +405,12 @@ pub fn aerosol_interp(
         data: &src_data,
         ipflag: &src_ipflag,
         qa_band,
-        lines: (0..nlines).map(|i| InterpAxis::new(i, nlines, aero_window, half_aero_window)).collect(),
-        samps: (0..nsamps).map(|i| InterpAxis::new(i, nsamps, aero_window, half_aero_window)).collect(),
+        lines: (0..nlines)
+            .map(|i| InterpAxis::new(i, nlines, aero_window, half_aero_window))
+            .collect(),
+        samps: (0..nsamps)
+            .map(|i| InterpAxis::new(i, nsamps, aero_window, half_aero_window))
+            .collect(),
         nsamps,
     };
 
@@ -516,9 +534,7 @@ pub fn fix_invalid_aerosols(
                         }
                         let ipix = ilpix + isamp as usize;
 
-                        if (ipflag[ipix] & valid_bit != 0)
-                            || (use_filled && smflag[ipix])
-                        {
+                        if (ipflag[ipix] & valid_bit != 0) || (use_filled && smflag[ipix]) {
                             nbclrpix += 1;
                             sum_aero += taero[ipix] as f64;
                             sum_eps += teps[ipix] as f64;
@@ -640,11 +656,7 @@ pub fn aerosol_interp_sentinel(
 /// Expand failed aerosol pixels to surrounding area for Sentinel-2.
 ///
 /// Ported from `ipflag_expand_failed_sentinel()` in C `aero_interp.c:658-722`.
-pub fn ipflag_expand_failed_sentinel(
-    ipflag: &mut [u8],
-    nlines: usize,
-    nsamps: usize,
-) {
+pub fn ipflag_expand_failed_sentinel(ipflag: &mut [u8], nlines: usize, nsamps: usize) {
     let half_win = HALF_EXPAND_WIN as isize;
 
     // Pass 1: Mark surrounding pixels with FAILED_TMP
@@ -845,9 +857,7 @@ pub fn aero_avg_failed_sentinel(
     // Copy averaged values back ONLY for FAILED pixels (not fill).
     // C: only replaces pixels with IPFLAG_FAILED set, and marks them IPFLAG_FIXED.
     for pix in 0..npixels {
-        if ipflag[pix] & (1u8 << IPFLAG_FAILED) != 0
-            && ipflag[pix] & (1u8 << IPFLAG_FILL) == 0
-        {
+        if ipflag[pix] & (1u8 << IPFLAG_FAILED) != 0 && ipflag[pix] & (1u8 << IPFLAG_FILL) == 0 {
             taero[pix] = taeros[pix];
             teps[pix] = tepss[pix];
             ipflag[pix] |= 1u8 << IPFLAG_FIXED;
@@ -872,11 +882,26 @@ mod tests {
         let normext_p0a3 = vec![1.0; nband];
         let tth = vec![1.0e-3, 1.0e-3, 0.0, 1.0e-3, 0.0, 0.0, 1.0e-4];
         let result = subaeroret_new(
-            false, 0, &erelc, &troatm, &tgo_arr, &roatm_ia_max,
-            &roatm_coef, &ttatmg_coef, &satm_coef, &normext_p0a3,
-            &LAMBDA_LANDSAT, 1.5, 0, &tth,
+            false,
+            0,
+            &erelc,
+            &troatm,
+            &tgo_arr,
+            &roatm_ia_max,
+            &roatm_coef,
+            &ttatmg_coef,
+            &satm_coef,
+            &normext_p0a3,
+            &LAMBDA_LANDSAT,
+            1.5,
+            0,
+            &tth,
         );
-        assert!(result.raot >= 0.01, "AOT should be >= 0.01: {}", result.raot);
+        assert!(
+            result.raot >= 0.01,
+            "AOT should be >= 0.01: {}",
+            result.raot
+        );
         assert!(result.raot <= 5.0, "AOT should be <= 5.0: {}", result.raot);
         assert!(result.residual >= 0.0);
     }
@@ -897,8 +922,8 @@ mod tests {
 
         for line in 0..nlines {
             // C: center_line = (int)(line * aero_step) * aero_window + half_aero_window
-            let center_line = ((line as f64 * aero_step) as isize) as usize * aero_window
-                + half_aero_window;
+            let center_line =
+                ((line as f64 * aero_step) as isize) as usize * aero_window + half_aero_window;
 
             // Fractional distance and neighbor line
             // C: float yaero, xaero — use f32 to match
@@ -929,8 +954,8 @@ mod tests {
                 }
 
                 // C: center_samp = (int)(samp * aero_step) * aero_window + half_aero_window
-                let center_samp = ((samp as f64 * aero_step) as isize) as usize * aero_window
-                    + half_aero_window;
+                let center_samp =
+                    ((samp as f64 * aero_step) as isize) as usize * aero_window + half_aero_window;
 
                 // Skip center pixels — they already have their values
                 if samp == center_samp && line == center_line {
@@ -967,10 +992,8 @@ mod tests {
                 let a12 = data[pix12];
                 let a21 = data[pix21];
                 let a22 = data[pix22];
-                data[pix] = a11
-                    + u * (a21 - a11)
-                    + v * (a12 - a11)
-                    + u * v * (a11 - a12 - a21 + a22);
+                data[pix] =
+                    a11 + u * (a21 - a11) + v * (a12 - a11) + u * v * (a11 - a12 - a21 + a22);
 
                 // Set ipflag: clear everything, set INTERP_WINDOW
                 ipflag[pix] = 1u8 << IPFLAG_INTERP_WINDOW;
@@ -1014,7 +1037,15 @@ mod tests {
         // The scan reads past the end unless the last line is fill when
         // nlines % 3 == 1, or the last column of the last two lines is fill
         // when nlines % 3 == 2 and nsamps % 3 == 1.
-        for &(nlines, nsamps) in &[(31, 37), (30, 36), (32, 38), (34, 40), (32, 37), (7, 4), (12, 10)] {
+        for &(nlines, nsamps) in &[
+            (31, 37),
+            (30, 36),
+            (32, 38),
+            (34, 40),
+            (32, 37),
+            (7, 4),
+            (12, 10),
+        ] {
             for &fill_frac in &[0.0f32, 0.2, 0.7] {
                 let npix = nlines * nsamps;
                 let mut qa: Vec<u16> = (0..npix)
@@ -1048,16 +1079,35 @@ mod tests {
                 let mut want_ipflag = ipflag.clone();
                 for _ in 0..2 {
                     aerosol_interp_serial(
-                        &mut want_data, &mut want_ipflag, &qa, nlines, nsamps,
-                        LAERO_WINDOW, LHALF_AERO_WINDOW,
+                        &mut want_data,
+                        &mut want_ipflag,
+                        &qa,
+                        nlines,
+                        nsamps,
+                        LAERO_WINDOW,
+                        LHALF_AERO_WINDOW,
                     );
                     aerosol_interp(
-                        &mut data, &mut ipflag, &qa, nlines, nsamps,
-                        LAERO_WINDOW, LHALF_AERO_WINDOW,
+                        &mut data,
+                        &mut ipflag,
+                        &qa,
+                        nlines,
+                        nsamps,
+                        LAERO_WINDOW,
+                        LHALF_AERO_WINDOW,
                     );
-                    let same_data = want_data.iter().zip(&data).all(|(a, b)| a.to_bits() == b.to_bits());
-                    assert!(same_data, "data differs for {nlines}x{nsamps}, fill {fill_frac}");
-                    assert_eq!(want_ipflag, ipflag, "ipflag differs for {nlines}x{nsamps}, fill {fill_frac}");
+                    let same_data = want_data
+                        .iter()
+                        .zip(&data)
+                        .all(|(a, b)| a.to_bits() == b.to_bits());
+                    assert!(
+                        same_data,
+                        "data differs for {nlines}x{nsamps}, fill {fill_frac}"
+                    );
+                    assert_eq!(
+                        want_ipflag, ipflag,
+                        "ipflag differs for {nlines}x{nsamps}, fill {fill_frac}"
+                    );
                 }
             }
         }
@@ -1084,7 +1134,10 @@ mod tests {
         aerosol_interp(&mut teps, &mut ipflag, &qa_band, nlines, nsamps, 3, 1);
         // Check that non-center pixels got interpolated values
         let non_center_pix = 0 * nsamps + 0; // pixel (0,0)
-        assert!(taero[non_center_pix] > 0.0, "Pixel (0,0) should have interpolated aerosol");
+        assert!(
+            taero[non_center_pix] > 0.0,
+            "Pixel (0,0) should have interpolated aerosol"
+        );
     }
 
     #[test]
@@ -1109,7 +1162,9 @@ mod tests {
         ipflag[bad_pix] = 0;
         taero[bad_pix] = 0.0;
 
-        fix_invalid_aerosols(&mut taero, &mut teps, &ipflag, nlines, nsamps, 3, 1, 15, 7, 4);
+        fix_invalid_aerosols(
+            &mut taero, &mut teps, &ipflag, nlines, nsamps, 3, 1, 15, 7, 4,
+        );
         // Landsat never sets IPFLAG_FIXED — but taero should be filled
         assert!(taero[bad_pix] > 0.0, "Should have filled value");
     }
@@ -1179,7 +1234,15 @@ mod tests {
         aero_avg_failed_sentinel(&qaband, &mut ipflag, &mut taero, &mut teps, nlines, nsamps);
 
         // Failed pixel should now have averaged values from neighbors
-        assert!(taero[center] > 0.05, "Failed pixel should be filled: {}", taero[center]);
-        assert!(teps[center] > 0.5, "Failed pixel eps should be filled: {}", teps[center]);
+        assert!(
+            taero[center] > 0.05,
+            "Failed pixel should be filled: {}",
+            taero[center]
+        );
+        assert!(
+            teps[center] > 0.5,
+            "Failed pixel eps should be filled: {}",
+            teps[center]
+        );
     }
 }

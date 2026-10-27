@@ -47,31 +47,63 @@ fn check_case(
 ) -> Result<(), TestCaseError> {
     // ---- C side (int indices, C-internal tth) ----
     let c = c_subaeroret_new(
-        SAT_LANDSAT_8, water, iband1 as i32,
-        erelc, troatm, tgo, ia_max,
-        roatm_coef, ttatmg_coef, satm_coef, normext,
-        iaots_in, eps,
+        SAT_LANDSAT_8,
+        water,
+        iband1 as i32,
+        erelc,
+        troatm,
+        tgo,
+        ia_max,
+        roatm_coef,
+        ttatmg_coef,
+        satm_coef,
+        normext,
+        iaots_in,
+        eps,
     );
 
     // ---- Rust side (values widened to f64; ia_max resolved via AOT550NM) ----
     let f64v = |v: &[f32]| v.iter().map(|&x| x as f64).collect::<Vec<_>>();
     let rows = |r: &[[f32; 4]]| r.iter().map(|c| c.map(|x| x as f64)).collect::<Vec<_>>();
-    let roatm_ia_max: Vec<f64> = ia_max.iter().map(|&i| AOT550NM[i as usize] as f64).collect();
+    let roatm_ia_max: Vec<f64> = ia_max
+        .iter()
+        .map(|&i| AOT550NM[i as usize] as f64)
+        .collect();
     // C picks tth by water flag internally; feed the matching table.
-    let tth_src = if water { &LANDSAT_TTH_WATER } else { &LANDSAT_TTH };
+    let tth_src = if water {
+        &LANDSAT_TTH_WATER
+    } else {
+        &LANDSAT_TTH
+    };
     let tth: Vec<f64> = tth_src[..N].iter().map(|&x| x as f64).collect();
 
     let r = rust_subaeroret_new(
-        water, iband1,
-        &f64v(erelc), &f64v(troatm), &f64v(tgo),
-        &roatm_ia_max, &rows(roatm_coef), &rows(ttatmg_coef), &rows(satm_coef),
-        &f64v(normext), &LAMBDA_LANDSAT, eps as f64, iaots_in as usize, &tth,
+        water,
+        iband1,
+        &f64v(erelc),
+        &f64v(troatm),
+        &f64v(tgo),
+        &roatm_ia_max,
+        &rows(roatm_coef),
+        &rows(ttatmg_coef),
+        &rows(satm_coef),
+        &f64v(normext),
+        &LAMBDA_LANDSAT,
+        eps as f64,
+        iaots_in as usize,
+        &tth,
     );
 
     prop_assume!(c.raot.is_finite() && r.raot.is_finite());
 
     // Converged AOT index: discrete, expected exact.
-    prop_assert_eq!(r.iaots as i32, c.iaots, "iaots differ: rust={} c={}", r.iaots, c.iaots);
+    prop_assert_eq!(
+        r.iaots as i32,
+        c.iaots,
+        "iaots differ: rust={} c={}",
+        r.iaots,
+        c.iaots
+    );
 
     // residual / raot: NOT bit-exact -- sqrt + double-accumulation across the C
     // and Rust compilers slips ~1 ULP inherently, and the docs treat the port
@@ -80,7 +112,10 @@ fn check_case(
     let rres = r.residual as f32;
     prop_assert!(
         (rres - c.residual).abs() <= 1e-5 * c.residual.abs().max(1e-3),
-        "residual differ: rust={} c={} eps={}", rres, c.residual, eps
+        "residual differ: rust={} c={} eps={}",
+        rres,
+        c.residual,
+        eps
     );
     // raot: the residual (fit quality) is the robust invariant and is checked
     // tightly above. The retrieved raot itself can flip to an adjacent AOT grid
@@ -91,7 +126,10 @@ fn check_case(
     let rraot = r.raot as f32;
     prop_assert!(
         (rraot - c.raot).abs() <= 0.06 + 0.2 * c.raot.abs(),
-        "raot gross differ: rust={} c={} eps={}", rraot, c.raot, eps
+        "raot gross differ: rust={} c={} eps={}",
+        rraot,
+        c.raot,
+        eps
     );
     Ok(())
 }

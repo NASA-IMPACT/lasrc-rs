@@ -45,7 +45,9 @@ fn main() {
         build.include(format!("{prefix}/include/libxml2"));
 
         let stage1 = [
-            "poly_coeff.c", "lut_subr.c", "subaeroret.c",
+            "poly_coeff.c",
+            "lut_subr.c",
+            "subaeroret.c",
             // aero_interp; its level1/lasrc_qa symbols resolve from
             // lib_espa_common (linked below), not compiled here.
             "aero_interp.c",

@@ -2,8 +2,7 @@
 
 use crate::constants::{
     AOT550NM, LOG_AOT550NM, NAOT_VALS, NAOT_X_NSOLAR, NAOT_X_NSUNANGLE, NPRES_VALS,
-    NSOLAR_ZEN_VALS, NSUNANGLE_VALS, NVIEW_ZEN_VALS, TPRES, XTS_MIN, XTS_STEP, XTV_MIN,
-    XTV_STEP_C,
+    NSOLAR_ZEN_VALS, NSUNANGLE_VALS, NVIEW_ZEN_VALS, TPRES, XTS_MIN, XTS_STEP, XTV_MIN, XTV_STEP_C,
 };
 use crate::geometry::scattering_angle;
 
@@ -70,7 +69,12 @@ impl LookupTables {
         }
         let iaot2 = iaot1 + 1;
 
-        LutIndices { ip1, ip2, iaot1, iaot2 }
+        LutIndices {
+            ip1,
+            ip2,
+            iaot1,
+            iaot2,
+        }
     }
 
     /// Compute spherical albedo via bilinear interpolation across AOT and pressure.
@@ -82,7 +86,12 @@ impl LookupTables {
         pressure: f64,
         raot550nm: f64,
     ) -> f64 {
-        let LutIndices { ip1, ip2, iaot1, iaot2 } = *indices;
+        let LutIndices {
+            ip1,
+            ip2,
+            iaot1,
+            iaot2,
+        } = *indices;
         let raot = raot550nm as f32;
         let pres = pressure as f32;
 
@@ -120,7 +129,12 @@ impl LookupTables {
         xtsmin: f32,
         xtsstep: f32,
     ) -> f64 {
-        let LutIndices { ip1, ip2, iaot1, iaot2 } = *indices;
+        let LutIndices {
+            ip1,
+            ip2,
+            iaot1,
+            iaot2,
+        } = *indices;
         let xts_f = xts as f32;
         let raot = raot550nm as f32;
         let pres = pressure as f32;
@@ -238,7 +252,11 @@ impl LookupTables {
                 ro[i] = roinf + (rosup - roinf) * (scaa - sca1) / (sca2 - sca1);
             } else {
                 let idx = rolutt_base + j;
-                ro[i] = if idx < self.rolutt.len() { self.rolutt[idx] } else { 0.0 };
+                ro[i] = if idx < self.rolutt.len() {
+                    self.rolutt[idx]
+                } else {
+                    0.0
+                };
             }
         }
 
@@ -260,7 +278,12 @@ impl LookupTables {
         xmuv: f64,
         cosxfi: f64,
     ) -> f64 {
-        let LutIndices { ip1, ip2, iaot1, iaot2 } = *indices;
+        let LutIndices {
+            ip1,
+            ip2,
+            iaot1,
+            iaot2,
+        } = *indices;
         let pres = pressure as f32;
 
         // Compute scattering angle (in f64, truncated to f32 like C)
@@ -331,7 +354,7 @@ impl LookupTables {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::constants::{NAOT_X_NSOLAR, NAOT_VALS, NPRES_VALS, NSOLAR_ZEN_VALS, NVIEW_ZEN_VALS};
+    use crate::constants::{NAOT_VALS, NAOT_X_NSOLAR, NPRES_VALS, NSOLAR_ZEN_VALS, NVIEW_ZEN_VALS};
 
     fn make_test_lut() -> LookupTables {
         let nsr = 1;
@@ -401,7 +424,8 @@ mod tests {
     fn test_interp_transmission_range() {
         let lut = make_test_lut();
         let idx = lut.find_indices(1013.0, 0.1);
-        let trans = lut.interp_transmission(&idx, 0, 1013.0, 0.1, 30.0, XTS_MIN as f32, XTS_STEP as f32);
+        let trans =
+            lut.interp_transmission(&idx, 0, 1013.0, 0.1, 30.0, XTS_MIN as f32, XTS_STEP as f32);
         assert!(trans > 0.0 && trans <= 1.0, "trans={trans}");
     }
 
@@ -409,9 +433,8 @@ mod tests {
     fn test_interp_atmospheric_reflectance_positive() {
         let lut = make_test_lut();
         let idx = lut.find_indices(1013.0, 0.1);
-        let roatm = lut.interp_atmospheric_reflectance(
-            &idx, 0, 1013.0, 0.1, 30.0, 5.0, 0.866, 0.996, 0.5,
-        );
+        let roatm =
+            lut.interp_atmospheric_reflectance(&idx, 0, 1013.0, 0.1, 30.0, 5.0, 0.866, 0.996, 0.5);
         assert!(roatm >= 0.0, "roatm={roatm}");
     }
 }

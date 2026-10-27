@@ -49,7 +49,8 @@ pub fn utm_to_deg(space_def: &SpaceDef, line: i32, samp: i32) -> (f64, f64) {
     let cos_lat = (lat0 as f64).cos();
     let sqr_cos_lat = cos_lat.powf(2.0);
 
-    let v = ((c as f64 / (1.0 + e2cuadrada as f64 * sqr_cos_lat).sqrt()) * scale_fact as f64) as f32;
+    let v =
+        ((c as f64 / (1.0 + e2cuadrada as f64 * sqr_cos_lat).sqrt()) * scale_fact as f64) as f32;
     let a = x / v;
     let a1 = (2.0 * lat0 as f64).sin() as f32;
     let a2 = (a1 as f64 * sqr_cos_lat) as f32;
@@ -101,7 +102,11 @@ pub fn utm_to_deg_gctp(space_def: &SpaceDef, line: f64, samp: f64) -> (f64, f64)
     let zone = space_def.zone.abs();
     let lon_center = ((6 * zone) as f64 - 183.0).to_radians();
     let false_easting = 500_000.0;
-    let false_northing = if space_def.zone < 0 { 10_000_000.0 } else { 0.0 };
+    let false_northing = if space_def.zone < 0 {
+        10_000_000.0
+    } else {
+        0.0
+    };
 
     // Eccentricity constants (gctp_calc_e0..e3, gctp_calc_dist_from_equator)
     let temp = R_MINOR / R_MAJOR;
@@ -124,10 +129,9 @@ pub fn utm_to_deg_gctp(space_def: &SpaceDef, line: f64, samp: f64) -> (f64, f64)
     let con = (ml0 + y / SCALE_FACTOR) / R_MAJOR;
     let mut phi = con;
     for i in 0.. {
-        let delta_phi = ((con + e1 * (2.0 * phi).sin() - e2 * (4.0 * phi).sin()
-            + e3 * (6.0 * phi).sin())
-            / e0)
-            - phi;
+        let delta_phi =
+            ((con + e1 * (2.0 * phi).sin() - e2 * (4.0 * phi).sin() + e3 * (6.0 * phi).sin()) / e0)
+                - phi;
         phi += delta_phi;
         if delta_phi.abs() <= EPSLN || i >= MAX_ITER {
             break;
@@ -150,7 +154,9 @@ pub fn utm_to_deg_gctp(space_def: &SpaceDef, line: f64, samp: f64) -> (f64, f64)
         - (n * tan_phi * ds / r)
             * (0.5
                 - ds / 24.0
-                    * (5.0 + 3.0 * t + 10.0 * c - 4.0 * cs - 9.0 * esp
+                    * (5.0 + 3.0 * t + 10.0 * c
+                        - 4.0 * cs
+                        - 9.0 * esp
                         - ds / 30.0
                             * (61.0 + 90.0 * t + 298.0 * c + 45.0 * ts - 252.0 * esp - 3.0 * cs)));
     let lon = lon_center

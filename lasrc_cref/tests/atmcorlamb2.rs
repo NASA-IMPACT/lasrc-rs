@@ -43,21 +43,31 @@ fn coef(lo: f32, hi: f32) -> impl Strategy<Value = [f32; 4]> {
 
 fn inputs(eps: impl Strategy<Value = f32>) -> impl Strategy<Value = Inputs> {
     (
-        0.5f32..1.0,          // tgo
-        0.05f32..0.5,         // roatm_upper
-        coef(-0.05, 0.05),    // roatm_coef
-        coef(0.0, 0.3),       // ttatmg_coef
-        coef(-0.05, 0.05),    // satm_coef
-        0.0f32..0.5,          // raot550nm
-        0i32..=6,             // iband (0..NREFLL_BANDS-1)
-        0.5f32..2.0,          // normext
-        0.0f32..1.0,          // rotoa
+        0.5f32..1.0,       // tgo
+        0.05f32..0.5,      // roatm_upper
+        coef(-0.05, 0.05), // roatm_coef
+        coef(0.0, 0.3),    // ttatmg_coef
+        coef(-0.05, 0.05), // satm_coef
+        0.0f32..0.5,       // raot550nm
+        0i32..=6,          // iband (0..NREFLL_BANDS-1)
+        0.5f32..2.0,       // normext
+        0.0f32..1.0,       // rotoa
         eps,
     )
-        .prop_map(|(tgo, ru, rc, tc, sc, raot, iband, nx, rotoa, eps)| Inputs {
-            tgo, roatm_upper: ru, roatm_coef: rc, ttatmg_coef: tc, satm_coef: sc,
-            raot550nm: raot, iband, normext: nx, rotoa, eps,
-        })
+        .prop_map(
+            |(tgo, ru, rc, tc, sc, raot, iband, nx, rotoa, eps)| Inputs {
+                tgo,
+                roatm_upper: ru,
+                roatm_coef: rc,
+                ttatmg_coef: tc,
+                satm_coef: sc,
+                raot550nm: raot,
+                iband,
+                normext: nx,
+                rotoa,
+                eps,
+            },
+        )
 }
 
 fn run_rust(i: &Inputs) -> f32 {
@@ -81,9 +91,17 @@ fn run_rust(i: &Inputs) -> f32 {
 
 fn run_c(i: &Inputs) -> f32 {
     c_atmcorlamb2_new(
-        SAT_LANDSAT_8, i.tgo, i.roatm_upper,
-        &i.roatm_coef, &i.ttatmg_coef, &i.satm_coef,
-        i.raot550nm, i.iband, i.normext, i.rotoa, i.eps,
+        SAT_LANDSAT_8,
+        i.tgo,
+        i.roatm_upper,
+        &i.roatm_coef,
+        &i.ttatmg_coef,
+        &i.satm_coef,
+        i.raot550nm,
+        i.iband,
+        i.normext,
+        i.rotoa,
+        i.eps,
     )
 }
 

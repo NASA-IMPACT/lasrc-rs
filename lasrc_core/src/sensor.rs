@@ -1,13 +1,12 @@
 //! Sensor trait and implementations for Landsat 8/9 and Sentinel-2A/B/C.
 
 use crate::constants::{
-    LAERO_WINDOW, LHALF_AERO_WINDOW, LFIX_AERO_WINDOW, LHALF_FIX_AERO_WINDOW, LMIN_CLEAR_PIX,
-    SAERO_WINDOW, SFIX_AERO_WINDOW, SHALF_FIX_AERO_WINDOW, SMIN_CLEAR_PIX,
-    TAURAY_LANDSAT, TAURAY_SENTINEL, LAMBDA_LANDSAT, LAMBDA_SENTINEL_ALL,
-    OZTRANSA_LANDSAT, WVTRANSA_LANDSAT, WVTRANSB_LANDSAT,
-    OGTRANSA1_LANDSAT, OGTRANSB0_LANDSAT, OGTRANSB1_LANDSAT,
-    OZTRANSA_SENTINEL, WVTRANSA_SENTINEL, WVTRANSB_SENTINEL,
-    OGTRANSA1_SENTINEL, OGTRANSB0_SENTINEL, OGTRANSB1_SENTINEL,
+    LAERO_WINDOW, LAMBDA_LANDSAT, LAMBDA_SENTINEL_ALL, LFIX_AERO_WINDOW, LHALF_AERO_WINDOW,
+    LHALF_FIX_AERO_WINDOW, LMIN_CLEAR_PIX, OGTRANSA1_LANDSAT, OGTRANSA1_SENTINEL,
+    OGTRANSB0_LANDSAT, OGTRANSB0_SENTINEL, OGTRANSB1_LANDSAT, OGTRANSB1_SENTINEL, OZTRANSA_LANDSAT,
+    OZTRANSA_SENTINEL, SAERO_WINDOW, SFIX_AERO_WINDOW, SHALF_FIX_AERO_WINDOW, SMIN_CLEAR_PIX,
+    TAURAY_LANDSAT, TAURAY_SENTINEL, WVTRANSA_LANDSAT, WVTRANSA_SENTINEL, WVTRANSB_LANDSAT,
+    WVTRANSB_SENTINEL,
 };
 use crate::gas_transmission::GasCoefficients;
 
@@ -54,19 +53,59 @@ pub trait Sensor: Send + Sync {
 // ── Landsat 8/9 constants ──────────────────────────────────────────────────
 
 const LANDSAT_REFL_BANDS: [BandConfig; 8] = [
-    BandConfig { name: "band1", wavelength_um: 0.443, native_resolution_m: 30.0 },
-    BandConfig { name: "band2", wavelength_um: 0.480, native_resolution_m: 30.0 },
-    BandConfig { name: "band3", wavelength_um: 0.585, native_resolution_m: 30.0 },
-    BandConfig { name: "band4", wavelength_um: 0.655, native_resolution_m: 30.0 },
-    BandConfig { name: "band5", wavelength_um: 0.865, native_resolution_m: 30.0 },
-    BandConfig { name: "band6", wavelength_um: 1.610, native_resolution_m: 30.0 },
-    BandConfig { name: "band7", wavelength_um: 2.200, native_resolution_m: 30.0 },
-    BandConfig { name: "band9", wavelength_um: 1.370, native_resolution_m: 30.0 },
+    BandConfig {
+        name: "band1",
+        wavelength_um: 0.443,
+        native_resolution_m: 30.0,
+    },
+    BandConfig {
+        name: "band2",
+        wavelength_um: 0.480,
+        native_resolution_m: 30.0,
+    },
+    BandConfig {
+        name: "band3",
+        wavelength_um: 0.585,
+        native_resolution_m: 30.0,
+    },
+    BandConfig {
+        name: "band4",
+        wavelength_um: 0.655,
+        native_resolution_m: 30.0,
+    },
+    BandConfig {
+        name: "band5",
+        wavelength_um: 0.865,
+        native_resolution_m: 30.0,
+    },
+    BandConfig {
+        name: "band6",
+        wavelength_um: 1.610,
+        native_resolution_m: 30.0,
+    },
+    BandConfig {
+        name: "band7",
+        wavelength_um: 2.200,
+        native_resolution_m: 30.0,
+    },
+    BandConfig {
+        name: "band9",
+        wavelength_um: 1.370,
+        native_resolution_m: 30.0,
+    },
 ];
 
 const LANDSAT_THM_BANDS: [BandConfig; 2] = [
-    BandConfig { name: "band10", wavelength_um: 10.9, native_resolution_m: 100.0 },
-    BandConfig { name: "band11", wavelength_um: 12.0, native_resolution_m: 100.0 },
+    BandConfig {
+        name: "band10",
+        wavelength_um: 10.9,
+        native_resolution_m: 100.0,
+    },
+    BandConfig {
+        name: "band11",
+        wavelength_um: 12.0,
+        native_resolution_m: 100.0,
+    },
 ];
 
 const LANDSAT_BAND_INDICES: BandIndices = BandIndices {
@@ -82,29 +121,81 @@ const LANDSAT_BAND_INDICES: BandIndices = BandIndices {
 // ── Sentinel-2 constants ───────────────────────────────────────────────────
 
 const SENTINEL_REFL_BANDS: [BandConfig; 13] = [
-    BandConfig { name: "B01", wavelength_um: 0.443, native_resolution_m: 60.0 },
-    BandConfig { name: "B02", wavelength_um: 0.490, native_resolution_m: 10.0 },
-    BandConfig { name: "B03", wavelength_um: 0.560, native_resolution_m: 10.0 },
-    BandConfig { name: "B04", wavelength_um: 0.665, native_resolution_m: 10.0 },
-    BandConfig { name: "B05", wavelength_um: 0.705, native_resolution_m: 20.0 },
-    BandConfig { name: "B06", wavelength_um: 0.740, native_resolution_m: 20.0 },
-    BandConfig { name: "B07", wavelength_um: 0.783, native_resolution_m: 20.0 },
-    BandConfig { name: "B08", wavelength_um: 0.842, native_resolution_m: 10.0 },
-    BandConfig { name: "B8A", wavelength_um: 0.865, native_resolution_m: 20.0 },
-    BandConfig { name: "B09", wavelength_um: 0.945, native_resolution_m: 60.0 },
-    BandConfig { name: "B10", wavelength_um: 1.375, native_resolution_m: 60.0 },
-    BandConfig { name: "B11", wavelength_um: 1.610, native_resolution_m: 20.0 },
-    BandConfig { name: "B12", wavelength_um: 2.190, native_resolution_m: 20.0 },
+    BandConfig {
+        name: "B01",
+        wavelength_um: 0.443,
+        native_resolution_m: 60.0,
+    },
+    BandConfig {
+        name: "B02",
+        wavelength_um: 0.490,
+        native_resolution_m: 10.0,
+    },
+    BandConfig {
+        name: "B03",
+        wavelength_um: 0.560,
+        native_resolution_m: 10.0,
+    },
+    BandConfig {
+        name: "B04",
+        wavelength_um: 0.665,
+        native_resolution_m: 10.0,
+    },
+    BandConfig {
+        name: "B05",
+        wavelength_um: 0.705,
+        native_resolution_m: 20.0,
+    },
+    BandConfig {
+        name: "B06",
+        wavelength_um: 0.740,
+        native_resolution_m: 20.0,
+    },
+    BandConfig {
+        name: "B07",
+        wavelength_um: 0.783,
+        native_resolution_m: 20.0,
+    },
+    BandConfig {
+        name: "B08",
+        wavelength_um: 0.842,
+        native_resolution_m: 10.0,
+    },
+    BandConfig {
+        name: "B8A",
+        wavelength_um: 0.865,
+        native_resolution_m: 20.0,
+    },
+    BandConfig {
+        name: "B09",
+        wavelength_um: 0.945,
+        native_resolution_m: 60.0,
+    },
+    BandConfig {
+        name: "B10",
+        wavelength_um: 1.375,
+        native_resolution_m: 60.0,
+    },
+    BandConfig {
+        name: "B11",
+        wavelength_um: 1.610,
+        native_resolution_m: 20.0,
+    },
+    BandConfig {
+        name: "B12",
+        wavelength_um: 2.190,
+        native_resolution_m: 20.0,
+    },
 ];
 
 const SENTINEL_BAND_INDICES: BandIndices = BandIndices {
-    coastal: 0,   // B01
-    blue: 1,      // B02
-    green: 2,     // B03
-    red: 3,       // B04
-    nir: 8,       // B8A (used in NDVI/NDWI)
-    swir1: 11,    // B11
-    swir2: 12,    // B12
+    coastal: 0, // B01
+    blue: 1,    // B02
+    green: 2,   // B03
+    red: 3,     // B04
+    nir: 8,     // B8A (used in NDVI/NDWI)
+    swir1: 11,  // B11
+    swir2: 12,  // B12
 };
 
 // ── Concrete sensor types ──────────────────────────────────────────────────
@@ -155,18 +246,42 @@ fn landsat_gas_coefficients() -> Vec<GasCoefficients> {
 // ── Landsat 8 impl ─────────────────────────────────────────────────────────
 
 impl Sensor for Landsat8 {
-    fn name(&self) -> &str { "LANDSAT_8" }
-    fn reflectance_bands(&self) -> &[BandConfig] { &LANDSAT_REFL_BANDS }
-    fn thermal_bands(&self) -> &[BandConfig] { &LANDSAT_THM_BANDS }
-    fn output_resolution_m(&self) -> f64 { 30.0 }
-    fn aerosol_window(&self) -> usize { LAERO_WINDOW }
-    fn half_aerosol_window(&self) -> usize { LHALF_AERO_WINDOW }
-    fn fix_aerosol_window(&self) -> usize { LFIX_AERO_WINDOW }
-    fn half_fix_aerosol_window(&self) -> usize { LHALF_FIX_AERO_WINDOW }
-    fn min_clear_pix(&self) -> usize { LMIN_CLEAR_PIX }
-    fn band_indices(&self) -> &BandIndices { &LANDSAT_BAND_INDICES }
-    fn tauray(&self) -> &[f64] { &TAURAY_LANDSAT }
-    fn lambda(&self) -> &[f64] { &LAMBDA_LANDSAT }
+    fn name(&self) -> &str {
+        "LANDSAT_8"
+    }
+    fn reflectance_bands(&self) -> &[BandConfig] {
+        &LANDSAT_REFL_BANDS
+    }
+    fn thermal_bands(&self) -> &[BandConfig] {
+        &LANDSAT_THM_BANDS
+    }
+    fn output_resolution_m(&self) -> f64 {
+        30.0
+    }
+    fn aerosol_window(&self) -> usize {
+        LAERO_WINDOW
+    }
+    fn half_aerosol_window(&self) -> usize {
+        LHALF_AERO_WINDOW
+    }
+    fn fix_aerosol_window(&self) -> usize {
+        LFIX_AERO_WINDOW
+    }
+    fn half_fix_aerosol_window(&self) -> usize {
+        LHALF_FIX_AERO_WINDOW
+    }
+    fn min_clear_pix(&self) -> usize {
+        LMIN_CLEAR_PIX
+    }
+    fn band_indices(&self) -> &BandIndices {
+        &LANDSAT_BAND_INDICES
+    }
+    fn tauray(&self) -> &[f64] {
+        &TAURAY_LANDSAT
+    }
+    fn lambda(&self) -> &[f64] {
+        &LAMBDA_LANDSAT
+    }
     fn gas_coefficients(&self) -> Vec<GasCoefficients> {
         landsat_gas_coefficients()
     }
@@ -175,18 +290,42 @@ impl Sensor for Landsat8 {
 // ── Landsat 9 impl ─────────────────────────────────────────────────────────
 
 impl Sensor for Landsat9 {
-    fn name(&self) -> &str { "LANDSAT_9" }
-    fn reflectance_bands(&self) -> &[BandConfig] { &LANDSAT_REFL_BANDS }
-    fn thermal_bands(&self) -> &[BandConfig] { &LANDSAT_THM_BANDS }
-    fn output_resolution_m(&self) -> f64 { 30.0 }
-    fn aerosol_window(&self) -> usize { LAERO_WINDOW }
-    fn half_aerosol_window(&self) -> usize { LHALF_AERO_WINDOW }
-    fn fix_aerosol_window(&self) -> usize { LFIX_AERO_WINDOW }
-    fn half_fix_aerosol_window(&self) -> usize { LHALF_FIX_AERO_WINDOW }
-    fn min_clear_pix(&self) -> usize { LMIN_CLEAR_PIX }
-    fn band_indices(&self) -> &BandIndices { &LANDSAT_BAND_INDICES }
-    fn tauray(&self) -> &[f64] { &TAURAY_LANDSAT }
-    fn lambda(&self) -> &[f64] { &LAMBDA_LANDSAT }
+    fn name(&self) -> &str {
+        "LANDSAT_9"
+    }
+    fn reflectance_bands(&self) -> &[BandConfig] {
+        &LANDSAT_REFL_BANDS
+    }
+    fn thermal_bands(&self) -> &[BandConfig] {
+        &LANDSAT_THM_BANDS
+    }
+    fn output_resolution_m(&self) -> f64 {
+        30.0
+    }
+    fn aerosol_window(&self) -> usize {
+        LAERO_WINDOW
+    }
+    fn half_aerosol_window(&self) -> usize {
+        LHALF_AERO_WINDOW
+    }
+    fn fix_aerosol_window(&self) -> usize {
+        LFIX_AERO_WINDOW
+    }
+    fn half_fix_aerosol_window(&self) -> usize {
+        LHALF_FIX_AERO_WINDOW
+    }
+    fn min_clear_pix(&self) -> usize {
+        LMIN_CLEAR_PIX
+    }
+    fn band_indices(&self) -> &BandIndices {
+        &LANDSAT_BAND_INDICES
+    }
+    fn tauray(&self) -> &[f64] {
+        &TAURAY_LANDSAT
+    }
+    fn lambda(&self) -> &[f64] {
+        &LAMBDA_LANDSAT
+    }
     fn gas_coefficients(&self) -> Vec<GasCoefficients> {
         landsat_gas_coefficients()
     }
@@ -197,18 +336,42 @@ impl Sensor for Landsat9 {
 macro_rules! impl_sentinel_sensor {
     ($type:ty, $name:expr) => {
         impl Sensor for $type {
-            fn name(&self) -> &str { $name }
-            fn reflectance_bands(&self) -> &[BandConfig] { &SENTINEL_REFL_BANDS }
-            fn thermal_bands(&self) -> &[BandConfig] { &[] }
-            fn output_resolution_m(&self) -> f64 { 10.0 }
-            fn aerosol_window(&self) -> usize { SAERO_WINDOW }
-            fn half_aerosol_window(&self) -> usize { SAERO_WINDOW / 2 }
-            fn fix_aerosol_window(&self) -> usize { SFIX_AERO_WINDOW }
-            fn half_fix_aerosol_window(&self) -> usize { SHALF_FIX_AERO_WINDOW }
-            fn min_clear_pix(&self) -> usize { SMIN_CLEAR_PIX }
-            fn band_indices(&self) -> &BandIndices { &SENTINEL_BAND_INDICES }
-            fn tauray(&self) -> &[f64] { &TAURAY_SENTINEL }
-            fn lambda(&self) -> &[f64] { &LAMBDA_SENTINEL_ALL }
+            fn name(&self) -> &str {
+                $name
+            }
+            fn reflectance_bands(&self) -> &[BandConfig] {
+                &SENTINEL_REFL_BANDS
+            }
+            fn thermal_bands(&self) -> &[BandConfig] {
+                &[]
+            }
+            fn output_resolution_m(&self) -> f64 {
+                10.0
+            }
+            fn aerosol_window(&self) -> usize {
+                SAERO_WINDOW
+            }
+            fn half_aerosol_window(&self) -> usize {
+                SAERO_WINDOW / 2
+            }
+            fn fix_aerosol_window(&self) -> usize {
+                SFIX_AERO_WINDOW
+            }
+            fn half_fix_aerosol_window(&self) -> usize {
+                SHALF_FIX_AERO_WINDOW
+            }
+            fn min_clear_pix(&self) -> usize {
+                SMIN_CLEAR_PIX
+            }
+            fn band_indices(&self) -> &BandIndices {
+                &SENTINEL_BAND_INDICES
+            }
+            fn tauray(&self) -> &[f64] {
+                &TAURAY_SENTINEL
+            }
+            fn lambda(&self) -> &[f64] {
+                &LAMBDA_SENTINEL_ALL
+            }
             fn gas_coefficients(&self) -> Vec<GasCoefficients> {
                 sentinel_gas_coefficients()
             }
