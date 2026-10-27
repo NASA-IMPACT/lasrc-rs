@@ -48,12 +48,13 @@ uv sync --reinstall-package lasrc
 ### Run the tests
 
 ```bash
-# Rust core unit tests
-cargo test -p lasrc_core
+scripts/test                 # cargo test --workspace, then pytest lasrc_py
+scripts/test -k geometry     # extra arguments are passed to pytest
+```
 
-# Python binding / pipeline tests
-uv run pytest lasrc_py
+`lasrc_cref` is a separate Cargo workspace and is not run by `scripts/test`:
 
+```bash
 # C-vs-Rust differential tests, stage 0 (no conda needed)
 cargo test --manifest-path lasrc_cref/Cargo.toml
 ```

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Run the Rust and Python test suites. Extra arguments are passed to pytest.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+cargo test --workspace
+
+uv run pytest lasrc_py "$@"
