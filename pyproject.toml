@@ -22,6 +22,6 @@ dev = [
 ]
 
 [[tool.mypy.overrides]]
-# Third-party packages and the compiled extension without type information
-module = ["h5py.*", "pyhdf.*", "lasrc.lasrc"]
+# Third-party packages without type information
+module = ["h5py.*", "pyhdf.*"]
 ignore_missing_imports = true

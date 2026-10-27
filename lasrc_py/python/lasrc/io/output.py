@@ -20,6 +20,7 @@ import numpy as np
 import rasterio
 
 from lasrc.lasrc import AERO_FILL, SR_FILL_VALUE
+from lasrc.results import SurfaceReflectanceResult
 from lasrc.sensors import SensorConfig
 
 
@@ -46,7 +47,7 @@ def _write_band(
 
 def write_espa_output(
     output_dir: str | Path,
-    result: dict,
+    result: SurfaceReflectanceResult,
     sensor_config: SensorConfig,
     crs,
     transform,
@@ -103,7 +104,7 @@ _COG_CREATION_OPTS = {
 
 def write_cog_output(
     output_dir: str | Path,
-    result: dict,
+    result: SurfaceReflectanceResult,
     sensor_config: SensorConfig,
     crs,
     transform,
@@ -152,7 +153,7 @@ def write_cog_output(
 
 def write_numpy(
     output_dir: str | Path,
-    result: dict,
+    result: SurfaceReflectanceResult,
     sensor_config: SensorConfig,
     product_id: str = "",
 ) -> None:
