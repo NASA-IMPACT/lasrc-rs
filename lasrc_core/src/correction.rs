@@ -312,6 +312,18 @@ fn modified_slope_intercept(
 
 /// Pre-compute polynomial coefficients for the fast atmospheric correction path.
 ///
+/// Per-band outputs of `precompute_coefficients()`:
+/// (atm_coeff, tgo, normext_p0a3, btgo, broatm, bttatmg, bsatm).
+type PrecomputedCoefficients = (
+    Vec<AtmCorrCoefficients>,
+    Vec<f64>,
+    Vec<f64>,
+    Vec<f64>,
+    Vec<f64>,
+    Vec<f64>,
+    Vec<f64>,
+);
+
 /// For each band, evaluate `atmcorlamb2()` at multiple AOT values using the
 /// scene-center geometry, extract roatm/ttatmg/satm values, then fit cubic
 /// polynomials.
@@ -329,15 +341,7 @@ fn precompute_coefficients(
     uoz: f64,
     uwv: f64,
     precomp_eps: f64,
-) -> (
-    Vec<AtmCorrCoefficients>,
-    Vec<f64>,
-    Vec<f64>,
-    Vec<f64>,
-    Vec<f64>,
-    Vec<f64>,
-    Vec<f64>,
-) {
+) -> PrecomputedCoefficients {
     let nbands = sensor.num_refl_bands();
     let tauray = sensor.tauray();
     let lambda = sensor.lambda();
@@ -358,9 +362,9 @@ fn precompute_coefficients(
 
     for iband in 0..nbands {
         // Arrays to collect roatm, ttatmg, satm at each AOT value
-        let mut roatm_vals = vec![0.0f64; NAOT_VALS];
-        let mut ttatmg_vals = vec![0.0f64; NAOT_VALS];
-        let mut satm_vals = vec![0.0f64; NAOT_VALS];
+        let mut roatm_vals = [0.0f64; NAOT_VALS];
+        let mut ttatmg_vals = [0.0f64; NAOT_VALS];
+        let mut satm_vals = [0.0f64; NAOT_VALS];
         let mut tgo_band = 0.0f64;
 
         for iaot in 0..NAOT_VALS {
@@ -445,7 +449,7 @@ fn precompute_coefficients(
         let iaot_ref = 3;
         let normext_idx = iband * NPRES_VALS * NAOT_VALS + ip_ref * NAOT_VALS + iaot_ref;
         let ne = if normext_idx < lut.normext.len() {
-            lut.normext[normext_idx] as f32 as f64
+            lut.normext[normext_idx] as f64
         } else {
             1.0
         };
@@ -889,7 +893,7 @@ pub fn compute_surface_reflectance(
                 let coefb = (xa * xf - xc * xd) / denom_fit;
                 let epsmin = -coefb / (2.0 * coefa);
 
-                let (eps, raot, residual) = if epsmin >= LOW_EPS && epsmin <= HIGH_EPS {
+                let (eps, raot, residual) = if (LOW_EPS..=HIGH_EPS).contains(&epsmin) {
                     let result_opt = subaeroret_new(
                         false,
                         iband1,
@@ -1536,10 +1540,10 @@ pub fn compute_sentinel_surface_reflectance(
                 let mut troatm = vec![0.0f64; nbands];
 
                 // Compute band ratios from NDWI
-                erelc[DNS_BAND1] = (xndwi * slprb1 + intrb1) as f32 as f64;
-                erelc[DNS_BAND2] = (xndwi * slprb2 + intrb2) as f32 as f64;
+                erelc[DNS_BAND1] = (xndwi * slprb1 + intrb1) as f64;
+                erelc[DNS_BAND2] = (xndwi * slprb2 + intrb2) as f64;
                 erelc[DNS_BAND4] = 1.0;
-                erelc[DNS_BAND12] = (xndwi * slprb7 + intrb7) as f32 as f64;
+                erelc[DNS_BAND12] = (xndwi * slprb7 + intrb7) as f64;
 
                 // Average TOA in 6x6 window for aerosol retrieval bands
                 // Sentinel does NOT divide by cos(SZA)
@@ -1645,13 +1649,13 @@ pub fn compute_sentinel_surface_reflectance(
                 let epsmin = (-coefb / (2.0 * coefa)) as f32 as f64;
                 let resepsmin = (xa * epsmin * epsmin + xb * epsmin + xc) as f32 as f64;
 
-                let eps = if epsmin < LOW_EPS || epsmin > HIGH_EPS {
-                    if residual1 < residual3 {
-                        eps1
-                    } else {
-                        eps3
-                    }
-                } else if resepsmin > residual1 || resepsmin > residual3 {
+                // `!(LOW_EPS..=HIGH_EPS).contains()` would differ from C for NaN
+                #[allow(clippy::manual_range_contains)]
+                let eps = if epsmin < LOW_EPS
+                    || epsmin > HIGH_EPS
+                    || resepsmin > residual1
+                    || resepsmin > residual3
+                {
                     if residual1 < residual3 {
                         eps1
                     } else {
@@ -1868,17 +1872,10 @@ pub fn compute_sentinel_surface_reflectance(
     }
 
     // ── Step 8: Post-processing ──
-    aerosol_interp_sentinel(
-        aero_window,
-        &qaband,
-        &mut ipflag,
-        &mut taero,
-        nlines,
-        nsamps,
-    );
+    aerosol_interp_sentinel(aero_window, qaband, &mut ipflag, &mut taero, nlines, nsamps);
     ipflag_expand_failed_sentinel(&mut ipflag, nlines, nsamps);
     pool.install(|| {
-        aero_avg_failed_sentinel(&qaband, &mut ipflag, &mut taero, &mut teps, nlines, nsamps)
+        aero_avg_failed_sentinel(qaband, &mut ipflag, &mut taero, &mut teps, nlines, nsamps)
     });
 
     // ── Step 9: Final per-pixel atmospheric correction, scaled to uint16 ──

@@ -89,7 +89,7 @@ pub fn atmcorlamb2_new(
         // then the result (double) is multiplied with the float quotient (promoted
         // to double), and the final result truncated back to float.
         let base = (lambda[iband] as f32 * lambda_sf) as f64;
-        let power = base.powf(-(eps as f64));
+        let power = base.powf(-eps);
         ((raot550nm as f32 / normext_ib_0_3 as f32) as f64 * power) as f32
     };
 
@@ -170,7 +170,7 @@ pub fn atmcorlamb2(
     } else {
         let normext_idx = iband * NPRES_VALS * NAOT_VALS + 3;
         let normext_val: f32 = if normext_idx < lut.normext.len() {
-            lut.normext[normext_idx] as f32
+            lut.normext[normext_idx]
         } else {
             1.0f32
         };

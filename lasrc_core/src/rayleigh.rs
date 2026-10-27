@@ -13,6 +13,8 @@ use crate::constants::DEG2RAD;
 /// * `xmuv` - Cosine of view zenith angle
 /// * `xmus` - Cosine of solar zenith angle
 /// * `xtau` - Rayleigh optical depth
+// Coefficients are kept verbatim from the C source
+#[allow(clippy::excessive_precision)]
 pub fn rayleigh_reflectance(xphi: f64, xmuv: f64, xmus: f64, xtau: f64) -> f64 {
     let xphi = xphi as f32;
     let xmuv = xmuv as f32;

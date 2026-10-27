@@ -293,6 +293,6 @@ mod tests {
     #[test]
     fn test_scattering_angle_range() {
         let sca = scattering_angle(0.7, 0.95, 0.5);
-        assert!(sca >= 0.0 && sca <= 180.0, "sca={sca}");
+        assert!((0.0..=180.0).contains(&sca), "sca={sca}");
     }
 }

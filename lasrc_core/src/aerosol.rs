@@ -209,6 +209,8 @@ pub fn subaeroret_new(
             final_raot as f64
         };
 
+        // `!(0.01..=4.0).contains()` would differ from C for NaN
+        #[allow(clippy::manual_range_contains)]
         let raotmin = if raotmin < 0.01 || raotmin > 4.0 {
             final_raot as f64
         } else {
@@ -266,7 +268,7 @@ pub fn subaeroret_new(
         if is_water && iaot == 1 {
             final_iaots = 0;
         } else {
-            final_iaots = if iaot2 >= 3 { iaot2 - 3 } else { 0 };
+            final_iaots = iaot2.saturating_sub(3);
         }
     }
 
@@ -1133,7 +1135,7 @@ mod tests {
         aerosol_interp(&mut taero, &mut ipflag, &qa_band, nlines, nsamps, 3, 1);
         aerosol_interp(&mut teps, &mut ipflag, &qa_band, nlines, nsamps, 3, 1);
         // Check that non-center pixels got interpolated values
-        let non_center_pix = 0 * nsamps + 0; // pixel (0,0)
+        let non_center_pix = 0; // pixel (0,0)
         assert!(
             taero[non_center_pix] > 0.0,
             "Pixel (0,0) should have interpolated aerosol"

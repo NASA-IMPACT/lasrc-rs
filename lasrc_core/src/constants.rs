@@ -98,7 +98,9 @@ pub const AOT550NM: [f64; NAOT_VALS] = [
     2.60, 3.00, 3.50, 4.00, 4.50, 5.00,
 ];
 
-// Log of AOT values (for atmospheric reflectance interpolation)
+// Log of AOT values (for atmospheric reflectance interpolation). Kept at the C table's
+// precision; e.g. -2.302585093 is not exactly -LN_10, and changing it changes results.
+#[allow(clippy::approx_constant)]
 pub const LOG_AOT550NM: [f64; NAOT_VALS] = [
     -4.605170186,
     -2.995732274,
