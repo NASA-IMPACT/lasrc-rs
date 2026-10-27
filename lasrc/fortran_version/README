@@ -1,9 +1,0 @@
-This FORTRAN software is the version 3.5.7 received from Eric Vermote with the
-support for VIIRS auxiliary inputs.
-
-#to compile the code
-make
-
-#run on testdata
-processldcm.ksh INPUT/ LC80410272013181LGN00
-
