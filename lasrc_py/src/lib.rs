@@ -18,7 +18,6 @@ struct PyLookupTables {
 #[pymethods]
 impl PyLookupTables {
     #[new]
-    #[allow(clippy::too_many_arguments)]
     fn new(
         rolutt: PyReadonlyArray1<'_, f64>,
         transt: PyReadonlyArray1<'_, f64>,
@@ -75,7 +74,6 @@ struct PyAuxiliaryData {
 #[pymethods]
 impl PyAuxiliaryData {
     #[new]
-    #[allow(clippy::too_many_arguments)]
     fn new(
         dem: PyReadonlyArray1<'_, i16>,
         wv: PyReadonlyArray1<'_, i16>,
@@ -157,7 +155,6 @@ impl PyAuxiliaryData {
 ///   "qa"        – 1-D uint8 array (flattened)
 #[pyfunction]
 #[pyo3(signature = (sensor_name, toa_bands, bt_bands, solar_zenith, solar_azimuth, view_zenith, view_azimuth, qa_band, lut, aux, ul_corner_x, ul_corner_y, pixel_size_x, pixel_size_y, utm_zone, num_threads=None, scene_solar_zenith=None))]
-#[allow(clippy::too_many_arguments)]
 fn process_surface_reflectance<'py>(
     py: Python<'py>,
     sensor_name: &str,
@@ -264,7 +261,6 @@ fn process_surface_reflectance<'py>(
 /// Compute surface reflectance for a Sentinel-2 scene.
 #[pyfunction]
 #[pyo3(signature = (sensor_name, toa_bands, solar_zenith, solar_azimuth, view_zenith, view_azimuth, qa_band, lut, aux, ul_corner_x, ul_corner_y, pixel_size_x, pixel_size_y, utm_zone, num_threads=None))]
-#[allow(clippy::too_many_arguments)]
 fn process_sentinel_surface_reflectance<'py>(
     py: Python<'py>,
     sensor_name: &str,

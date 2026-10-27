@@ -7,3 +7,6 @@ description = "LaSRC atmospheric correction core algorithms"
 [dependencies]
 ndarray = "0.16"
 rayon = "1.10"
+
+[lints]
+workspace = true

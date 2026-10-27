@@ -1,3 +1,8 @@
 [workspace]
 members = ["lasrc_core", "lasrc_py"]
 resolver = "2"
+
+# Ported numerical code mirrors the C function signatures and index-based loops
+[workspace.lints.clippy]
+too_many_arguments = "allow"
+needless_range_loop = "allow"

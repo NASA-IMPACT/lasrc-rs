@@ -265,7 +265,6 @@ impl LookupTables {
 
     /// Compute intrinsic atmospheric reflectance via complex 5D interpolation.
     /// All arithmetic in f32 matching C's float.
-    #[allow(clippy::too_many_arguments)]
     pub fn interp_atmospheric_reflectance(
         &self,
         indices: &LutIndices,

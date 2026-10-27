@@ -315,7 +315,6 @@ fn modified_slope_intercept(
 /// For each band, evaluate `atmcorlamb2()` at multiple AOT values using the
 /// scene-center geometry, extract roatm/ttatmg/satm values, then fit cubic
 /// polynomials.
-#[allow(clippy::too_many_arguments)]
 fn precompute_coefficients(
     sensor: &dyn Sensor,
     lut: &LookupTables,
@@ -483,7 +482,6 @@ fn precompute_coefficients(
 /// # Panics
 ///
 /// If `qa_band` is not in standard (C-contiguous) layout.
-#[allow(clippy::too_many_arguments)]
 pub fn compute_surface_reflectance(
     sensor: &dyn Sensor,
     toa_bands: &[ArrayView2<f32>],
@@ -1240,7 +1238,6 @@ pub fn compute_surface_reflectance(
 /// # Panics
 ///
 /// If `qa_band` is not in standard (C-contiguous) layout.
-#[allow(clippy::too_many_arguments)]
 pub fn compute_sentinel_surface_reflectance(
     sensor: &dyn Sensor,
     toa_bands: &[ArrayView2<f32>],

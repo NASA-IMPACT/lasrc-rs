@@ -138,7 +138,6 @@ pub fn atmcorlamb2_new(
 ///
 /// # Returns
 /// [`AtmCorrResult`] with surface reflectance and intermediate quantities.
-#[allow(clippy::too_many_arguments)]
 pub fn atmcorlamb2(
     lut: &LookupTables,
     gas_coeff: &GasCoefficients,
