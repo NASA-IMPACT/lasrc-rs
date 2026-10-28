@@ -9,92 +9,66 @@ Running LaSRC takes three steps:
 
 ## 1. Ancillary data
 
-LaSRC needs two kinds of auxiliary input:
+LaSRC needs **static** inputs, downloaded once and used for every scene, and one **daily** input
+that matches each scene's acquisition date.
 
-| File | Kind | CLI option | What it is |
-|---|---|---|---|
-| `{LDCMLUT,MSILUT}/ANGLE_NEW.hdf` | static | `--angle-hdf` | Angle LUT |
-| `{LDCMLUT,MSILUT}/RES_LUT_*.hdf` | static | `--intref-hdf` | Intrinsic (atmospheric path) reflectance LUT |
-| `{LDCMLUT,MSILUT}/TRANS_LUT_*.ASCII` | static | `--transm-hdf` | Transmission LUT |
-| `{LDCMLUT,MSILUT}/AERO_LUT_*.ASCII` | static | `--sphera-hdf` | Spherical albedo / aerosol extinction LUT |
-| `CMGDEM.hdf` | static | `--dem-hdf` | Global elevation on the CMG grid |
-| `ratiomapndwiexp.hdf` | static | `--ratio-hdf` | Band ratio / NDWI climatology |
-| `LADS/<year>/V*04ANC.A<year><doy>.*.h5` | daily | `--wv-oz-hdf` | VIIRS water vapor + ozone for the scene's acquisition date |
+Static:
+
+| File | CLI option | What it is |
+|---|---|---|
+| `{LDCMLUT,MSILUT}/ANGLE_NEW.hdf` | `--angle-hdf` | Angle LUT |
+| `{LDCMLUT,MSILUT}/RES_LUT_*.hdf` | `--intref-hdf` | Intrinsic (atmospheric path) reflectance LUT |
+| `{LDCMLUT,MSILUT}/TRANS_LUT_*.ASCII` | `--transm-hdf` | Transmission LUT |
+| `{LDCMLUT,MSILUT}/AERO_LUT_*.ASCII` | `--sphera-hdf` | Spherical albedo / aerosol extinction LUT |
+| `CMGDEM.hdf` | `--dem-hdf` | Global elevation on the CMG grid |
+| `ratiomapndwiexp.hdf` | `--ratio-hdf` | Band ratio / NDWI climatology |
 
 The LUTs are sensor-specific: use `LDCMLUT/` (`*-V2.0` files) for Landsat 8/9 and `MSILUT/`
 (`*-V3.0` files) for Sentinel-2. `CMGDEM.hdf` and `ratiomapndwiexp.hdf` are shared by all
 sensors.
 
-These files come from the USGS
+Daily:
+
+| File | CLI option | What it is |
+|---|---|---|
+| `V*04ANC.A<year><doy>.*.h5` | `--wv-oz-hdf` | VIIRS water vapor + ozone for the scene's acquisition date |
+
+### Static files
+
+`CMGDEM.hdf`, `ratiomapndwiexp.hdf`, and the Landsat LUTs come from the USGS
 [Landsat Collection 2 Atmospheric Auxiliary Data](https://www.usgs.gov/landsat-missions/landsat-collection-2-atmospheric-auxiliary-data)
-distribution, the original source and source of truth. The S3 copy below is a convenience mirror.
-
-### From S3
-
-The static files, plus a collection of the daily VIIRS files, are in a public
+page. USGS no longer distributes the Sentinel-2 LUTs, so we host a copy (`MSILUT.tar.gz`) in a
 [requester pays](https://docs.aws.amazon.com/AmazonS3/latest/userguide/RequesterPaysBuckets.html)
-bucket in `us-west-2`, under `s3://hls-validation-datasets/lasrc_aux/`:
+S3 bucket, `s3://hls-validation-datasets/aux_source/`.
+
+From a checkout of this repo, `scripts/download-aux` downloads all of them, checks them against
+`scripts/download-aux.sha256`, and unpacks them (~1.7 GB, mostly `ratiomapndwiexp.hdf`):
+
+```bash
+scripts/download-aux ./lasrc_aux
+```
 
 ```
 lasrc_aux/
-  CMGDEM.hdf                   ~130 MB
-  ratiomapndwiexp.hdf          ~1.5 GB
-  LDCMLUT/                     ~40 MB   Landsat 8/9 LUTs
-  MSILUT/                      ~65 MB   Sentinel-2 LUTs
-  LADS/<year>/V*04ANC.*.h5     ~50 MB per day, partial archive
+  LDCMLUT/                Landsat 8/9 LUTs
+  MSILUT/                 Sentinel-2 LUTs
+  CMGDEM.hdf
+  ratiomapndwiexp.hdf
 ```
 
-You need AWS credentials, and your account pays for the request and data transfer (transfer is
-free within `us-west-2`). The VIIRS files make up most of the bucket, so download the static files
-on their own:
-
-```bash
-aws s3 sync s3://hls-validation-datasets/lasrc_aux/ ./lasrc_aux/ \
-    --request-payer requester \
-    --exclude "LADS/*"
-```
-
-Skip `LDCMLUT/*` or `MSILUT/*` as well if you only process one sensor family.
+It needs `curl`, `unzip`, and the [AWS CLI](https://aws.amazon.com/cli/) with AWS credentials for
+the MSILUT download. With requester pays, your account pays for the transfer (~25 MB; free within
+`us-west-2`). Re-running skips files already downloaded.
 
 ### Daily VIIRS atmosphere files
 
-Each scene needs the VIIRS ancillary file for its acquisition date (year + day of year). There are
-two equivalent products: `VNP04ANC` (Suomi NPP) and `VJ104ANC` (NOAA-20 / JPSS-1). Either one
-works with `--wv-oz-hdf`.
+Each scene needs the VIIRS ancillary file for its acquisition date (year + day of year), passed
+with `--wv-oz-hdf`. Either of two equivalent products works: `VNP04ANC` (Suomi NPP) or `VJ104ANC`
+(NOAA-20 / JPSS-1). Download them from NASA Earthdata via the
+[LAADS DAAC](https://ladsweb.modaps.eosdis.nasa.gov/) archive. You need a free
+[NASA Earthdata Login](https://urs.earthdata.nasa.gov/) account.
 
-The bucket holds a partial archive of these files as a convenience. NASA Earthdata (below) is the
-source for the full record. To fetch the file(s) for one date from the bucket:
-
-```bash
-# Scene acquired 2026-01-24 -> year 2026, day of year 024
-aws s3 sync s3://hls-validation-datasets/lasrc_aux/LADS/2026/ ./lasrc_aux/LADS/2026/ \
-    --request-payer requester \
-    --exclude "*" --include "V*04ANC.A2026024.*.h5"
-```
-
-If nothing downloads, the bucket doesn't have that date. Get it, and any other date, directly from
-NASA Earthdata via the
-[LAADS DAAC](https://ladsweb.modaps.eosdis.nasa.gov/) archive, which needs a free
-[NASA Earthdata Login](https://urs.earthdata.nasa.gov/) account and a user token (Earthdata
-profile -> "Generate Token"):
-
-```bash
-export EDL_TOKEN=...   # your Earthdata user token
-
-PRODUCT=VJ104ANC       # or VNP04ANC
-YEAR=2026
-DOY=024
-URL="https://ladsweb.modaps.eosdis.nasa.gov/archive/allData/5200/${PRODUCT}/${YEAR}/${DOY}"
-
-# Each day directory holds a single file; look up its name, then download it
-NAME=$(curl -s "${URL}.json" | python3 -c "import json,sys; print(json.load(sys.stdin)['content'][0]['name'])")
-mkdir -p "lasrc_aux/LADS/${YEAR}"
-curl -L -H "Authorization: Bearer ${EDL_TOKEN}" \
-    -o "lasrc_aux/LADS/${YEAR}/${NAME}" "${URL}/${NAME}"
-```
-
-Day of year for a date: `date -d 2026-01-24 +%j` (GNU) or `date -j -f %Y-%m-%d 2026-01-24 +%j`
-(macOS).
+The examples below keep them under `lasrc_aux/LADS/<year>/`, but any path works.
 
 ## 2. Install
 
@@ -103,6 +77,8 @@ There are no prebuilt wheels yet, so `lasrc` builds from source. You need:
 - [rustup](https://rustup.rs/). The build picks up the pinned toolchain from
   `rust-toolchain.toml`.
 - Python >= 3.10
+- The HDF4 library, if `pip`/`uv` can't find a prebuilt `pyhdf` wheel for your platform:
+  `brew install hdf4` (macOS) or `apt install libhdf4-dev` (Debian/Ubuntu)
 
 To install the CLIs as a standalone tool with [uv](https://docs.astral.sh/uv/):
 
