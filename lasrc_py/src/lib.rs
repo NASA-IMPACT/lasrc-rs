@@ -1,6 +1,7 @@
 use numpy::{IntoPyArray, PyArray1, PyReadonlyArray1, PyReadonlyArray2};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
 
 use lasrc_core::constants::{AERO_FILL, NSOLAR_ZEN_VALS, SR_FILL_VALUE};
 use lasrc_core::correction::{
@@ -174,7 +175,7 @@ fn process_surface_reflectance<'py>(
     utm_zone: i32,
     num_threads: Option<usize>,
     scene_solar_zenith: Option<f32>,
-) -> PyResult<PyObject> {
+) -> PyResult<Bound<'py, PyDict>> {
     let sensor: Box<dyn Sensor> = match sensor_name {
         "LANDSAT_8" => Box::new(Landsat8),
         "LANDSAT_9" => Box::new(Landsat9),
@@ -223,7 +224,7 @@ fn process_surface_reflectance<'py>(
 
     // Build output dict.
     // Array2<T> implements IntoPyArray directly, so no intermediate Vec needed.
-    let dict = pyo3::types::PyDict::new(py);
+    let dict = PyDict::new(py);
 
     // SR bands: Vec<Array2<u16>> -> list of 1-D PyArray<u16>
     let sr_list: Vec<Bound<'py, PyArray1<u16>>> = result
@@ -255,7 +256,7 @@ fn process_surface_reflectance<'py>(
     let (qa_vec, _) = result.qa.into_raw_vec_and_offset();
     dict.set_item("qa", qa_vec.into_pyarray(py))?;
 
-    Ok(dict.into())
+    Ok(dict)
 }
 
 /// Compute surface reflectance for a Sentinel-2 scene.
@@ -278,7 +279,7 @@ fn process_sentinel_surface_reflectance<'py>(
     pixel_size_y: f64,
     utm_zone: i32,
     num_threads: Option<usize>,
-) -> PyResult<PyObject> {
+) -> PyResult<Bound<'py, PyDict>> {
     let sensor: Box<dyn Sensor> = match sensor_name {
         "SENTINEL_2A" => Box::new(Sentinel2A),
         "SENTINEL_2B" => Box::new(Sentinel2B),
@@ -319,7 +320,7 @@ fn process_sentinel_surface_reflectance<'py>(
         num_threads,
     );
 
-    let dict = pyo3::types::PyDict::new(py);
+    let dict = PyDict::new(py);
 
     let sr_list: Vec<Bound<'py, PyArray1<u16>>> = result
         .sr_bands
@@ -337,7 +338,7 @@ fn process_sentinel_surface_reflectance<'py>(
     let (qa_vec, _) = result.qa.into_raw_vec_and_offset();
     dict.set_item("qa", qa_vec.into_pyarray(py))?;
 
-    Ok(dict.into())
+    Ok(dict)
 }
 
 #[pymodule]
