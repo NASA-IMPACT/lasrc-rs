@@ -5,8 +5,8 @@ Three formats are supported, all driven by the same in-memory ``result`` dict
 
   - ESPA internal format : one ENVI file per band (flat binary ``.img`` plus a
     text ``.hdr`` sidecar), georeferenced. This is the real ESPA product format.
-  - COG                  : a single multi-band Cloud-Optimized GeoTIFF.
-  - NumPy raw            : headerless flat binary ``.img`` files (``ndarray.tofile``),
+  - COG                  : one Cloud-Optimized GeoTIFF (``.tif``) per band.
+  - NumPy raw            : headerless flat binary ``.bin`` files (``ndarray.tofile``),
     kept only for compatibility with the analysis/test scripts.
 
 Output dtypes match the C reference exactly: surface reflectance (and
