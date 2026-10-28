@@ -5,6 +5,8 @@ and initially developed in C by the USGS ESPA team at EROS (see [espa-surface-re
 
 ## Documentation
 
+- [Usage](docs/usage.md) - getting the ancillary data, installing, and running LaSRC from the CLI
+  or Python
 - [LaSRC's semi-empirical code path](docs/lasrc-semi-empirical-code-path.md) - a ~10 minute tour
   of how LaSRC turns TOA reflectance into surface reflectance on the default path used by NASA HLS
 - [Glossary](docs/GLOSSARY.md) - what the terse variable names carried over from the C code
