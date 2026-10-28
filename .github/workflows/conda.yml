@@ -40,14 +40,12 @@ jobs:
       - name: Check tag matches package version
         if: github.event_name == 'push'
         run: |
-          tag=${GITHUB_REF_NAME#v}
-          for f in lasrc_py/Cargo.toml lasrc_py/pyproject.toml; do
-            v=$(sed -n 's/^version = "\(.*\)"/\1/p' "$f" | head -1)
-            if [[ "$v" != "$tag" ]]; then
-              echo "::error file=$f::version $v does not match tag $GITHUB_REF_NAME"
-              exit 1
-            fi
-          done
+          # [workspace.package] version; the crates and pyproject.toml inherit it
+          v=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml)
+          if [[ "$v" != "${GITHUB_REF_NAME#v}" ]]; then
+            echo "::error file=Cargo.toml::version $v does not match tag $GITHUB_REF_NAME"
+            exit 1
+          fi
 
       - uses: prefix-dev/setup-pixi@ad1da6449d9e506fd127fd67ab2d054a769f6a94 # v0.11.2
         with:
