@@ -196,7 +196,7 @@ result = process_scene(
 )
 
 result["sr_bands"][0]  # (nlines, nsamps) uint16
-result["aerosol"]      # (nlines, nsamps) int16
+result["aerosol"]  # (nlines, nsamps) int16
 ```
 
 For Sentinel-2, `lasrc.pipeline_sentinel.process_sentinel_scene` takes the same inputs as flat
