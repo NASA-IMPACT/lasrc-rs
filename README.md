@@ -1,6 +1,6 @@
 # lasrc-rs
 
-Rust port of the Land Surface Reflectance Code (LaSRC) algorithm created by Vermote et al (2018)
+Rust port of the Land Surface Reflectance Code (LaSRC) algorithm created by [Vermote et al (2018)][vermote2018]
 and initially developed in C by the USGS ESPA team at EROS (see [espa-surface-reflectance][espa-sr]).
 
 ## Developer getting started
@@ -10,12 +10,13 @@ This repo contains a Rust port of LaSRC with Python bindings:
 | Path               | What it is                                                                     |
 |--------------------|--------------------------------------------------------------------------------|
 | `lasrc_core/`      | Pure Rust LaSRC algorithms (no Python)                                         |
-| `lasrc_py/`        | PyO3 bindings + Python package `lasrc` (I/O, CLI: `lasrc-landsat`, `lasrc-sentinel`) |
+| `lasrc_py/`        | PyO3 bindings + Python package `lasrc` |
 
 ### Prerequisites
 
-- [rustup](https://rustup.rs/) - Rust toolchain manager. The toolchain version and components
-  are pinned in `rust-toolchain.toml`; run `rustup install` from the repo root to install them
+- [rustup](https://rustup.rs/) - Rust toolchain manager.
+    - The toolchain version and components are pinned in `rust-toolchain.toml`
+    - Run `rustup install` from the repo root to install dependencies.
 - [uv](https://docs.astral.sh/uv/) - Python version, virtualenv, and package management
 
 ### Set up the environment
@@ -52,7 +53,7 @@ scripts/format         # apply cargo fmt + ruff format, and ruff auto-fixes, in 
 scripts/lint           # check-only: cargo fmt --check, clippy -D warnings, ruff
 scripts/lint rust      # Rust checks only
 scripts/lint python    # Python checks only
-scripts/typecheck      # mypy on lasrc_py/python
+scripts/typecheck      # mypy on lasrc_py/python, stubtest on the lasrc.lasrc extension stub
 ```
 
 CI (`.github/workflows/ci.yml`) runs these same scripts in separate `rust` and `python` jobs.
@@ -66,3 +67,4 @@ Valencia, Spain. https://doi.org/10.1109/IGARSS.2018.8517622 (NASA NTRS Document
 https://ntrs.nasa.gov/citations/20190001670)
 
 [espa-sr]: https://github.com/NASA-IMPACT/espa-surface-reflectance/
+[vermote2018]: #references

@@ -13,6 +13,7 @@ from lasrc.io import (
     write_espa_output,
     write_numpy,
 )
+from lasrc.results import SurfaceReflectanceResult
 from lasrc.sensors import SENSORS
 
 
@@ -55,7 +56,7 @@ def process_scene(
     sensor_name: str = "LANDSAT_8",
     output_format: str = "cog",
     num_threads: int | None = None,
-) -> dict:
+) -> SurfaceReflectanceResult:
     """Process a scene from TOA to surface reflectance.
 
     Parameters

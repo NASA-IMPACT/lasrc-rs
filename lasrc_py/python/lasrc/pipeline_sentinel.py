@@ -8,6 +8,7 @@ from rasterio.transform import from_origin
 import lasrc as _lasrc
 from lasrc.aux import load_auxiliary_data, load_dem, load_lut, load_ratio_file
 from lasrc.io import read_sentinel_safe, write_espa_output, write_numpy
+from lasrc.results import SurfaceReflectanceResult
 from lasrc.sensors import SENSORS
 
 
@@ -24,7 +25,7 @@ def process_sentinel_scene(
     sensor_name: str = "SENTINEL_2B",
     output_format: str = "espa",
     num_threads: int | None = None,
-) -> dict:
+) -> SurfaceReflectanceResult:
     """Process a Sentinel-2 SAFE archive to surface reflectance.
 
     ``num_threads`` sets the Rayon worker pool; 0 or None lets Rayon choose.
