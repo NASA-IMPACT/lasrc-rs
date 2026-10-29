@@ -5,7 +5,7 @@ edition = "2021"
 description = "LaSRC atmospheric correction core algorithms"
 
 [dependencies]
-ndarray = "0.16"
+ndarray = "0.17"
 rayon = "1.10"
 
 [lints]
