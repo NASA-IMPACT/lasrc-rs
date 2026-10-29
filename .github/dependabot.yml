@@ -26,6 +26,10 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
+    ignore:
+      # Pinned below 0.11.7 in lasrc_py/pyproject.toml
+      - dependency-name: pyhdf
+        versions: [">=0.11.7"]
     groups:
       python:
         update-types: [minor, patch]

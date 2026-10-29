@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Download the static LaSRC auxiliary data into DEST, laid out as:
+#
+#   DEST/LDCMLUT/              Landsat 8/9 LUTs   (USGS)
+#   DEST/MSILUT/               Sentinel-2 LUTs    (s3://hls-validation-datasets, requester pays)
+#   DEST/CMGDEM.hdf                               (USGS)
+#   DEST/ratiomapndwiexp.hdf                      (USGS)
+#
+# USGS no longer distributes the Sentinel-2 LUTs, so MSILUT comes from S3 and needs awscli with
+# AWS credentials. Daily VIIRS files are not included; see docs/usage.md.
+#
+# Usage: scripts/download-aux DEST
+set -euo pipefail
+
+usgs=https://landsat.usgs.gov/sites/default/files/documents
+s3=s3://hls-validation-datasets/aux_source
+checksums="$(cd "$(dirname "$0")" && pwd)/download-aux.sha256"
+dest=${1:?usage: $0 DEST}
+
+mkdir -p "$dest"
+cd "$dest"
+
+for f in C2-LDCMLUT.zip CMGDEM.hdf ratiomapndwiexp.hdf; do
+    [ -f "$f" ] || { curl -fL --retry 3 -o "$f.part" "$usgs/$f" && mv "$f.part" "$f"; }
+done
+[ -f MSILUT.tar.gz ] || aws s3 cp --request-payer requester "$s3/MSILUT.tar.gz" .
+
+if command -v sha256sum >/dev/null; then
+    sha256sum -c "$checksums"
+else
+    shasum -a 256 -c "$checksums"
+fi
+
+mkdir -p LDCMLUT
+unzip -oq C2-LDCMLUT.zip -d LDCMLUT
+tar -xzf MSILUT.tar.gz
