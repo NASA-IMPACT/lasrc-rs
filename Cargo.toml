@@ -2,6 +2,10 @@
 members = ["lasrc_core", "lasrc_py"]
 resolver = "2"
 
+# Single source of the release version: both crates and the Python package (via maturin) inherit it
+[workspace.package]
+version = "0.1.0"
+
 # Ported numerical code mirrors the C function signatures and index-based loops
 [workspace.lints.clippy]
 too_many_arguments = "allow"
