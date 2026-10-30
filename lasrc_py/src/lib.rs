@@ -3,7 +3,7 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use lasrc_core::constants::{AERO_FILL, NSOLAR_ZEN_VALS, SR_FILL_VALUE};
+use lasrc_core::constants::{AERO_FILL, ALGORITHM_VERSION, NSOLAR_ZEN_VALS, SR_FILL_VALUE};
 use lasrc_core::correction::{
     compute_sentinel_surface_reflectance, compute_surface_reflectance, AuxiliaryData,
 };
@@ -344,6 +344,7 @@ fn process_sentinel_surface_reflectance<'py>(
 #[pymodule]
 fn lasrc(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
+    m.add("ALGORITHM_VERSION", ALGORITHM_VERSION)?;
     m.add("SR_FILL_VALUE", SR_FILL_VALUE)?;
     m.add("AERO_FILL", AERO_FILL)?;
     m.add_class::<PyLookupTables>()?;

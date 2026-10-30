@@ -1,5 +1,6 @@
 from lasrc.lasrc import (
     AERO_FILL,
+    ALGORITHM_VERSION,
     SR_FILL_VALUE,
     PyAuxiliaryData,
     PyLookupTables,
@@ -11,6 +12,7 @@ from lasrc.pipeline import AuxFilePaths
 
 __all__ = [
     "AERO_FILL",
+    "ALGORITHM_VERSION",
     "SR_FILL_VALUE",
     "AuxFilePaths",
     "PyAuxiliaryData",
