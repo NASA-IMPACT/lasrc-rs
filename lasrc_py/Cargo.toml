@@ -1,6 +1,7 @@
 [package]
 name = "lasrc_py"
 version.workspace = true
+publish = false
 edition = "2021"
 
 [lib]
