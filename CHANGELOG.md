@@ -8,6 +8,8 @@ Each release also records its algorithm version. See [VERSIONING.md](VERSIONING.
 
 ## [Unreleased]
 
+**Algorithm version:** 3.5.1.0
+
 ### Added <!-- New features -->
 
 -
@@ -35,6 +37,8 @@ Each release also records its algorithm version. See [VERSIONING.md](VERSIONING.
 ## [v3.5.1.0]
 
 Release Date: March, 2025
+
+**Algorithm version:** 3.5.1.0
 
 This release of the LaSRC code has been modified by the NASA-IMPACT team as part of
 maintenance for the HLS project based off of the USGS's version `v3.5.1`.
