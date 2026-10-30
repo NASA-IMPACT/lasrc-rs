@@ -48,7 +48,7 @@ From a checkout of this repo, `scripts/download-aux` downloads all of them, chec
 scripts/download-aux ./lasrc_aux
 ```
 
-```
+```text
 lasrc_aux/
   LDCMLUT/                Landsat 8/9 LUTs
   MSILUT/                 Sentinel-2 LUTs

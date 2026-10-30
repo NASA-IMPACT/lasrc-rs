@@ -5,7 +5,7 @@ reflectance (SR) on its default, "semi-empirical" path (`use_orig_aero=false`). 
 NASA HLS runs in production. It applies to both Landsat and Sentinel-2; differences are noted
 where they matter. For variable names (`roatm`, `erelc`, `troatm`, ...) see `docs/GLOSSARY.md`.
 
-### The big picture
+## The big picture
 
 The atmosphere changes what the sensor sees in three ways: it adds scattered light (path
 reflectance, `roatm`), it attenuates light on the way down and back up (transmission,
@@ -46,7 +46,7 @@ The steps, in order:
 7. Fill in failed windows and spread aerosol to every pixel
 8. Apply the final per-pixel correction
 
-### 1. Inputs
+## 1. Inputs
 
 - **TOA reflectance** for the reflective bands. Landsat applies the MTL gains and offsets;
   Sentinel-2 applies `RADIO_ADD_OFFSET` and `QUANTIFICATION_VALUE`, with its 20 m and 60 m
@@ -63,7 +63,7 @@ The steps, in order:
     SWIR surface reflectance to red surface reflectance, as a function of NDWI. This is what
     makes aerosol retrieval possible over land.
 
-### 2. Scene-level geometry and atmosphere
+## 2. Scene-level geometry and atmosphere
 
 LaSRC picks one geometry and one atmosphere for the whole scene:
 
@@ -73,7 +73,7 @@ LaSRC picks one geometry and one atmosphere for the whole scene:
 - **Atmosphere**: the scene center is converted to lat/long, and water vapor, ozone and pressure
   are read from the single nearest CMG cell.
 
-### 3. Fitting the atmospheric terms
+## 3. Fitting the atmospheric terms
 
 For each band and each of the 22 AOT levels in the lookup tables (0.01 to 5.0), LaSRC runs the
 full lookup-table evaluation, `atmcorlamb2`, with the scene geometry and atmosphere. That gives
@@ -88,7 +88,9 @@ atmospheric terms for this band at this AOT" calls `atmcorlamb2_new`. It first c
 retrieved 550 nm AOT, $\tau_{550}$, to the AOT that band's polynomials are indexed by:
 
 $$
-\tau_b = \min\left( \frac{\tau_{550}}{n_b} \left( \frac{\lambda_b}{0.55} \right)^{-\epsilon},\ \tau_{\max,b} \right)
+\tau_b = \min\left(
+  \frac{\tau_{550}}{n_b} \left( \frac{\lambda_b}{0.55} \right)^{-\epsilon},\ \tau_{\max,b}
+\right)
 $$
 
 where $\lambda_b$ is the band's center wavelength in micrometers, $\epsilon$ is the Angstrom
@@ -99,7 +101,7 @@ depth; dividing by $n_b$ maps that back onto the lookup tables' AOT axis, which 
 fitted on. It then evaluates the three cubics at $\tau_b$ and applies the Lambertian
 correction above.
 
-### 4. First-pass ("climatological") surface reflectance
+## 4. First-pass ("climatological") surface reflectance
 
 The aerosol retrieval needs a rough idea of the surface type, so LaSRC first corrects the image
 at a fixed, low AOT of 0.05. Landsat divides TOA by the cosine of the per-pixel solar zenith
@@ -108,7 +110,7 @@ before this; Sentinel-2 does not.
 Only a few bands of this first pass are used later: the NIR and SWIR bands for NDWI at each
 aerosol window, and on Sentinel-2 the coastal band for the aerosol QA test.
 
-### 5. Aerosol retrieval in windows
+## 5. Aerosol retrieval in windows
 
 The scene is tiled into small windows: 3x3 pixels around a center for Landsat, 6x6 pixels
 anchored at the upper-left corner for Sentinel-2. For each window:
@@ -135,7 +137,7 @@ retrieval next.
 The window's result is stored at its anchor pixel and copied to the window's other non-fill
 pixels.
 
-### 6. Validating windows and the water retest
+## 6. Validating windows and the water retest
 
 A retrieval counts as valid land only if:
 
@@ -148,7 +150,7 @@ Otherwise the window is retried as water: the same inversion with all band ratio
 anything else marks the window as failed. These outcomes are recorded per window in `ipflag`
 (fill, clear, water, failed, ...), which becomes the aerosol QA band.
 
-### 7. Filling in and spreading aerosol
+## 7. Filling in and spreading aerosol
 
 Failed windows need an aerosol value, and every pixel needs a smooth aerosol field.
 
@@ -163,7 +165,7 @@ Failed windows need an aerosol value, and every pixel needs a smooth aerosol fie
 
 The result is an AOT (`taero`) and `eps` (`teps`) value for every non-fill pixel.
 
-### 8. Final per-pixel correction
+## 8. Final per-pixel correction
 
 Every non-fill pixel and band is corrected with `atmcorlamb2_new` at that pixel's AOT and
 `eps`, clamped to the valid reflectance range. The outputs are:
@@ -173,7 +175,7 @@ Every non-fill pixel and band is corrected with `atmcorlamb2_new` at that pixel'
 - the aerosol QA band: the window outcome from step 6 plus a low, medium or high aerosol level,
   set from how much the final correction differs from the first-pass SR in a reference band
 
-### How `use_orig_aero=true` differs
+## How `use_orig_aero=true` differs
 
 For comparison, the alternative path changes steps 2, 3, 5, 6 and 8:
 
@@ -185,7 +187,7 @@ For comparison, the alternative path changes steps 2, 3, 5, 6 and 8:
 Steps 1, 4 and 7 are the same in both paths. Step 4 uses the scene-center atmosphere even
 when the flag is on.
 
-### Known issues
+## Known issues
 
 Two behaviors in this path look like bugs:
 

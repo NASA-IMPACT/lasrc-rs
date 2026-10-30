@@ -13,6 +13,7 @@ from lasrc.results import SurfaceReflectanceResult
 
 __all__ = [
     "AERO_FILL",
+    "ALGORITHM_VERSION",
     "SR_FILL_VALUE",
     "PyAuxiliaryData",
     "PyLookupTables",
@@ -22,6 +23,7 @@ __all__ = [
 ]
 
 __version__: Final[str]
+ALGORITHM_VERSION: Final[str]
 SR_FILL_VALUE: Final[int]
 AERO_FILL: Final[int]
 

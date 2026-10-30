@@ -35,6 +35,9 @@ jobs:
       - name: Install Python (from .python-version)
         run: uv python install
 
+      - name: Check versions
+        run: scripts/check-versions
+
       - name: Lint
         run: scripts/lint rust
 
@@ -42,7 +45,7 @@ jobs:
         run: scripts/test rust
 
   python:
-    name: Python (ruff, mypy, pytest)
+    name: Python (ruff, mypy, pytest) and Markdown (rumdl)
     runs-on: ubuntu-latest
     env:
       UV_LOCKED: "1"
@@ -66,6 +69,9 @@ jobs:
 
       - name: Lint
         run: scripts/lint python
+
+      - name: Lint Markdown
+        run: scripts/lint markdown
 
       - name: Type check
         run: scripts/typecheck

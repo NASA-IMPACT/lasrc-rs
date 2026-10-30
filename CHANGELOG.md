@@ -3,10 +3,12 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
-with an additional version indicator for modifications of this fork.
+and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+Each release also records its algorithm version. See [VERSIONING.md](VERSIONING.md).
 
 ## [Unreleased]
+
+**Algorithm version:** 3.5.1.0
 
 ### Added <!-- New features -->
 
@@ -36,6 +38,8 @@ with an additional version indicator for modifications of this fork.
 
 Release Date: March, 2025
 
+**Algorithm version:** 3.5.1.0
+
 This release of the LaSRC code has been modified by the NASA-IMPACT team as part of
 maintenance for the HLS project based off of the USGS's version `v3.5.1`.
 We are indicating this change by appending a "maintainer version" to the version tag
@@ -46,8 +50,8 @@ with releases from the upstream.
 
 - Support Sentinel-2C and -2D by updating hard coded platform values
 - Include `PROC_ALL_BANDS` definition
-- Mask a pixel if _any_ band has invalid data [#17](https://github.com/NASA-IMPACT/espa-surface-reflectance/pull/17)
+- Mask a pixel if _any_ band has invalid data
+  [#17](https://github.com/NASA-IMPACT/espa-surface-reflectance/pull/17)
 
-
-[Unreleased]: https://github.com/NASA-IMPACT/espa-surface-reflectance/tree/v3.5.1.0...HEAD
+[Unreleased]: https://github.com/NASA-IMPACT/lasrc-rs/commits/main
 [v3.5.1.0]: https://github.com/NASA-IMPACT/espa-surface-reflectance/tree/v3.5.1.0

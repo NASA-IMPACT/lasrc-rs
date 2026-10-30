@@ -1,6 +1,7 @@
 [package]
 name = "lasrc_core"
 version.workspace = true
+publish = false
 edition = "2021"
 description = "LaSRC atmospheric correction core algorithms"
 

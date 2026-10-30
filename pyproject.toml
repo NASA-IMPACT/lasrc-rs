@@ -18,6 +18,7 @@ dev = [
     "mypy>=2.4.0",
     "pytest>=9.1.1",
     "ruff>=0.17.1",
+    "rumdl>=0.3.2",
     "types-rasterio>=1.5.0 ; python_full_version >= '3.12'",
 ]
 
@@ -25,3 +26,14 @@ dev = [
 # Third-party packages without type information
 module = ["h5py.*", "pyhdf.*"]
 ignore_missing_imports = true
+
+[tool.rumdl]
+line-length = 100
+
+[tool.rumdl.MD013]
+reflow = true
+tables = false
+code-blocks = false
+
+[tool.rumdl.MD046]
+style = "fenced"

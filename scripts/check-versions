@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Check that versions agree across the repo (see VERSIONING.md).
+# Usage: scripts/check-versions [TAG]
+#
+#   - the top CHANGELOG.md entry's algorithm version matches lasrc_core::ALGORITHM_VERSION
+#   - TAG (e.g. v1.2.3), if given, matches the package version in Cargo.toml and has a CHANGELOG.md
+#     entry
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+# [workspace.package] version, inherited by every crate and the Python package
+package_version() {
+    sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml
+}
+
+algorithm_version() {
+    grep '^pub const ALGORITHM_VERSION' lasrc_core/src/constants.rs | cut -d'"' -f2
+}
+
+# Algorithm version of the top CHANGELOG.md entry (third field of "**Algorithm version:** X")
+changelog_algorithm_version() {
+    awk '/^## \[/ { n++ } n == 1 && /^\*\*Algorithm version:\*\*/ { print $3; exit }' CHANGELOG.md
+}
+
+has_changelog_entry() {
+    grep -qxF "## [$1]" CHANGELOG.md
+}
+
+status=0
+
+if [[ "$(changelog_algorithm_version)" != "$(algorithm_version)" ]]; then
+    echo "error: top CHANGELOG.md entry has algorithm version '$(changelog_algorithm_version)'," \
+        "expected lasrc_core::ALGORITHM_VERSION '$(algorithm_version)'" >&2
+    status=1
+fi
+
+if [[ $# -gt 0 ]]; then
+    if [[ "${1#v}" != "$(package_version)" ]]; then
+        echo "error: tag $1 does not match Cargo.toml version $(package_version)" >&2
+        status=1
+    fi
+    if ! has_changelog_entry "${1#v}"; then
+        echo "error: CHANGELOG.md has no '## [${1#v}]' entry for tag $1" >&2
+        status=1
+    fi
+fi
+
+exit "$status"
