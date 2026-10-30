@@ -188,7 +188,7 @@ repo:
    - add a `### Science` section to the CHANGELOG entry (section 6)
 4. Review changes to the Python API, CLI, and output metadata since the previous tag and confirm the
    bump matches section 4.
-5. Run `scripts/test` and `scripts/typecheck`.
+5. Run `scripts/test`, `scripts/typecheck`, and `scripts/check-versions`.
 6. Move the `[Unreleased]` CHANGELOG entries into the new release entry (section 6), including:
    - the `**Algorithm version:**` line
    - whether validation was run, with a link to the results.
@@ -232,5 +232,7 @@ Release Date: February 3, 2027
 The `[v3.5.1.0]` entry predates this repo's package versions: it is the NASA-IMPACT C release, and
 its version is the algorithm version. Package release entries start at `[1.0.0]`.
 
-CI checks that the `**Algorithm version:**` line of the newest released entry matches
+The `[Unreleased]` entry also states the algorithm version, so a change to
+`lasrc_core::ALGORITHM_VERSION` updates the CHANGELOG in the same PR. CI (`scripts/check-versions`)
+checks that the `**Algorithm version:**` line of the top entry matches
 `lasrc_core::ALGORITHM_VERSION`.
