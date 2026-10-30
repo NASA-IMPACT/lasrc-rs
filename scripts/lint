@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Check formatting and lints without modifying files (suitable for CI).
-# Usage: scripts/lint [rust|python]   (default: both)
+# Usage: scripts/lint [rust|python|markdown]   (default: all)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -17,4 +17,8 @@ fi
 if [[ "$target" == "all" || "$target" == "python" ]]; then
     uv run ruff format --check .
     uv run ruff check .
+fi
+
+if [[ "$target" == "all" || "$target" == "markdown" ]]; then
+    uv run rumdl check .
 fi
