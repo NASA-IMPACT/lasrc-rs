@@ -17,6 +17,8 @@ updates:
     cooldown:
       default-days: 7
     groups:
+      pyo3:
+        patterns: ["pyo3*", "numpy"]
       cargo:
         update-types: [minor, patch]
 
