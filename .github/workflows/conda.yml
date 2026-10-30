@@ -37,15 +37,13 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
+      - name: Install Rust toolchain (from rust-toolchain.toml)
+        if: github.event_name == 'push'
+        run: rustup toolchain install
+
       - name: Check tag matches package version
         if: github.event_name == 'push'
-        run: |
-          # [workspace.package] version; the crates and pyproject.toml inherit it
-          v=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml)
-          if [[ "$v" != "${GITHUB_REF_NAME#v}" ]]; then
-            echo "::error file=Cargo.toml::version $v does not match tag $GITHUB_REF_NAME"
-            exit 1
-          fi
+        run: scripts/check-versions "$GITHUB_REF_NAME"
 
       - uses: prefix-dev/setup-pixi@ad1da6449d9e506fd127fd67ab2d054a769f6a94 # v0.11.2
         with:

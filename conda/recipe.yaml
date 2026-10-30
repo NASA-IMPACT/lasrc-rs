@@ -20,6 +20,13 @@ build:
       # lasrc_py depends on ../lasrc_core by path, so build from the subdir of the full checkout
       - cd lasrc_py
       - $PYTHON -m pip install . --no-deps --no-build-isolation -vv
+      # Exported on activation. Read from the Rust source because the host env lacks the run
+      # dependencies that importing lasrc needs.
+      - v=$(grep '^pub const ALGORITHM_VERSION' ../lasrc_core/src/constants.rs | cut -d'"' -f2)
+      - test -n "$v"
+      - mkdir -p "$PREFIX/etc/conda/activate.d" "$PREFIX/etc/conda/deactivate.d"
+      - echo "export LASRC_ALGORITHM_VERSION=$v" > "$PREFIX/etc/conda/activate.d/lasrc-rs.sh"
+      - echo "unset LASRC_ALGORITHM_VERSION" > "$PREFIX/etc/conda/deactivate.d/lasrc-rs.sh"
 
 requirements:
   build:
@@ -49,6 +56,8 @@ tests:
   - script:
       - lasrc-landsat --help
       - lasrc-sentinel --help
+      - lasrc-landsat --version
+      - test "$LASRC_ALGORITHM_VERSION" = "$(lasrc-landsat --algorithm-version)"
   - python:
       imports:
         - lasrc.pipeline
