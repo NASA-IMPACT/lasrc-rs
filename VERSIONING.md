@@ -113,7 +113,7 @@ Products sharing an algorithm version, given the same inputs, are comparable.
 
 Whether outputs "changed" is decided by validation against the golden dataset, not by judgment. The
 dataset, tolerances, and validation procedure are described in the project wiki:
-<https://github.com/NASA-IMPACT/hls-project/wiki/Validation-Datasets>.
+<https://github.com/NASA-IMPACT/hls-project/wiki/Atmospheric-Correction-Validation>.
 
 Full validation is expensive (~hundreds of compute hours), so it is **not run in CI**. It is run
 manually before any release that could affect outputs, including:
