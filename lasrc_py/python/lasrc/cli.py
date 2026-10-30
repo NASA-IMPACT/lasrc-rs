@@ -2,8 +2,31 @@
 
 import click
 
+from lasrc.lasrc import ALGORITHM_VERSION, __version__
+
+
+def _print_algorithm_version(
+    ctx: click.Context, _param: click.Parameter, value: bool
+) -> None:
+    if not value or ctx.resilient_parsing:
+        return
+    click.echo(ALGORITHM_VERSION)
+    ctx.exit()
+
+
+_algorithm_version_option = click.option(
+    "--algorithm-version",
+    is_flag=True,
+    expose_value=False,
+    is_eager=True,
+    callback=_print_algorithm_version,
+    help="Show the LaSRC algorithm version and exit.",
+)
+
 
 @click.command()
+@click.version_option(__version__)
+@_algorithm_version_option
 @click.option(
     "--input",
     "input_path",
@@ -132,6 +155,8 @@ def landsat(
 
 
 @click.command()
+@click.version_option(__version__)
+@_algorithm_version_option
 @click.option(
     "--input",
     "input_path",
