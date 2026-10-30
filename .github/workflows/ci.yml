@@ -35,6 +35,9 @@ jobs:
       - name: Install Python (from .python-version)
         run: uv python install
 
+      - name: Check versions
+        run: scripts/check-versions
+
       - name: Lint
         run: scripts/lint rust
 

@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Check that versions agree across the repo (see VERSIONING.md).
+# Usage: scripts/check-versions [TAG]
+#
+#   - every workspace crate has the same version, and Cargo.lock is up to date
+#   - the top CHANGELOG.md entry's algorithm version matches lasrc_core::ALGORITHM_VERSION
+#   - the conda recipe's rust floor matches rust-toolchain.toml
+#   - TAG (e.g. v1.2.3), if given, matches the package version
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+status=0
+fail() {
+    echo "error: $*" >&2
+    status=1
+}
+
+# --locked fails on a stale Cargo.lock. That needs a full resolve (not --no-deps), which may fetch
+# the crates.io index.
+metadata=$(cargo metadata --locked --format-version 1)
+members=$(python3 -c '
+import json, sys
+m = json.load(sys.stdin)
+ids = set(m["workspace_members"])
+for p in m["packages"]:
+    if p["id"] in ids:
+        print(p["name"], p["version"])
+' <<<"$metadata")
+package_version=$(head -n 1 <<<"$members" | cut -d' ' -f2)
+while read -r name version; do
+    if [[ "$version" != "$package_version" ]]; then
+        fail "crate $name has version $version, expected $package_version"
+    fi
+done <<<"$members"
+
+algorithm_version=$(grep '^pub const ALGORITHM_VERSION' lasrc_core/src/constants.rs | cut -d'"' -f2)
+# Third field of "**Algorithm version:** X" within the first "## [" entry
+changelog_version=$(awk '/^## \[/ { n++ } n == 1 && /^\*\*Algorithm version:\*\*/ { print $3; exit }' \
+    CHANGELOG.md)
+if [[ -z "$changelog_version" ]]; then
+    fail "top CHANGELOG.md entry has no '**Algorithm version:**' line"
+elif [[ "$changelog_version" != "$algorithm_version" ]]; then
+    fail "CHANGELOG.md algorithm version $changelog_version does not match" \
+        "lasrc_core::ALGORITHM_VERSION $algorithm_version"
+fi
+
+toolchain=$(sed -n 's/^channel = "\(.*\)"/\1/p' rust-toolchain.toml)
+conda_floor=$(sed -n 's/^ *- rust >=\(.*\)/\1/p' conda/recipe.yaml)
+if [[ "$(cut -d. -f1,2 <<<"$toolchain")" != "$(cut -d. -f1,2 <<<"$conda_floor")" ]]; then
+    fail "conda/recipe.yaml rust >=$conda_floor does not match rust-toolchain.toml $toolchain"
+fi
+
+if [[ $# -gt 0 && "${1#v}" != "$package_version" ]]; then
+    fail "tag $1 does not match package version $package_version"
+fi
+
+if [[ "$status" == 0 ]]; then
+    echo "package $package_version, algorithm $algorithm_version, rust $toolchain"
+fi
+exit "$status"
