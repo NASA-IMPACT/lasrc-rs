@@ -69,7 +69,8 @@ See the decision table in section 4, which covers both the package and the algor
 ```
 
 - `upstream` is the USGS release this lineage forked from (e.g. `3.5.1`).
-- `fork_rev` is our revision counter, starting at `0`. It increments by one per algorithm change.
+- `fork_rev` is our revision counter, starting at `0`. It increments by one per release that
+  changes the algorithm. Several algorithm changes in one release share a single bump.
 
 The current algorithm version is the one in the newest release entry of `CHANGELOG.md`.
 
@@ -182,8 +183,9 @@ repo:
    (`cargo update --workspace`).
 2. If the release could affect outputs (see section 2.3), run the golden-dataset validation and
    record the result.
-3. If science changed:
-   - bump `fork_rev` in `lasrc_core::ALGORITHM_VERSION`
+3. If science changed since the previous release:
+   - confirm `fork_rev` in `lasrc_core::ALGORITHM_VERSION` was bumped once (usually by the first
+     science PR)
    - refresh the golden reference outputs
    - add a `### Science` section to the CHANGELOG entry (section 6)
 4. Review changes to the Python API, CLI, and output metadata since the previous tag and confirm the
@@ -192,6 +194,8 @@ repo:
 6. Move the `[Unreleased]` CHANGELOG entries into the new release entry (section 6), including:
    - the `**Algorithm version:**` line
    - whether validation was run, with a link to the results.
+
+   Then start a new, empty `[Unreleased]` entry that keeps the `**Algorithm version:**` line.
 7. Merge to `main`, then tag `vX.Y.Z` on that commit and push the tag. The Conda workflow checks the
    tag against `Cargo.toml` and publishes to the stable channel.
 
@@ -215,7 +219,8 @@ Release Date: November 12, 2026
 ```
 
 When the algorithm version changes, the entry has a `### Science` section, before the other
-sections, describing the change and linking to validation results:
+sections, describing the changes and linking to the release's validation results (e.g. a wiki
+page). Links to individual PRs are optional:
 
 ```markdown
 ## [1.4.0]
@@ -226,7 +231,9 @@ Release Date: February 3, 2027
 
 ### Science
 
-- Fix <bug> affecting <regime>. Validation: <link>
+Validation: <link to results>
+
+- Fix <bug> affecting <regime> (#123)
 ```
 
 The `[v3.5.1.0]` entry predates this repo's package versions: it is the NASA-IMPACT C release, and

@@ -67,7 +67,7 @@ scripts/lint rust      # Rust checks only
 scripts/lint python    # Python checks only
 scripts/lint markdown  # Markdown checks only
 scripts/typecheck      # mypy on lasrc_py/python, stubtest on the lasrc.lasrc extension stub
-scripts/check-versions # crate, CHANGELOG algorithm, and conda rust versions agree (VERSIONING.md)
+scripts/check-versions # CHANGELOG algorithm version matches the code (VERSIONING.md)
 ```
 
 CI (`.github/workflows/ci.yml`) runs these same scripts in separate `rust` and `python` jobs.
