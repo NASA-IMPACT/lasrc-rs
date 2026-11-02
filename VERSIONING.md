@@ -18,9 +18,10 @@ Changes to the algorithm logic are done intentionally, and divergence among the 
 algorithm are evaluated by comparison testing on representative samples of data.
 
 The versions are related to one another. A scientific algorithm specification bump implies at least
-a minor package bump, but the reverse does not hold. The product version is decided by the HLS
-project and can change for reasons outside this repo (other processing steps), so it is not tied to
-either version here (see section 3).
+a minor package bump, and a major bump if outputs are no longer comparable (see section 4), but the
+reverse does not hold. The product version is decided by the HLS project and can change for reasons
+outside this repo (other processing steps), so it is not tied to either version here (see section
+3).
 
 ---
 
@@ -93,7 +94,8 @@ It is a domain value, not a package version: it never appears in `Cargo.toml` or
 > **The algorithm version bumps if and only if the same inputs (including ancillary data) produce
 > different outputs (beyond tolerance), or the meaning of an output changes.**
 
-Products sharing an algorithm version, given the same inputs, are comparable.
+Products sharing an algorithm version, given the same inputs, are comparable. See the decision table
+in section 4 for how each kind of change affects the package version.
 
 **Bump** for:
 
@@ -169,11 +171,13 @@ repo:
 | Cherry-pick logic from a newer USGS release | minor+ | bump (record provenance in CHANGELOG) |
 | Changed meaning of an existing QA bit or fill value | major | bump |
 | Changed default science parameter | major | bump |
+| Outputs no longer comparable with earlier algorithm versions (e.g. moving off the semi-empirical path) | major | bump |
 | Removing or renaming public API, a CLI option, or a metadata field | major | no |
 | Adding a required parameter to a public function or CLI command | major | no |
 | Remove an ancillary adapter | major | no |
 
-"minor+" means minor at least. Use major if downstream users are expected to reprocess.
+"minor+" means minor at least. Use major if outputs are no longer comparable with earlier algorithm
+versions. The HLS project still makes the reprocessing decision (section 3).
 
 ---
 
