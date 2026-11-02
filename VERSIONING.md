@@ -69,16 +69,19 @@ See the decision table in section 4, which covers both the package and the algor
 {upstream}.{fork_rev}
 ```
 
-- `upstream` is the USGS release this lineage forked from (e.g. `3.5.1`).
+- `upstream` is the USGS C release this lineage forked from (`3.5.1`). It identifies the starting
+  point and is not expected to change.
 - `fork_rev` is our revision counter, starting at `0`. It increments by one per release that
-  changes the algorithm. Several algorithm changes in one release share a single bump.
+  changes the algorithm, whichever upstream the change came from. Several algorithm changes in one
+  release share a single bump.
 
 The current algorithm version is the one in the newest release entry of `CHANGELOG.md`.
 
-**Lineage:** forked from the USGS C implementation at v3.5.1. USGS has since continued development
-privately. `v3.5.1.0` is the NASA-IMPACT C release that added fixes on top of v3.5.1, including
-masking a pixel if any band has invalid data (see its `CHANGELOG.md` entry). The Rust port did not
-change outputs.
+**Lineage:** the algorithm is developed by its author in Fortran, which both USGS and HLS have
+drawn from. This repo descends from the USGS C implementation at v3.5.1. `v3.5.1.0` is the
+NASA-IMPACT C release that added fixes on top of v3.5.1, including masking a pixel if any band has
+invalid data (see its `CHANGELOG.md` entry). The Rust port did not change outputs. Later changes
+can come from either upstream, and neither follows a release schedule this project controls.
 
 The algorithm version is defined once in `lasrc_core` as `lasrc_core::ALGORITHM_VERSION`. It is
 exposed as:
@@ -103,7 +106,7 @@ in section 4 for how each kind of change affects the package version.
 - Changes to static science data: aerosol LUTs, coefficients, ratio files
 - Changes to the meaning of an existing QA bit, fill value, or scale factor
 - A changed default for a science parameter (threshold, retrieval setting)
-- Adopting logic from a newer upstream USGS release
+- Adopting logic from an upstream source (the algorithm author or USGS)
 
 **Do not bump** for:
 
@@ -168,7 +171,7 @@ repo:
 | Dropping a Python version | minor | no |
 | Output-changing bug fix | minor+ | bump |
 | Updated LUTs or coefficients | minor+ | bump |
-| Cherry-pick logic from a newer USGS release | minor+ | bump (record provenance in CHANGELOG) |
+| Adopt logic from an upstream source | minor+ | bump (record provenance in CHANGELOG) |
 | Changed meaning of an existing QA bit or fill value | major | bump |
 | Changed default science parameter | major | bump |
 | Outputs no longer comparable with earlier algorithm versions (e.g. moving off the semi-empirical path) | major | bump |
