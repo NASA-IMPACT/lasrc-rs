@@ -88,7 +88,9 @@ atmospheric terms for this band at this AOT" calls `atmcorlamb2_new`. It first c
 retrieved 550 nm AOT, $\tau_{550}$, to the AOT that band's polynomials are indexed by:
 
 $$
-\tau_b = \min\left( \frac{\tau_{550}}{n_b} \left( \frac{\lambda_b}{0.55} \right)^{-\epsilon},\ \tau_{\max,b} \right)
+\tau_b = \min\left(
+  \frac{\tau_{550}}{n_b} \left( \frac{\lambda_b}{0.55} \right)^{-\epsilon},\ \tau_{\max,b}
+\right)
 $$
 
 where $\lambda_b$ is the band's center wavelength in micrometers, $\epsilon$ is the Angstrom
