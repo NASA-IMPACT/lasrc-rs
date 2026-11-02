@@ -46,8 +46,8 @@ with releases from the upstream.
 
 - Support Sentinel-2C and -2D by updating hard coded platform values
 - Include `PROC_ALL_BANDS` definition
-- Mask a pixel if _any_ band has invalid data [#17](https://github.com/NASA-IMPACT/espa-surface-reflectance/pull/17)
-
+- Mask a pixel if _any_ band has invalid data
+  [#17](https://github.com/NASA-IMPACT/espa-surface-reflectance/pull/17)
 
 [Unreleased]: https://github.com/NASA-IMPACT/espa-surface-reflectance/tree/v3.5.1.0...HEAD
 [v3.5.1.0]: https://github.com/NASA-IMPACT/espa-surface-reflectance/tree/v3.5.1.0

@@ -1,8 +1,8 @@
 # LaSRC glossary
 
-The C variable names carried into the Rust port are terse and mostly undocumented.
-This is what they mean, with the C declaration to check against. File references are
-to the C code version ([lasrc/c_version](https://github.com/NASA-IMPACT/espa-surface-reflectance/tree/eros-collection2-3.5.1/lasrc/c_version)).
+The C variable names carried into the Rust port are terse and mostly undocumented. This is what they
+mean, with the C declaration to check against. File references are to the C code version
+([lasrc/c_version](https://github.com/NASA-IMPACT/espa-surface-reflectance/tree/eros-collection2-3.5.1/lasrc/c_version)).
 
 ## Naming conventions
 

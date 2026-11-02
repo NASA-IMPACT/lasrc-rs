@@ -5,7 +5,7 @@ reflectance (SR) on its default, "semi-empirical" path (`use_orig_aero=false`). 
 NASA HLS runs in production. It applies to both Landsat and Sentinel-2; differences are noted
 where they matter. For variable names (`roatm`, `erelc`, `troatm`, ...) see `docs/GLOSSARY.md`.
 
-### The big picture
+## The big picture
 
 The atmosphere changes what the sensor sees in three ways: it adds scattered light (path
 reflectance, `roatm`), it attenuates light on the way down and back up (transmission,
