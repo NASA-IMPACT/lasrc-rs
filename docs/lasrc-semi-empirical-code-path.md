@@ -5,7 +5,7 @@ reflectance (SR) on its default, "semi-empirical" path (`use_orig_aero=false`). 
 NASA HLS runs in production. It applies to both Landsat and Sentinel-2; differences are noted
 where they matter. For variable names (`roatm`, `erelc`, `troatm`, ...) see `docs/GLOSSARY.md`.
 
-### The big picture
+## The big picture
 
 The atmosphere changes what the sensor sees in three ways: it adds scattered light (path
 reflectance, `roatm`), it attenuates light on the way down and back up (transmission,
@@ -88,7 +88,9 @@ atmospheric terms for this band at this AOT" calls `atmcorlamb2_new`. It first c
 retrieved 550 nm AOT, $\tau_{550}$, to the AOT that band's polynomials are indexed by:
 
 $$
-\tau_b = \min\left( \frac{\tau_{550}}{n_b} \left( \frac{\lambda_b}{0.55} \right)^{-\epsilon},\ \tau_{\max,b} \right)
+\tau_b = \min\left(
+  \frac{\tau_{550}}{n_b} \left( \frac{\lambda_b}{0.55} \right)^{-\epsilon},\ \tau_{\max,b}
+\right)
 $$
 
 where $\lambda_b$ is the band's center wavelength in micrometers, $\epsilon$ is the Angstrom
