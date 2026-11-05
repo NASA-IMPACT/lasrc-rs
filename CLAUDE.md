@@ -25,6 +25,8 @@ Prefer the scripts in `scripts/` (CI runs the same ones):
 - `scripts/lint [rust|python]` - check-only: cargo fmt, clippy `-D warnings`, ruff
 - `scripts/format` - apply cargo fmt, ruff format, ruff auto-fixes
 - `scripts/typecheck` - mypy on `lasrc_py/python`
+- `scripts/check-versions [TAG]` - CHANGELOG algorithm version matches the code, and TAG (if given)
+  matches the `Cargo.toml` version (see `VERSIONING.md`)
 
 Running cargo directly: the `lasrc_py` crate builds against Python via PyO3, which uses the first
 `python3` on PATH. Set `PYO3_PYTHON="$(uv python find)"` to match the project interpreter (the
