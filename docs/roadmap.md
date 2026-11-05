@@ -64,6 +64,31 @@ this in mind for changes to that code, such as `performance.md` items 5, 7, and 
 - [ ] Save the verified port baseline outputs, and keep the outputs of each release
 - [ ] Add the CI tripwire that `VERSIONING.md` section 2.3 describes, which isn't in
       `.github/workflows/ci.yml` yet
+- [ ] Add a manually triggered full-granule check (see below)
+
+### Full-granule check
+
+The tripwire runs on small fixtures, and full validation takes hundreds of compute hours. Most
+changes in this loop are expected to leave outputs unchanged, and for those a check on one full
+granule would give an answer within the hour. That makes it the fastest way to iterate.
+
+The check would run at least one Landsat granule on demand for a PR, and compare the reflectance
+against the previous release's outputs with the 5 DN limit. It would report the per-band mean
+differences in the PR. A Sentinel-2 granule could be added later, at about twice the pixels.
+
+Things to decide:
+
+- **Trigger.** `workflow_dispatch` on the PR branch, or a PR label. This repo is public, so the
+  workflow must not run fork code with secrets. Avoid `pull_request_target`.
+- **Data.** The LUTs, climatology, and ancillary data for the granule are large. Fetching them from
+  S3 with an OIDC role, plus caching, is likely better than storing them in the repo.
+- **Runner.** A full Landsat scene may need more memory than a standard GitHub runner has. A larger
+  hosted runner is simpler and safer than a self-hosted one for a public repo.
+- **Reference outputs.** These come from the baseline prerequisite above, and need updating with
+  each release.
+
+Passing this check is a reason to go ahead with a change, not a replacement for full validation
+before release.
 
 ## 1. Remove C equivalence code
 
@@ -109,6 +134,20 @@ constraints in a few ways:
   in `rust-toolchain.toml` and the matching floor in `conda/recipe.yaml`. Each use is a change to
   put through the loop above.
 
+### Instance type
+
+Production runs on memory-optimized instances (`r5d`, and likely `r6id` later). Fmask's memory use
+may be what sets this, and separate work is reducing it. Once that work and the performance work
+here are done, the balance of memory and CPU each job needs will have changed.
+
+- [ ] Measure peak memory and core-seconds per scene for the whole job, for both sensors
+- [ ] Compare memory-optimized (`r`), general-purpose (`m`), and compute-optimized (`c`)
+      instances by cost per scene. `m6id` and `c6id` are the counterparts to `r6id` with local NVMe
+      storage.
+- [ ] Revisit the core count per job at the same time (`performance.md` item 13)
+
+This is a job-level decision that goes beyond this repo, but the results here feed into it.
+
 ## 3. Likely bugs
 
 These were kept for equivalence, and fixing them may exceed the 5 DN limit. All of them are in the C
@@ -126,8 +165,8 @@ them before changing anything.
 
 - [ ] **`eps` fit truncation.** `xd` truncates -3.1875 to -3, in both the Landsat and Sentinel-2
       paths. This directly affects the fitted `eps`. It looks accidental: the Fortran declared `xd`
-      as an integer alongside `yd`, `zone`, and `sphere`. The C code didn't truncate until 2020, when
-      USGS changed it to match the Fortran (`6c66205`).
+      as an integer alongside `yd`, `zone`, and `sphere`. The C code didn't truncate until 2020,
+      when USGS changed it to match the Fortran (`6c66205`).
 - [ ] **Transmission grid.** `comptrans` picks an index into the `tts` table with the view grid for
       `xtv`, then interpolates using the table's solar angles. The Fortran does the same for both
       sensors.

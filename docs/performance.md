@@ -138,8 +138,13 @@ confirm in the disassembly).
 - **Outputs should not change.** Rust does not fuse `a * b + c` into FMA unless `mul_add` is called,
   and it does not reorder floating-point sums. It is still a toolchain change that touches numerics,
   so include it in a validation run.
-- **Check the fleet first.** The binary crashes on CPUs without AVX2. `x86-64-v4` (AVX-512) is not
-  worth the narrower hardware support.
+- **The current fleet supports it.** The binary crashes on CPUs without AVX2. Production runs on
+  `r5d` (Intel Skylake-SP and Cascade Lake) and will likely add `r6id` (Intel Ice Lake). Both have
+  AVX2, so `x86-64-v3` is safe. Recheck this if the fleet adds other instance families.
+- **Leave `x86-64-v4` (AVX-512) for later.** Both instance families support it, but it gains little
+  until items 4 and 10 make the hot loops vectorize. Skylake also lowers its clock speed under heavy
+  AVX-512 use, so measure on `r5d` before adopting it. Ice Lake is much less affected. A v4 build
+  would also rule out AMD and older Intel instances.
 
 ### 3. Profile-guided optimization
 
@@ -271,6 +276,11 @@ compare physical cores against hyperthreads. If parallel efficiency falls off, a
 be cheaper per scene, as long as Fmask's memory floor can still be met. This takes no code and can
 be done at any time, but item 5 and item 7 will change the answer.
 
+The core count may also be a side effect of memory. `r5d` and `r6id` are memory-optimized, with 8
+GiB per vCPU, so a job sized for Fmask's memory gets the cores that come with it. Once the
+performance work here and the Fmask memory work are done, reevaluate the instance family as well as
+the core count (see the [roadmap](roadmap.md#2-lower-compute-cost)).
+
 ### 14. Remaining serial sections
 
 These still run serially: `aerosol_interp_sentinel`, `ipflag_expand_failed_sentinel`, the result
@@ -280,8 +290,8 @@ except from `aerosol_interp_sentinel`, which item 7 addresses. Revisit if item 0
 
 ### 15. ARM builds
 
-Graviton instances are often cheaper for the same throughput. The Conda workflow publishes only
-`linux-64`. This depends on the whole job, including Fmask and the other HLS steps, and a different
+Graviton instances are often cheaper for the same throughput. `r6gd` is the Graviton counterpart
+to `r6id`, with local NVMe storage. The Conda workflow publishes only `linux-64`. This depends on the whole job, including Fmask and the other HLS steps, and a different
 libm and CPU would need validation. It is a job-level decision that goes beyond this repo.
 
 ### 16-18. Science-changing options
