@@ -290,9 +290,10 @@ except from `aerosol_interp_sentinel`, which item 7 addresses. Revisit if item 0
 
 ### 15. ARM builds
 
-Graviton instances are often cheaper for the same throughput. `r6gd` is the Graviton counterpart
-to `r6id`, with local NVMe storage. The Conda workflow publishes only `linux-64`. This depends on the whole job, including Fmask and the other HLS steps, and a different
-libm and CPU would need validation. It is a job-level decision that goes beyond this repo.
+Graviton instances are often cheaper for the same throughput. `r6gd` is the Graviton counterpart to
+`r6id`, with local NVMe storage. The Conda workflow publishes only `linux-64`. This depends on the
+whole job, including Fmask and the other HLS steps, and a different libm and CPU would need
+validation. It is a job-level decision that goes beyond this repo.
 
 ### 16-18. Science-changing options
 
