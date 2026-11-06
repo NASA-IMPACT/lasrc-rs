@@ -12,6 +12,9 @@ Rust port of the Land Surface Reflectance Code (LaSRC) algorithm created by
   of how LaSRC turns TOA reflectance into surface reflectance on the default path used by NASA HLS
 - [Glossary](docs/GLOSSARY.md) - what the terse variable names carried over from the C code
   (`roatm`, `xmus`, `erelc`, ...) mean
+- [Roadmap](docs/roadmap.md) - planned cleanup, performance, and science work, and how changes get
+  accepted
+- [Performance roadmap](docs/performance.md) - past optimizations and a ranked list of future ones
 
 ## Developer getting started
 
