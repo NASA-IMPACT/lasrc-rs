@@ -1,19 +1,21 @@
 # Roadmap
 
-Port verification is complete. The Rust code reproduced the C code's outputs, and the type casts and
-duplicate code paths that made this possible have done their job. They made floating-point noise
-disappear so that real logic bugs stood out, but they now make the code harder to read and to
-optimize.
+Port verification is complete. The Rust code reproduces the C code's outputs, using type casts and
+duplicate code paths that match C. These removed floating-point differences during verification, so
+that logic bugs were easier to find. Now they make the code harder to read and to optimize.
 
 The work ahead has four goals:
 
 1. Remove what was added only for equivalence with C
 2. Lower compute cost (see [`performance.md`](performance.md))
-3. Process Sentinel-2 at 30 m, which is the resolution of the final product
-4. Make the code general enough to support other sensors, possibly including commercial satellites
 
-Goals 1 and 2 should leave outputs effectively unchanged. Goals 3 and 4 change the product on
-purpose and are tracked separately.
+We have also discussed goals with much larger scope, including:
+
+1. Process Sentinel-2 at 30 m, which is the resolution of the final product
+2. Make the code general enough to support other sensors, possibly including commercial satellites
+
+The first two goals should leave outputs effectively unchanged. The second set of goals change the
+product on purpose and are tracked separately.
 
 ## How changes get accepted
 
@@ -26,7 +28,11 @@ Work through the cleanup and performance lists one change at a time:
 The methodology and acceptance criteria are in the
 [validation wiki page](https://github.com/NASA-IMPACT/hls-project/wiki/Atmospheric-Correction-Validation).
 
-### The limit
+The figures and tables from each verification round will be saved to the HLS project wiki
+as part of documenting each release. Outputs may be deleted over time to save cost since
+it's possible to regenerate them using older versions of the Docker container.
+
+### Acceptance limit
 
 The limit is an **absolute mean difference of less than 5 DN across all pixels** for each
 reflectance band.
@@ -46,7 +52,7 @@ evaluated as better or worse, so they are not part of acceptance.
 - **The verified port baseline (cumulative change).** This shows how far outputs have moved in
   total, so that many small changes can't add up unnoticed.
 
-### Beyond the mean
+### Localized changes
 
 A mean can hide changes that matter, because a large change over a small area barely moves it. This
 can happen in the aerosol retrieval, where a comment on `utm_to_deg` notes that a 1 ULP change can
@@ -55,37 +61,21 @@ are how to catch this.
 
 ### Test scenes
 
-The science team decides the validation dataset. Belmanip2 is filtered to less than 30% cloud and
-more than 50% coverage, so it gives less coverage of failed aerosol retrievals and fill edges. Keep
-this in mind for changes to that code, such as `performance.md` items 5, 7, and 11.
-
-### Prerequisites
-
-- [ ] Save the verified port baseline outputs, and keep the outputs of each release
-- [ ] Add the CI tripwire that `VERSIONING.md` section 2.3 describes, which isn't in
-      `.github/workflows/ci.yml` yet
-- [ ] Add a manually triggered full-granule check (see below)
+The science team picked a validation dataset for this effort, "Belmanip2".
+[Belmanip2](https://github.com/NASA-IMPACT/hls-project/wiki/Atmospheric-Correction-Validation#belmanip2)
+is filtered to less than 30% cloud and more than 50% coverage, so it gives less coverage of failed
+aerosol retrievals and fill edges. Keep this in mind for changes to that code, such as
+`performance.md` items 5, 7, and 11.
 
 ### Full-granule check
 
 The tripwire runs on small fixtures, and full validation takes hundreds of compute hours. Most
 changes in this loop are expected to leave outputs unchanged, and for those a check on one full
-granule would give an answer within the hour. That makes it the fastest way to iterate.
+granule would give an answer within the hour. That makes it the fastest way to check a change.
 
 The check would run at least one Landsat granule on demand for a PR, and compare the reflectance
 against the previous release's outputs with the 5 DN limit. It would report the per-band mean
 differences in the PR. A Sentinel-2 granule could be added later, at about twice the pixels.
-
-Things to decide:
-
-- **Trigger.** `workflow_dispatch` on the PR branch, or a PR label. This repo is public, so the
-  workflow must not run fork code with secrets. Avoid `pull_request_target`.
-- **Data.** The LUTs, climatology, and ancillary data for the granule are large. Fetching them from
-  S3 with an OIDC role, plus caching, is likely better than storing them in the repo.
-- **Runner.** A full Landsat scene may need more memory than a standard GitHub runner has. A larger
-  hosted runner is simpler and safer than a self-hosted one for a public repo.
-- **Reference outputs.** These come from the baseline prerequisite above, and need updating with
-  each release.
 
 Passing this check is a reason to go ahead with a change, not a replacement for full validation
 before release.
@@ -163,10 +153,16 @@ algorithm author's current version.
 These come from the algorithm's source and are not C port errors. Ask the algorithm author about
 them before changing anything.
 
-- [ ] **`eps` fit truncation.** `xd` truncates -3.1875 to -3, in both the Landsat and Sentinel-2
-      paths. This directly affects the fitted `eps`. It looks accidental: the Fortran declared `xd`
-      as an integer alongside `yd`, `zone`, and `sphere`. The C code didn't truncate until 2020,
+- [ ] **`eps` fit truncation ([#21](https://github.com/NASA-IMPACT/lasrc-rs/issues/21)).** `xd`
+      truncates -3.1875 to -3, in both the Landsat and Sentinel-2 paths. This directly affects the
+      fitted `eps`. It looks accidental: the Fortran declared `xd` as an integer alongside `yd`,
+      `zone`, and `sphere`. The C code didn't truncate until 2020,
       when USGS changed it to match the Fortran (`6c66205`).
+- [ ] **Sentinel-2 `eps` fallback check
+      ([#22](https://github.com/NASA-IMPACT/lasrc-rs/issues/22)).** `resepsmin` evaluates the fit
+      with its inputs (`xa`, `xb`, `xc`) instead of its coefficients, so the fallback to `eps1` or
+      `eps3` effectively never runs. When the fitted curve opens downward, the retrieval keeps the
+      `eps` with the highest fitted residual. The Landsat code has no such check.
 - [ ] **Transmission grid.** `comptrans` picks an index into the `tts` table with the view grid for
       `xtv`, then interpolates using the table's solar angles. The Fortran does the same for both
       sensors.

@@ -8,7 +8,7 @@ which also defines how changes get accepted.
 operations, not from profiling. Expect some to be wrong, and replace them with measurements as items
 are picked up (see [item 0](#0-measure-first)).
 
-## What matters
+## Cost context
 
 | | Sentinel-2 | Landsat |
 |---|---|---|
@@ -41,10 +41,10 @@ the C workflow because it needs no intermediate file conversions on input and ou
 | `4b3efd0`, `083b7a8` | S2: borrow the QA band instead of copying it (~241 MB) | Memory |
 
 Rayon spreads work across cores, which reduces wall clock but not total core-seconds. The memory
-commits remove allocations and copies, but their main effect is on memory. So far, little has
-reduced the amount of computation, and that is where this roadmap starts.
+commits remove allocations and copies, but their main effect is on memory. Little of this work has
+reduced the amount of computation, which is what most of the items below target.
 
-## Where the time probably goes
+## Estimated hotspots
 
 These are operation counts for a full scene with no fill pixels. Sentinel-2 is 10980 x 10980
 (~120.6M pixels) and Landsat uses the 7771 x 7641 test scene (~59M pixels). The "core-seconds"
@@ -60,7 +60,7 @@ column multiplies the count by a guessed per-operation cost, so use it only for 
 | Final correction: `atmcorlamb2_new` for 7 bands, plus `clim_sr` | Landsat | up to ~416M calls | 20-40 |
 
 Input and output are not in this table and may matter just as much, especially JP2 decoding for
-Sentinel-2. Item 0 settles this.
+Sentinel-2. Item 0 measures this.
 
 ## Roadmap
 
@@ -105,9 +105,9 @@ larger share of what remains.
 **Suggested order:** do 0 first, then the build items (1-3), because they need no changes to the
 algorithm code and they make every later measurement more realistic. Then do 4, which lets the AVX2
 build and later SIMD work pay off. Then do 5 and 6, which are the largest changes that keep outputs
-identical. Decide on 10 and later items using the new measurements. Items 16-18 each need a science
-conversation rather than an engineering one, and items 16 and 17 are the only ones that could change
-the cost by a large factor.
+identical. Decide on 10 and later items using the new measurements. Items 16-18 each need a
+decision from the HLS project, and items 16 and 17 are the only ones that could change the cost by a
+large factor.
 
 ## Item notes
 
@@ -138,7 +138,7 @@ confirm in the disassembly).
 - **Outputs should not change.** Rust does not fuse `a * b + c` into FMA unless `mul_add` is called,
   and it does not reorder floating-point sums. It is still a toolchain change that touches numerics,
   so include it in a validation run.
-- **The current fleet supports it.** The binary crashes on CPUs without AVX2. Production runs on
+- **Production instances support it.** The binary crashes on CPUs without AVX2. Production runs on
   `r5d` (Intel Skylake-SP and Cascade Lake) and will likely add `r6id` (Intel Ice Lake). Both have
   AVX2, so `x86-64-v3` is safe. Recheck this if the fleet adds other instance families.
 - **Leave `x86-64-v4` (AVX-512) for later.** Both instance families support it, but it gains little
@@ -307,9 +307,9 @@ roadmap.
   evaluations in the final loop from ~1.45B to ~0.67B. This assumes aerosol can be sampled or
   averaged onto the coarser grid.
 - **17. Process S2 at 30 m.** The HLS product is 30 m, but LaSRC runs on a 10 m grid, which is 9
-  times the pixels, and the output is later converted to 30 m. This is the largest "do less work"
-  option. The trade-off is correcting then aggregating versus aggregating then correcting, which
-  will likely change the product significantly.
+  times the pixels, and the output is later converted to 30 m. This is the largest reduction in
+  work on this list. The trade-off is correcting then aggregating versus aggregating then
+  correcting, which will likely change the product significantly.
 - **18. Skip retrieval on known clouds.** Windows under cloud are retrieved and often fail, and the
   S2 failure handling adds more work. Fmask runs in the same job, so its mask could skip them, but
   this needs Fmask to run first. Older upstream commits such as `b0d6a7d` suggest a similar idea and
