@@ -29,9 +29,9 @@ Nothing outside `lasrc/c_version/src` changes in content.
 
 1. **New GRIB input path** for water vapor and ozone, read from two GDAS files that bracket the
    scene acquisition time (`--aux` and a new `--aux2` option).
-2. **Temporal interpolation**: linear in time between the two GDAS analyses.
-3. **Spatial interpolation**: bilinear from the GDAS grid (1 degree) onto the 0.05 degree CMG grid
-   that the rest of LaSRC already uses.
+2. **Temporal interpolation**: linear in time between the two GDAS 0-hour forecasts.
+3. **Spatial interpolation**: bilinear from the GDAS grid onto the 0.05 degree CMG grid that the
+   rest of LaSRC already uses.
 4. **Sentinel-2 acquisition time** is now read from `MTD_MSIL1C.xml`. Before this change it was
    always midnight (`T00:00:00`).
 5. Changes **not related to GDAS**:
@@ -61,8 +61,9 @@ lasrc --xml=LC08_L1TP_078014_20220306_20220314_02_T1.xml \
 
 Before this change the source came from the filename (`04ANC` means VIIRS, `L8ANC` means MODIS).
 The aux source enum gains `AUXNULL = -1` and `GRIB`. If the filename matches neither VIIRS nor
-MODIS, `lasrc` opens `$LASRC_AUX_DIR/LADS/<aux>` and checks for the `GRIB` magic bytes. Byte 7
-holds the GRIB edition (1 or 2). Both GRIB1 and GRIB2 are supported, through two vendored readers:
+MODIS, `lasrc` opens `$LASRC_AUX_DIR/LADS/<aux>` and checks for the `GRIB` magic bytes. The byte
+at offset 7 (octet 8) holds the GRIB edition, 1 or 2 (`lut_subr.c:3909-3913`). Both GRIB1 and
+GRIB2 are supported, through two vendored readers:
 
 - `grib.c` / `grib.h` (GRIB1, about 3,500 lines, adapted from `wgrib`)
 - `PGE11_grib2.c` / `PGE11_grib2.h` / `PGE11_grb2.h` (GRIB2, about 6,000 lines, adapted from
@@ -122,9 +123,9 @@ Water vapor in g/cm^2 is `DN / WV_SCALE_FACTOR = PWAT * 10 / 200 = PWAT / 20`
 0.1 g/cm^2, so the correct value is `PWAT / 10`. The GRIB path halves water vapor. Ozone is scaled
 correctly.
 
-The GRIB path copies the divisor of 200 from the MODIS and VIIRS paths. The VIIRS
-`Coarse Resolution Water Vapor` dataset has `scale_factor=0.01`, so with VIIRS input the physical
-divisor is 100, and 200 halves water vapor.
+The GRIB path copies the divisor of 200 from the MODIS and VIIRS paths. With VIIRS input it halves
+water vapor too: the VIIRS `Coarse Resolution Water Vapor` dataset has `scale_factor=0.01`, so the
+physical divisor is 100.
 
 The 200 comes from the algorithm author's Fortran. The history in `espa-surface-reflectance`:
 
@@ -158,9 +159,9 @@ is not a one-way path either. `comptg` already applies the air mass for both pat
 separate half-column transmission (`tgwvhalf`) on top of the `uwv` it is given.
 
 Whether 200 was physical for the original MODIS `L8ANC` input depends on that product's scale
-factor, which is not checked here. USGS used 100 for VIIRS from 2022-03 to 2023-08, then restored 200 and called it a bug. The
-code doesn't say why. lasrc-rs has the same factor (`wv_scale` 200 in
-`lasrc_py/python/lasrc/aux.py`).
+factor, which is not checked here. USGS used 100 for VIIRS from 2022-03 to 2023-08, then restored
+200, calling it a bug in the commit message. Neither the code nor the commit says why they restored
+it. lasrc-rs has the same factor today (`wv_scale` 200 in `lasrc_py/python/lasrc/aux.py`).
 
 A DN of 0 counts as fill and is replaced by the default. For GDAS that means a PWAT below
 0.1 kg/m^2. The smallest value in a sample June 2025 file was 0.16, so this is rare.
@@ -206,7 +207,7 @@ The bilinear code (`get_cart_linesamp`, `get_cart_interp`) treats the GDAS grid 
 at latitude `90 - i * dlat`, column `j` at longitude `-180 + j * dlon`. The GDAS spacing comes from
 the grid size (`180 / (ny - 1)` and `360 / nx`), so it is not tied to 1 degree.
 
-Details that matter for reproducing the output exactly:
+Problems in this code, largest effect first:
 
 - **The GDAS grid is shifted one column east.** `reverse_data` (`PGE11_grib2.c:287-300`) moves
   input column `j` (longitude `j * dlon`) to `jj = j + nx / 2 - 1`. After the rotation, column 0
@@ -217,15 +218,15 @@ Details that matter for reproducing the output exactly:
   a query at 0.0 and 16.12 for a query at 15.12. The GRIB1 reader has the same rotation
   (`grib.c:352`). The fix is `jj = j + nx / 2`, or taking the first longitude from the GRIB grid
   definition.
-- **CMG sample points are cell edges, not centers.** Row `i` is sampled at latitude
-  `90 - i * 0.05` and column `j` at `-180 + j * 0.05`. The rest of LaSRC treats CMG cells as
-  centered on `89.975 - i * 0.05` and `-179.975 + j * 0.05`, so the samples are offset by half a
-  CMG cell (0.025 degree) north and west.
-- **The sample coordinates accumulate in single precision.** `CMGlat` and `CMGlon` start from an
-  offset and add or subtract `0.05f` on each step, so they drift slightly over 3600 and 7200 steps.
+- **CMG sample points are cell corners, not centers.** Row `i` is sampled at latitude
+  `90 - i * 0.05` and column `j` at `-180 + j * 0.05`. CMG cell `(i, j)` is centered on
+  `89.975 - i * 0.05`, `-179.975 + j * 0.05` (see below), so the samples are offset by half a CMG
+  cell (0.025 degree) north and west.
 - **The longitude seam is wrong.** For longitudes in the last GDAS column (179 to 180 degrees at 1
   degree), the "east" neighbor index runs off the end of the row into the first column of the next
   row. Those samples blend in a value one GDAS row south instead of wrapping to the same row.
+- **The sample coordinates accumulate in single precision.** `CMGlat` and `CMGlon` start from an
+  offset and add or subtract `0.05f` on each step, so they drift slightly over 3600 and 7200 steps.
 - Out-of-range neighbors would read as 0 (`get_cart_interp`), but this is not reached. The
   southernmost sample is at -89.95, between the last two GDAS rows.
 
@@ -305,8 +306,8 @@ left in a comment. No net change.
 
 ## GDAS data on the NODD bucket
 
-These notes come from a spot check of `s3://noaa-gfs-bdp-pds` (public, no credentials) on
-2026-11-11. They are not part of the upstream branch.
+These notes come from spot checks of `s3://noaa-gfs-bdp-pds` (public, no credentials) on
+2026-11-11 to 2026-11-13. They are not part of the upstream branch.
 
 - Cycles run every 6 hours (00, 06, 12, 18 UTC). The 0-hour forecast is
   `gdas.tHHz.pgrb2.1p00.f000` (1 degree, 360 x 181). A 0.25 degree version (`0p25`) is also
@@ -342,6 +343,15 @@ These notes come from a spot check of `s3://noaa-gfs-bdp-pds` (public, no creden
 - Other files in a cycle directory are not needed: `sfluxgrb` (surface fluxes), `bf`/`sf`,
   `atmf`/`sfcf` and `atmanl`/`sfcanl` (model state on native levels, NetCDF in newer years),
   `bufr_d`/`prepbufr` (observations), `abias`/`satang` (satellite bias corrections).
+- The bucket goes back to 2006, so it covers the whole Landsat 8 and Sentinel-2 record. Years
+  before 2013 were not checked for these files.
+- The older `pgrbf00.grib2` files (checked for 2013-06-01) are the same 1 degree, 360 x 181 GRIB2
+  grid, with PWAT and TOZNE at forecast hour 0. They have no `.idx` file, so the whole file
+  (about 17 MB) has to be fetched.
+- The GDAL GRIB driver bundled with the `rasterio` wheels reads these files. It shifts the grid to
+  start at longitude -180 (correctly, unlike the C reader's off-by-one rotation). It exposes the
+  times in band tags (`GRIB_REF_TIME`, `GRIB_VALID_TIME`, `GRIB_FORECAST_SECONDS`), along with
+  `GRIB_ELEMENT` (`PWAT`, `TOZNE`) and `GRIB_UNIT`.
 
 ### Finding the files for a granule
 
@@ -373,9 +383,10 @@ ready ~= cycle2 + 7 hours        (7 to 13 hours after acquisition)
 
 The wait depends on where `t` falls within its 6 hour window. A granule imaged just after a cycle
 waits about 13 hours, and one imaged just before a cycle waits about 7. Landsat and Sentinel-2
-pass at about 10:30 local time, so UTC time follows longitude, and the wait repeats every 90
-degrees of longitude. The longest waits are just west of about 157.5E, 67.5E, 22.5W and 112.5W.
-Two examples, at 10:30 local:
+cross the equator at about 10:00 to 10:30 local time, so UTC time mostly follows longitude, and
+the wait repeats roughly every 90 degrees of longitude. The local time also shifts with latitude
+(about 20 minutes at 30 degrees and an hour at 60 degrees), so the boundaries between short and
+long waits move with latitude too. Two examples, assuming 10:30 local:
 
 | Granule | UTC time | Cycles | Ready about | Wait |
 |---|---|---|---|---|
@@ -383,19 +394,9 @@ Two examples, at 10:30 local:
 | Japan, 140E | 01:11 | 00Z, 06Z | 13:00 | ~12 hours |
 
 A dependency solver should trigger on the `cycle2` file appearing (an S3 event or polling), not
-on a fixed delay. NODD publishing can lag.
+on a fixed delay, since publishing times vary.
 
 Later forecast hours of the same run land within minutes of its 0-hour file. In the same check,
 the 00Z `f006` (valid at 06Z) landed at 07:08, while the 06Z `f000` landed at 12:47. Using the
 previous cycle's 6 hour forecast for `cycle2` would cut the wait to about 1 to 7 hours. Upstream
 does not do this. It assumes 0-hour files.
-
-- The bucket goes back to 2006, so it covers the whole Landsat 8 and Sentinel-2 record. Years
-  before 2013 were not checked for these files.
-- The older `pgrbf00.grib2` files (checked for 2013-06-01) are the same 1 degree, 360 x 181 GRIB2
-  grid, with PWAT and TOZNE at forecast hour 0. They have no `.idx` file, so the whole file
-  (about 17 MB) has to be fetched.
-- The GDAL GRIB driver bundled with the `rasterio` wheels reads these files. It shifts the grid to
-  start at longitude -180 (correctly, unlike the C reader's off-by-one rotation), and exposes the times in band
-  tags (`GRIB_REF_TIME`, `GRIB_VALID_TIME`, `GRIB_FORECAST_SECONDS`) along with `GRIB_ELEMENT`
-  (`PWAT`, `TOZNE`) and `GRIB_UNIT`.
