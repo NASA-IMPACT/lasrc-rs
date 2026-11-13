@@ -14,6 +14,9 @@ We have also discussed goals with much larger scope, including:
 1. Process Sentinel-2 at 30 m, which is the resolution of the final product
 2. Make the code general enough to support other sensors, possibly including commercial satellites
 
+Separately, the auxiliary inputs are moving to documented, self-describing formats, with source
+handling in a separate package (see [`plans/standardized-inputs.md`](plans/standardized-inputs.md)).
+
 The first two goals should leave outputs effectively unchanged. The second set of goals change the
 product on purpose and are tracked separately.
 
