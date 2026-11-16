@@ -257,10 +257,20 @@ The new `ad_hoc_XML_reader.c` reads `<PRODUCT_START_TIME>` from the `<Product_In
 process if it isn't there. The comment says it is meant to be thrown away once the ESPA
 product formatter reads the time itself.
 
-`PRODUCT_START_TIME` is not the tile's time. In single-tile products, `PRODUCT_START_TIME`,
-`PRODUCT_STOP_TIME` and `DATATAKE_SENSING_START` are all the start of the datatake. In
+This is the wrong time. The right one is the tile's `SENSING_TIME` in `GRANULE/*/MTD_TL.xml`,
+which is when the satellite imaged the tile.
+
+`PRODUCT_START_TIME` is the start of the datatake, the continuous imaging strip the tile was cut
+from. In single-tile products, `PRODUCT_START_TIME`, `PRODUCT_STOP_TIME` and
+`DATATAKE_SENSING_START` all hold that same datatake start. In
 `S2B_MSIL1C_20260124T073109_N0511_R049_T38PNC_20260124T092241` all three are 07:31:09.024, and the
-tile's `SENSING_TIME` in `GRANULE/*/MTD_TL.xml` is 07:45:13.375, 14 minutes later.
+tile's `SENSING_TIME` is 07:45:13.375, 14 minutes later. The error grows the further down the
+datatake the tile is. Over a 6-hour GDAS interval, 14 minutes moves about 4% of the weight from
+one cycle to the other.
+
+The datatake start is also the first timestamp in the product name (`20260124T073109` above), and
+so in the granule ID built from it. A granule ID alone gives the datatake start, not the tile time.
+The tile was imaged at or after that time, never before.
 
 ## 5. Changes not related to GDAS
 
@@ -361,7 +371,7 @@ reverse: one instant in UTC for the whole globe. A granule needs the two cycles 
 UTC acquisition time:
 
 ```text
-t      = acquisition time, UTC (Landsat DATE_ACQUIRED + SCENE_CENTER_TIME, Sentinel-2 SENSING_TIME)
+t      = acquisition time, UTC (from the scene metadata, see Processing below)
 cycle1 = t floored to 00, 06, 12 or 18 UTC
 cycle2 = cycle1 + 6 hours
 ```
@@ -393,10 +403,125 @@ long waits move with latitude too. Two examples, assuming 10:30 local:
 | Hawaii, 158W | 21:01 | 18Z, 00Z (next day) | 07:00 | ~10 hours |
 | Japan, 140E | 01:11 | 00Z, 06Z | 13:00 | ~12 hours |
 
-A dependency solver should trigger on the `cycle2` file appearing (an S3 event or polling), not
-on a fixed delay, since publishing times vary.
-
 Later forecast hours of the same run land within minutes of its 0-hour file. In the same check,
 the 00Z `f006` (valid at 06Z) landed at 07:08, while the 06Z `f000` landed at 12:47. Using the
 previous cycle's 6 hour forecast for `cycle2` would cut the wait to about 1 to 7 hours. Upstream
 does not do this. It assumes 0-hour files.
+
+Finding the files happens twice, in two layers that know different things. The orchestration layer
+decides when a granule can run, and knows only the granule ID. The processing layer picks the
+files the result depends on, and has the scene metadata with the exact time.
+
+#### Orchestration: triggering from the granule ID
+
+The granule ID doesn't carry the acquisition time:
+
+- A Landsat product ID has the UTC date and the WRS-2 path/row, but no time. The USGS SNS message
+  for a new scene doesn't add one.
+- A Sentinel-2 product name has the MGRS tile and the datatake start (section 4), not the tile's
+  `SENSING_TIME`. The tile was imaged at or after the datatake start, never before.
+
+So the orchestration layer estimates the time. Landsat 8/9 and Sentinel-2 are sun-synchronous, so
+the UTC time at a point follows from the platform's inclination and descending node time, and the
+latitude and longitude of the scene or tile center:
+
+```text
+u     = 180 - asin(sin(lat) / sin(inc))             # descending pass, argument of latitude
+dra   = atan2(cos(inc) * sin(u), cos(u)) - 180      # wrapped to [-180, 180)
+local = node_time + dra / 15                         # hours
+utc   = local - lon / 15                             # hours, on the UTC date from the ID
+```
+
+| Platform | Inclination | Descending node time (nominal) |
+|---|---|---|
+| Landsat 8 | 98.2 | 10:00 (10:12 measured in 2019-2020) |
+| Landsat 9 | 98.2 | 10:00 |
+| Sentinel-2 | 98.62 | 10:30 |
+
+Longitude alone is not enough. The latitude term shifts the local time by about 19 minutes at 30
+degrees and 58 minutes at 60 degrees. Checked against two Landsat 8 scenes, with a node time of
+10:12:
+
+| Scene | Center | Actual UTC | Estimate | Longitude-only estimate |
+|---|---|---|---|---|
+| 027039, 2019-09-01 | 30.3N, 97.8W | 17:03:12 | 0.5 min early | 20 min early |
+| 231089, 2020-08-07 | 41.8S, 70.2W | 14:23:41 | 0.6 min early | 29 min late |
+
+The orchestration layer then:
+
+1. Takes a window of the estimate plus or minus 30 minutes, clipped to the UTC date in the ID. For
+   Sentinel-2 it also clips the start to the datatake start. The margin covers node time drift and
+   the approximations. The estimate is not yet checked on Sentinel-2.
+2. Lists every cycle the window touches. That is two cycles, or three when the window spans a
+   cycle boundary (about 1 granule in 6).
+3. Triggers the granule when the last of those cycles appears on NODD (an S3 event or polling),
+   not after a fixed delay, since publishing times vary.
+
+Waiting for all the cycles in the window is conservative. A granule whose window spans a boundary
+waits up to 6 hours longer than it needs to, but the processing layer almost never has to retry.
+
+The estimate is only a gate. It decides when to run, never which files the result uses.
+
+#### Processing: using the exact time
+
+The processing layer reads the exact UTC time from the scene metadata:
+
+- Landsat: `DATE_ACQUIRED` plus `SCENE_CENTER_TIME` from the MTL.
+- Sentinel-2: the tile's `SENSING_TIME` from `GRANULE/*/MTD_TL.xml`, not `PRODUCT_START_TIME` or
+  the time in the product name.
+
+From that time it computes `cycle1` and `cycle2` with the rule above, and finds or fetches those
+two files itself. It doesn't take a file list from the orchestration layer, so a wrong estimate
+can't select the wrong files. It checks each file's valid time from the GRIB metadata, and that the
+two valid times bracket the acquisition time, before interpolating.
+
+When the orchestration layer was wrong:
+
+| Case | What happens |
+|---|---|
+| Triggered early: `cycle2` is not on NODD yet | Exit with code 75 (`EX_TEMPFAIL`) so the orchestration retries |
+| Still missing well past the expected latency (for example 24 hours after `cycle2`) | Fail with a normal error, so a gap in the archive doesn't retry forever |
+| Staged files that don't bracket the acquisition time | Ignore them and fetch the right pair, or fail with a clear error when fetching is off |
+
+An estimate that is late only delays the granule. It can't change the result.
+
+## Latency
+
+**GDAS cycles are slow by design.** GDAS waits about 6 hours after each cycle for late
+observations before it runs. Its 0-hour file is published about 7 hours after the cycle (6.7 to
+7.5 hours on 2026-11-10 to 16).
+
+**A granule needs the later of its two cycles.** Interpolating to the acquisition time `t` needs
+the cycles before and after `t`, so the inputs are ready at `cycle2 + 7 h`, 7 to 13 hours after
+acquisition (median about 10). For Sentinel-2, whose L1C enters our bucket about 4.3 hours after
+sensing (median, May to September 2026), that is 2.7 to 8.7 hours after entry.
+
+**NODD adds almost nothing.** The NODD copies trail NOMADS (NCEP's own server) by about a minute.
+The worst case seen was 46 minutes, once in 15 cycles. The NCEP FTP server publishes the same
+files as NOMADS. There is no faster public source of GDAS.
+
+**An earlier estimate got this wrong.** A 2026 latency study of Sentinel-2 measured the wait from
+bucket entry to the next GDAS 0-hour file to be published, whatever its cycle. That wait is
+uniform over 0 to 6 hours, and the study's results match it (median about 3 hours, 90% of
+granules published within 6 hours of entry). But the next file to land is often the cycle before
+acquisition, not after it. With entry at about `t + 4.3 h` and files landing at `cycle + 7 h`, this
+happens for about 45% of granules, and their `cycle2` lands 6 hours later. Corrected, the median
+wait after entry is about 5.7 hours, and about 45% of granules are published within 6 hours of
+entry, not 90%. GDAS is still far faster than VIIRS (about 39 hours from sensing to publish in the
+same study).
+
+**GFS is the low-latency alternative.** GFS runs the same model on the same cycles with an early
+observation cutoff (about 2h45m), and its 0-hour file has `PWAT` and `TOZNE` on the same grid,
+published about 3.5 hours after the cycle. It has fewer observations than GDAS. Whether that
+matters for water vapor and ozone is for the science team, and it is a different input from
+upstream.
+
+| Input for `cycle2` | Ready after acquisition | Wait after Sentinel-2 entry (median) |
+|---|---|---|
+| GDAS `f000` (upstream) | 7 to 13 h | about 5.7 h |
+| GFS `f000` | 3.5 to 9.5 h | about 2.2 h |
+| GDAS `f006` from `cycle1` | 1 to 7 h | about 0 |
+| GFS `f006` from `cycle1` | 0 to 3.6 h | about 0 |
+
+Name the system and forecast hour (for example "GDAS `f000`" or "GFS `f000`"), not "NCEP" or
+"the NCEP product", which covers both.
