@@ -1,11 +1,8 @@
 # Standardized inputs
 
-Status: direction agreed 2026-11-13. The first piece is water vapor and ozone, with GDAS as a new
-source.
-
 ## Goal
 
-A wall between the processing code and its auxiliary inputs:
+We want to create standardized interface between the processing code and its auxiliary inputs:
 
 - **`lasrc_py` and the Rust core** read a small set of documented, self-describing files, in
   physical units, on fixed grids. They know nothing about where the data came from.
@@ -16,19 +13,19 @@ Swapping an input then means writing a producer, with no change to `lasrc_py`.
 
 ## Why
 
-- **HDF4.** `pyhdf` is the hardest dependency to install and maintain. It is pinned below 0.11.7
-  because those wheels need macOS 26 or glibc 2.28 (`lasrc_py/pyproject.toml`, and a matching
-  ignore in `.github/dependabot.yml`). Platforms without a wheel have to build against a system
-  HDF4 library (`docs/usage.md`).
 - **Source-specific code in the core.** The VIIRS water vapor and ozone scale factors and defaults
   live in the Rust core today. Moving to GDAS showed how much of that has to change for a new
   source.
+- **Undocumented formats.** Today the format of each input is whatever the reader in
+  `lasrc/aux.py` expects.
 - **Upstream reader bugs.** The upstream GDAS reader is off by one grid column, and its CMG
   sampling is off by half a cell (see [`gdas-support.md`](../gdas-support.md)). Both come from
   unstated grid conventions. A documented format states the convention once, and each conversion
   lives in one producer with its own tests.
-- **Undocumented formats.** Today the format of each input is whatever the reader in
-  `lasrc/aux.py` expects.
+- **HDF4.** `pyhdf` is the hardest dependency to install and maintain. It is pinned below 0.11.7
+  because those wheels need macOS 26 or glibc 2.28 (`lasrc_py/pyproject.toml`, and a matching
+  ignore in `.github/dependabot.yml`). Platforms without a wheel have to build against a system
+  HDF4 library (`docs/usage.md`).
 
 ## Principles
 
