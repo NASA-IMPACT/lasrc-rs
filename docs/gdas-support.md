@@ -536,15 +536,15 @@ sensing (median, May to September 2026), that is 2.7 to 8.7 hours after entry.
 The worst case seen was 46 minutes, once in 15 cycles. The NCEP FTP server publishes the same
 files as NOMADS. There is no faster public source of GDAS.
 
-**An earlier estimate got this wrong.** A 2026 latency study of Sentinel-2 measured the wait from
-bucket entry to the next GDAS 0-hour file to be published, whatever its cycle. That wait is
+**An earlier estimate appears incorrect.** A 2026 latency study of Sentinel-2 measured the wait
+from bucket entry to the next GDAS 0-hour file to be published, whatever its cycle. That wait is
 uniform over 0 to 6 hours, and the study's results match it (median about 3 hours, 90% of
-granules published within 6 hours of entry). But the next file to land is often the cycle before
-acquisition, not after it. With entry at about `t + 4.3 h` and files landing at `cycle + 7 h`, this
-happens for about 45% of granules, and their `cycle2` lands 6 hours later. Corrected, the median
-wait after entry is about 5.7 hours, and about 45% of granules are published within 6 hours of
-entry, not 90%. GDAS is still far faster than VIIRS (about 39 hours from sensing to publish in the
-same study).
+granules published within 6 hours of entry). The measure isn't tied to the granule's cycles, and
+most likely never looked for `cycle2` at all. With entry at about `t + 4.3 h` and files landing
+at `cycle + 7 h`, the next file to land is `cycle1` for about 45% of granules and `cycle2` for
+the rest, by coincidence. Waiting for `cycle2` every time, the median wait after entry is about
+5.7 hours, and about 45% of granules are published within 6 hours of entry, not 90%. GDAS is
+still far faster than VIIRS (about 39 hours from sensing to publish in the same study).
 
 **GFS is the low-latency alternative.** GFS runs the same model on the same cycles with an early
 observation cutoff (about 2h45m), and its 0-hour file has `PWAT` and `TOZNE` on the same grid,
