@@ -523,5 +523,5 @@ upstream.
 | GDAS `f006` from `cycle1` | 1 to 7 h | about 0 |
 | GFS `f006` from `cycle1` | 0 to 3.6 h | about 0 |
 
-Name the system and forecast hour (for example "GDAS `f000`" or "GFS `f000`"), not "NCEP" or
-"the NCEP product", which covers both.
+GDAS and GFS share many of the same properties (NODD bucket, file formats, naming conventions)
+so switching between them should not be very difficult.
