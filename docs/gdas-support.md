@@ -23,6 +23,7 @@
     - [Finding the files for a granule](#finding-the-files-for-a-granule)
       - [Orchestration: triggering from the granule ID](#orchestration-triggering-from-the-granule-id)
       - [Processing: using the exact time](#processing-using-the-exact-time)
+    - [Interpolating without index arithmetic](#interpolating-without-index-arithmetic)
     - [Appendix: latency, GDAS vs GFS](#appendix-latency-gdas-vs-gfs)
 <!--toc:end-->
 
@@ -529,6 +530,22 @@ When the orchestration layer was wrong:
 | Staged files that don't bracket the acquisition time | Ignore them and fetch the right pair, or fail with a clear error when fetching is off |
 
 An estimate that is late only delays the granule. It can't change the result.
+
+### Interpolating without index arithmetic
+
+Every upstream interpolation bug in sections 2 and 3 (the one-column shift, sampling CMG cells at a
+corner, the longitude seam, `float32` coordinate drift) comes from hand-written index arithmetic.
+lasrc-rs doesn't port any of it. The GDAS data gets labeled with its real coordinates, in
+`float64`, and `xarray` interpolates by label (`DataArray.interp`): linearly in time to the
+acquisition time, then bilinearly in space to the CMG cell centers. That leaves two things to get
+right:
+
+- **The coordinates.** GDAS point `(k, l)` is at latitude `90 - k * d` and longitude
+  `-180 + l * d`. GDAL reports these points as pixel centers (for the 1 degree grid, the
+  geotransform origin is -180.5, 90.5), so the labels must be the pixel centers, not the corners.
+  Using the corners shifts everything by half a grid step.
+- **The seam.** `interp` doesn't wrap longitude, so append a copy of the -180 column at +180
+  first.
 
 ### Appendix: latency, GDAS vs GFS
 
