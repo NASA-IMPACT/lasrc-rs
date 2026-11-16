@@ -1,13 +1,47 @@
-# GDAS ancillary support in the upstream C code
+# GDAS water vapor and ozone
 
-This page describes what the algorithm author's `eros-collection2-3.5.2` branch of
+<!--toc:start-->
+- [GDAS water vapor and ozone](#gdas-water-vapor-and-ozone)
+  - [Upstream C code](#upstream-c-code)
+    - [Commits](#commits)
+    - [Summary of changes](#summary-of-changes)
+    - [1. GRIB input path](#1-grib-input-path)
+      - [Command line](#command-line)
+      - [Detecting the source](#detecting-the-source)
+      - [GDAS Variables](#gdas-variables)
+      - [Scaling to DN](#scaling-to-dn)
+    - [2. Temporal interpolation](#2-temporal-interpolation)
+    - [3. Spatial interpolation](#3-spatial-interpolation)
+    - [4. Sentinel-2 acquisition time](#4-sentinel-2-acquisition-time)
+    - [5. Changes not related to GDAS](#5-changes-not-related-to-gdas)
+      - [Output reflectance scaling](#output-reflectance-scaling)
+      - [Sentinel-2 fill mask fix](#sentinel-2-fill-mask-fix)
+      - [Aerosol window](#aerosol-window)
+      - [Version and debug output](#version-and-debug-output)
+  - [Using GDAS in lasrc-rs](#using-gdas-in-lasrc-rs)
+    - [GDAS data on the NODD bucket](#gdas-data-on-the-nodd-bucket)
+    - [Finding the files for a granule](#finding-the-files-for-a-granule)
+      - [Orchestration: triggering from the granule ID](#orchestration-triggering-from-the-granule-id)
+      - [Processing: using the exact time](#processing-using-the-exact-time)
+    - [Appendix: latency, GDAS vs GFS](#appendix-latency-gdas-vs-gfs)
+<!--toc:end-->
+
+This page has two parts:
+
+- **Upstream C code**: what the algorithm author's GDAS support changes, read from the diff.
+- **Using GDAS in lasrc-rs**: the GDAS files on NODD, how to find the ones a granule needs, and
+  how long they take to arrive.
+
+## Upstream C code
+
+This part describes what the algorithm author's `eros-collection2-3.5.2` branch of
 `espa-surface-reflectance` changes, relative to the `eros-collection2-3.5.1` release
 (`6051e02`). The main change is support for NOAA GDAS GRIB files as the source of water vapor and
 ozone, in place of the daily VIIRS (`V*04ANC`) or MODIS (`L8ANC`) CMG files.
 
 The branch has no description of its own. Everything here comes from reading the diff.
 
-## Commits
+### Commits
 
 | Commit | Date | Message | Content |
 |---|---|---|---|
@@ -25,7 +59,7 @@ git -c core.filemode=false diff -w --ignore-cr-at-eol --ignore-blank-lines \
 
 Nothing outside `lasrc/c_version/src` changes in content.
 
-## Summary of changes
+### Summary of changes
 
 1. **New GRIB input path** for water vapor and ozone, read from two GDAS files that bracket the
    scene acquisition time (`--aux` and a new `--aux2` option).
@@ -44,9 +78,9 @@ The rest of the algorithm is unchanged. The GDAS path produces the same CMG-shap
 ozone arrays that the VIIRS and MODIS readers produce, and everything downstream reads them the same
 way.
 
-## 1. GRIB input path
+### 1. GRIB input path
 
-### Command line
+#### Command line
 
 `lasrc` gains an optional `--aux2` argument. The usage example is:
 
@@ -57,7 +91,7 @@ lasrc --xml=LC08_L1TP_078014_20220306_20220314_02_T1.xml \
 
 `--aux2` is only used when `--aux` is a GRIB file. For VIIRS and MODIS it is ignored.
 
-### Detecting the source
+#### Detecting the source
 
 Before this change the source came from the filename (`04ANC` means VIIRS, `L8ANC` means MODIS).
 The aux source enum gains `AUXNULL = -1` and `GRIB`. If the filename matches neither VIIRS nor
@@ -76,7 +110,7 @@ VIIRS and MODIS. The comment says the year can't be reliably derived from GRIB f
 is read from the first file's PWAT message instead, but it is not used for anything once the path
 is known.
 
-### GDAS Variables
+#### GDAS Variables
 
 From each file, two messages:
 
@@ -93,7 +127,7 @@ The GRIB2 reader reorders the grid to run north to south, and rotates each row s
 longitude -180. GDAS stores each row from 0 to 359 degrees east. The rotation is off by one column
 (see [section 3](#3-spatial-interpolation)).
 
-### Scaling to DN
+#### Scaling to DN
 
 After interpolation (sections 2 and 3), the values are converted to the same integer "DN" arrays
 that the VIIRS and MODIS readers fill:
@@ -166,7 +200,7 @@ it. lasrc-rs has the same factor today (`wv_scale` 200 in `lasrc_py/python/lasrc
 A DN of 0 counts as fill and is replaced by the default. For GDAS that means a PWAT below
 0.1 kg/m^2. The smallest value in a sample June 2025 file was 0.16, so this is rare.
 
-## 2. Temporal interpolation
+### 2. Temporal interpolation
 
 `open_gb_oz_wv_datasets` in `lut_subr.c` reads both files and interpolates linearly in time to the
 scene acquisition time `t`:
@@ -197,7 +231,7 @@ in C. If it happens to be non-zero, the two files get each other's weights, so t
 interpolated toward the wrong cycle. Since reversed pairs are already rejected, the fix is to
 remove the variable and its `else` branch, or set it to 0.
 
-## 3. Spatial interpolation
+### 3. Spatial interpolation
 
 The interpolated GDAS grid is resampled onto the CMG grid (3600 x 7200, 0.05 degree). The first
 commit used nearest-neighbor replication. `b271310` switched to bilinear interpolation, with the
@@ -247,7 +281,7 @@ degree near fronts and coastlines. The corner offset affects every scene, but by
 0.025 degree shift in fields that vary smoothly at 1 degree. The seam only affects scenes whose
 center lands between 179 and 180 degrees east.
 
-## 4. Sentinel-2 acquisition time
+### 4. Sentinel-2 acquisition time
 
 The GDAS path needs the time of day. Landsat already had it (`scene_center_time` in the ESPA XML).
 For Sentinel-2 the ESPA XML has no time, and the old code set it to `T00:00:00`.
@@ -272,9 +306,9 @@ The datatake start is also the first timestamp in the product name (`20260124T07
 so in the granule ID built from it. A granule ID alone gives the datatake start, not the tile time.
 The tile was imaged at or after that time, never before.
 
-## 5. Changes not related to GDAS
+### 5. Changes not related to GDAS
 
-### Output reflectance scaling
+#### Output reflectance scaling
 
 `output.h` changes the surface reflectance scale factor and offset:
 
@@ -288,7 +322,7 @@ These feed both the XML metadata and the integer conversion of the output bands
 values change for Landsat and Sentinel-2. lasrc-rs still uses the Collection 2 values
 (`lasrc_core/src/constants.rs`).
 
-### Sentinel-2 fill mask fix
+#### Sentinel-2 fill mask fix
 
 In `compute_sentinel_refl.c`, the fill check in the per-pixel auxiliary interpolation loop used the
 line index instead of the pixel index:
@@ -301,20 +335,22 @@ if (level1_qa_is_fill (qaband[curr_pix]))   /* after */
 That loop only runs for the original aerosol algorithm (`--use_orig_aero_alg`), which lasrc-rs
 does not port.
 
-### Aerosol window
+#### Aerosol window
 
 `a64c9cf` changed the aerosol retrieval window to 1x1 (`LAERO_WINDOW 1`, `SAERO_WINDOW 1`).
 `b271310` restored the production values (3x3 for Landsat, 6 for Sentinel-2). The 1x1 values are
 left in a comment. No net change.
 
-### Version and debug output
+#### Version and debug output
 
 - `SR_VERSION` goes from `3.5.1.0` to `3.5.2.0`.
 - `open_gb_oz_wv_datasets` always prints the acquisition time, file times and weights to stdout.
 - Several commented-out `printf` lines and an unused `char xxxxxxxxxx[]` buffer
   ("need some kind of space ... on the cluster") are added.
 
-## GDAS data on the NODD bucket
+## Using GDAS in lasrc-rs
+
+### GDAS data on the NODD bucket
 
 These notes come from spot checks of `s3://noaa-gfs-bdp-pds` (public, no credentials) on
 2026-11-11 to 2026-11-13. They are not part of the upstream branch.
@@ -485,7 +521,7 @@ When the orchestration layer was wrong:
 
 An estimate that is late only delays the granule. It can't change the result.
 
-## Latency
+### Appendix: latency, GDAS vs GFS
 
 **GDAS cycles are slow by design.** GDAS waits about 6 hours after each cycle for late
 observations before it runs. Its 0-hour file is published about 7 hours after the cycle (6.7 to
