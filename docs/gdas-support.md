@@ -420,9 +420,8 @@ cycle2 = cycle1 + 6 hours
 - A time exactly on a cycle gives that cycle a weight of 1 and the next a weight of 0. The second
   file is still required. This is rare enough to ignore.
 
-The 0-hour files land on NODD about 7 hours after their cycle time. A check of 2026-11-10 and
-2026-11-11 gave 6.8 to 7.4 hours for every cycle, for both 1 degree and 0.25 degree. A granule is
-ready when `cycle2` lands:
+The 0-hour files land on NODD about 7 hours after their cycle time (median 6.8 hours, 95% within
+7.6, over a year of cycles, see the appendix). A granule is ready when `cycle2` lands:
 
 ```text
 ready ~= cycle2 + 7 hours        (7 to 13 hours after acquisition)
@@ -550,8 +549,20 @@ right:
 ### Appendix: latency, GDAS vs GFS
 
 **GDAS cycles are slow by design.** GDAS waits about 6 hours after each cycle for late
-observations before it runs. Its 0-hour file is published about 7 hours after the cycle (6.7 to
-7.5 hours on 2026-11-10 to 16).
+observations before it runs. Its 0-hour file is published about 7 hours after the cycle. Hours
+from cycle to the NODD `LastModified` time for the 1460 cycles from 2025-11-16 to 2026-11-15, with
+none missing:
+
+| `f000` file | Median | 95% | 99% | Max |
+|---|---|---|---|---|
+| GDAS 1p00 | 6.84 | 7.60 | 7.98 | 9.73 |
+| GDAS 0p25 | 6.85 | 7.61 | 7.92 | 9.73 |
+| GFS 1p00 | 3.56 | 3.80 | 3.83 | 7.46 |
+| GFS 0p25 | 3.57 | 3.81 | 3.85 | 13.45 |
+
+The GDAS 18Z cycle is the slowest (median 7.21, 95% within 7.85), and 12 of the 14 GDAS cycles over
+8 hours were 18Z. The resolutions land together. `LastModified` is the time of the last write, so a
+file that was rewritten shows the later time.
 
 **A granule needs the later of its two cycles.** Interpolating to the acquisition time `t` needs
 the cycles before and after `t`, so the inputs are ready at `cycle2 + 7 h`, 7 to 13 hours after
@@ -574,9 +585,9 @@ still far faster than VIIRS (about 39 hours from sensing to publish in the same 
 
 **GFS is the low-latency alternative.** GFS runs the same model on the same cycles with an early
 observation cutoff (about 2h45m), and its 0-hour file has `PWAT` and `TOZNE` on the same grid,
-published about 3.5 hours after the cycle. It has fewer observations than GDAS. Whether that
-matters for water vapor and ozone is for the science team, and it is a different input from
-upstream.
+published about 3.5 hours after the cycle (table above). It has fewer observations than GDAS.
+Whether that matters for water vapor and ozone is for the science team, and it is a different input
+from upstream.
 
 | Input for `cycle2` | Ready after acquisition | Wait after Sentinel-2 entry (median) |
 |---|---|---|
@@ -586,4 +597,5 @@ upstream.
 | GFS `f006` from `cycle1` | 0 to 3.6 h | about 0 |
 
 GDAS and GFS share many of the same properties (NODD bucket, file formats, naming conventions)
-so switching between them should not be very difficult.
+so switching between them should not be very difficult, but will likely require rerunning
+sensitivity analyses.
