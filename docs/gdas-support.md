@@ -436,19 +436,21 @@ long waits move with latitude too. Some examples, assuming 10:30 local and ignor
 
 | Granule | UTC time | Cycles | Ready about | Wait |
 |---|---|---|---|---|
-| Honolulu, 158W | 21:02 | 18Z, 00Z (next day) | 07:00 | ~10 hours |
-| Los Angeles, 118W | 18:22 | 18Z, 00Z (next day) | 07:00 | ~12.5 hours |
-| Denver, 105W | 17:30 | 12Z, 18Z | 01:00 (next day) | ~7.5 hours |
-| Belem, 48W | 13:42 | 12Z, 18Z | 01:00 (next day) | ~11 hours |
+| Mexico City, 99W | 17:07 | 12Z, 18Z | 01:00 (next day) | ~8 hours |
+| Washington, 77W | 15:38 | 12Z, 18Z | 01:00 (next day) | ~9.5 hours |
+| Brasilia, 48W | 13:41 | 12Z, 18Z | 01:00 (next day) | ~11.5 hours |
 | London, 0 | 10:30 | 06Z, 12Z | 19:00 | ~8.5 hours |
-| Nairobi, 37E | 08:02 | 06Z, 12Z | 19:00 | ~11 hours |
-| Delhi, 77E | 05:22 | 00Z, 06Z | 13:00 | ~7.5 hours |
-| Tokyo, 140E | 01:10 | 00Z, 06Z | 13:00 | ~12 hours |
+| Nairobi, 37E | 08:03 | 06Z, 12Z | 19:00 | ~11 hours |
+| Tehran, 51E | 07:04 | 06Z, 12Z | 19:00 | ~12 hours |
+| New Delhi, 77E | 05:21 | 00Z, 06Z | 13:00 | ~7.5 hours |
+| Tokyo, 140E | 01:11 | 00Z, 06Z | 13:00 | ~12 hours |
+| Canberra, 149E | 00:34 | 00Z, 06Z | 13:00 | ~12.5 hours |
+| Wellington, 175E | 22:51 (previous day) | 18Z, 00Z | 07:00 | ~8 hours |
 
 The wait drops from about 13 hours to about 7 where the UTC time crosses a cycle, near 112.5W,
 22.5W, 67.5E and 157.5E, then grows again going east.
 
-Later forecast hours of the same run land within minutes of its 0-hour file. In the same check,
+Later forecast hours of the same run land within minutes of its 0-hour file. On 2026-11-10,
 the 00Z `f006` (valid at 06Z) landed at 07:08, while the 06Z `f000` landed at 12:47. Using the
 previous cycle's 6 hour forecast for `cycle2` would cut the wait to about 1 to 7 hours. Upstream
 does not do this. It assumes 0-hour files.
