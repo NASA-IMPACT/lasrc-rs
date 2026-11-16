@@ -432,12 +432,21 @@ waits about 13 hours, and one imaged just before a cycle waits about 7. Landsat 
 cross the equator at about 10:00 to 10:30 local time, so UTC time mostly follows longitude, and
 the wait repeats roughly every 90 degrees of longitude. The local time also shifts with latitude
 (about 20 minutes at 30 degrees and an hour at 60 degrees), so the boundaries between short and
-long waits move with latitude too. Two examples, assuming 10:30 local:
+long waits move with latitude too. Some examples, assuming 10:30 local and ignoring latitude:
 
 | Granule | UTC time | Cycles | Ready about | Wait |
 |---|---|---|---|---|
-| Hawaii, 158W | 21:01 | 18Z, 00Z (next day) | 07:00 | ~10 hours |
-| Japan, 140E | 01:11 | 00Z, 06Z | 13:00 | ~12 hours |
+| Honolulu, 158W | 21:02 | 18Z, 00Z (next day) | 07:00 | ~10 hours |
+| Los Angeles, 118W | 18:22 | 18Z, 00Z (next day) | 07:00 | ~12.5 hours |
+| Denver, 105W | 17:30 | 12Z, 18Z | 01:00 (next day) | ~7.5 hours |
+| Belem, 48W | 13:42 | 12Z, 18Z | 01:00 (next day) | ~11 hours |
+| London, 0 | 10:30 | 06Z, 12Z | 19:00 | ~8.5 hours |
+| Nairobi, 37E | 08:02 | 06Z, 12Z | 19:00 | ~11 hours |
+| Delhi, 77E | 05:22 | 00Z, 06Z | 13:00 | ~7.5 hours |
+| Tokyo, 140E | 01:10 | 00Z, 06Z | 13:00 | ~12 hours |
+
+The wait drops from about 13 hours to about 7 where the UTC time crosses a cycle, near 112.5W,
+22.5W, 67.5E and 157.5E, then grows again going east.
 
 Later forecast hours of the same run land within minutes of its 0-hour file. In the same check,
 the 00Z `f006` (valid at 06Z) landed at 07:08, while the 06Z `f000` landed at 12:47. Using the
