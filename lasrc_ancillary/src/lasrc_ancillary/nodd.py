@@ -10,7 +10,7 @@ import re
 from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, get_args
 
 from lasrc_ancillary.cycles import to_utc
 
@@ -18,11 +18,12 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
 
 NODD_BUCKET = "noaa-gfs-bdp-pds"
-RESOLUTIONS = ("1p00", "0p25")
+Resolution = Literal["1p00", "0p25"]
+RESOLUTIONS: tuple[Resolution, ...] = get_args(Resolution)
 VARIABLES = ("PWAT", "TOZNE")
 
 
-def _name_pattern(hh: str, resolution: str) -> re.Pattern[str]:
+def _name_pattern(hh: str, resolution: Resolution) -> re.Pattern[str]:
     # The key layout changed over time (see docs/gdas-support.md): gdas1.tHHz.pgrbf00.grib2
     # (1 degree only, until early 2015), then gdas1. and later gdas. with pgrb2.RES.f000, and
     # an atmos/ directory from early 2021.
@@ -57,7 +58,7 @@ def cycle_prefix(cycle: datetime) -> str:
 def locate_gdas(
     cycles: Sequence[datetime],
     s3_client: S3Client,
-    resolution: str = "1p00",
+    resolution: Resolution = "1p00",
     bucket: str = NODD_BUCKET,
 ) -> list[str | None]:
     """The 0-hour file key for each cycle, in order, with None for a cycle that isn't there."""
@@ -79,7 +80,7 @@ def locate_gdas(
 def find_gdas(
     cycles: Sequence[datetime],
     s3_client: S3Client,
-    resolution: str = "1p00",
+    resolution: Resolution = "1p00",
     bucket: str = NODD_BUCKET,
 ) -> list[str] | None:
     """The 0-hour file key for each cycle, in order, or None while any of them is missing."""

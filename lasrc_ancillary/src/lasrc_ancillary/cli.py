@@ -12,7 +12,7 @@ import click
 
 from lasrc_ancillary.gdas import GdasMissing, GdasNotYetPublished, prepare_gdas
 from lasrc_ancillary.metadata import read_acquisition_time
-from lasrc_ancillary.nodd import NODD_BUCKET, RESOLUTIONS
+from lasrc_ancillary.nodd import NODD_BUCKET, RESOLUTIONS, Resolution
 
 EX_TEMPFAIL = 75
 
@@ -71,7 +71,7 @@ def gdas(
     acquisition_time: datetime | None,
     metadata: Path | None,
     fetch: bool,
-    resolution: str,
+    resolution: Resolution,
     bucket: str,
     work_dir: Path | None,
     grib: tuple[Path, ...],
