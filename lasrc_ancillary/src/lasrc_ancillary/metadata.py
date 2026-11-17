@@ -1,13 +1,9 @@
 """Acquisition time from Landsat and Sentinel-2 metadata, with the standard library only."""
 
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from xml.etree import ElementTree
-
-from lasrc_ancillary.cycles import parse_iso, to_utc
-
-UTC = timezone.utc
 
 
 def read_acquisition_time(path: Path) -> datetime:
@@ -54,5 +50,5 @@ def _sentinel_tile_time(path: Path) -> datetime:
     root = ElementTree.parse(path).getroot()
     for element in root.iter():
         if element.tag.rsplit("}", 1)[-1] == "SENSING_TIME" and element.text:
-            return to_utc(parse_iso(element.text))
+            return datetime.fromisoformat(element.text.strip()).astimezone(UTC)
     raise ValueError(f"{path.name}: missing SENSING_TIME")

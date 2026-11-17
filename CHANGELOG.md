@@ -19,7 +19,7 @@ with an additional version indicator for modifications of this fork.
 
 ### Changed <!-- Changes in existing functionality -->
 
--
+- `lasrc` requires Python 3.12 or newer (was 3.10).
 
 ### Deprecated <!-- Soon-to-be removed features -->
 

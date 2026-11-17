@@ -130,7 +130,7 @@ There are no prebuilt wheels yet, so `lasrc` builds from source. You need:
 
 - [rustup](https://rustup.rs/). The build picks up the pinned toolchain from
   `rust-toolchain.toml`.
-- Python >= 3.10
+- Python >= 3.12
 - The HDF4 library, if `pip`/`uv` can't find a prebuilt `pyhdf` wheel for your platform:
   `brew install hdf4` (macOS) or `apt install libhdf4-dev` (Debian/Ubuntu)
 

@@ -1,9 +1,7 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from lasrc_ancillary.metadata import read_acquisition_time
-
-UTC = timezone.utc
 
 MTD_TL = """<?xml version="1.0" encoding="UTF-8"?>
 <n1:Level-1C_Tile_ID xmlns:n1="https://psd-14.sentinel2.eo.esa.int/PSD/S2_PDI_Level-1C_Tile_Metadata.xsd">

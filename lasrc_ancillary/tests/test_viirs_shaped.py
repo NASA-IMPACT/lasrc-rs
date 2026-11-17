@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import h5py
@@ -17,7 +17,7 @@ from lasrc_ancillary.viirs_shaped import (
 DATA = Path(__file__).parent / "data"
 F00 = DATA / "gdas.20261115.t00z.1p00.grib2"
 F06 = DATA / "gdas.20261115.t06z.1p00.grib2"
-T = datetime(2026, 11, 15, 3, tzinfo=timezone.utc)
+T = datetime(2026, 11, 15, 3, tzinfo=UTC)
 
 
 def test_to_dn_rounding_and_clipping():
