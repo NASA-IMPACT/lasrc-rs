@@ -106,8 +106,11 @@ def gdas(
             now=obj.get("now"),
         )
     except GdasNotYetPublished as e:
-        click.echo(f"{e}, retry later", err=True)
+        click.echo(str(e), err=True)
         ctx.exit(EX_TEMPFAIL)
-    except (GdasMissing, OSError, ValueError) as e:
+    except GdasMissing as e:
+        click.echo(str(e), err=True)
+        ctx.exit(1)
+    except (OSError, ValueError) as e:
         click.echo(f"error: {e}", err=True)
         ctx.exit(1)

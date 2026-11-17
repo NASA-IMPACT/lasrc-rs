@@ -149,3 +149,29 @@ def test_bucket_default_is_nodd():
     text = "".join(result.output.split())  # click wraps long values across lines
     assert "default:noaa-gfs-bdp-pds" in text
     assert "LASRC_ANCILLARY_GDAS_BUCKET" in text
+
+
+def test_missing_cycles_are_reported_one_per_line(nodd, tmp_path):
+    args = ["--acquisition-time", "2026-11-15T03:00:00Z", "--fetch", tmp_path / "g.h5"]
+    result = run(args, s3_client=nodd(K00), now=lambda: utc(2026, 11, 15, 8))
+    assert result.exit_code == EX_TEMPFAIL
+    lines = [
+        line for line in result.output.splitlines() if line.startswith("GDAS_MISSING")
+    ]
+    assert lines == [
+        (
+            "GDAS_MISSING status=not-yet-published cycle=2026-11-15T06:00Z resolution=1p00 "
+            "acquisition=2026-11-15T03:00:00Z searched=s3://noaa-gfs-bdp-pds/gdas.20261115/06/"
+        )
+    ]
+
+
+def test_not_bracketing_message_is_readable(tmp_path):
+    args = ["--acquisition-time", "2026-11-15T08:00:00Z", F00, F06, tmp_path / "g.h5"]
+    result = run(args)
+    assert result.exit_code == 1
+    assert "datetime.datetime(" not in result.output
+    assert "do not bracket the acquisition time 2026-11-15T08:00:00Z" in result.output
+    assert "gdas.20261115.t00z.1p00.grib2: valid 2026-11-15T00:00Z" in result.output
+    assert "gdas.20261115.t06z.1p00.grib2: valid 2026-11-15T06:00Z" in result.output
+    assert "needs the cycles 2026-11-15T06:00Z and 2026-11-15T12:00Z" in result.output

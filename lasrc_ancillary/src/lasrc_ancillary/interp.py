@@ -7,6 +7,7 @@ is off by one column and samples cell corners, see docs/gdas-support.md, section
 
 from collections.abc import Sequence
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 
@@ -34,6 +35,14 @@ def _to_cmg(values: np.ndarray, lat: np.ndarray, lon: np.ndarray) -> np.ndarray:
     return np.asarray(out.values, dtype=np.float64)
 
 
+def _iso_minutes(t: datetime) -> str:
+    return to_utc(t).strftime("%Y-%m-%dT%H:%MZ")
+
+
+def _name(field: GdasField) -> str:
+    return Path(field.source).name
+
+
 def interpolate_to_cmg(
     fields: Sequence[GdasField], acquisition_time: datetime
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -42,14 +51,15 @@ def interpolate_to_cmg(
         raise ValueError(f"expected two GDAS fields, got {len(fields)}")
     f1, f2 = sorted(fields, key=lambda f: f.valid_time)
     t = to_utc(acquisition_time)
-    if f2.valid_time - f1.valid_time != gdas_cycles(t)[1] - gdas_cycles(t)[0]:
-        raise ValueError(
-            f"GDAS fields must be 6 hours apart, got {f1.valid_time} and {f2.valid_time}"
+    needed = gdas_cycles(t)
+    if (f1.valid_time, f2.valid_time) != needed:
+        files = "\n".join(
+            f"  {_name(f)}: valid {_iso_minutes(f.valid_time)}" for f in (f1, f2)
         )
-    if gdas_cycles(t) != (f1.valid_time, f2.valid_time):
         raise ValueError(
-            f"GDAS fields {f1.valid_time} and {f2.valid_time} do not bracket the "
-            f"acquisition time {t.isoformat()}, which needs {gdas_cycles(t)}"
+            f"GDAS files do not bracket the acquisition time {t:%Y-%m-%dT%H:%M:%SZ}:\n"
+            f"{files}\n"
+            f"It needs the cycles {_iso_minutes(needed[0])} and {_iso_minutes(needed[1])}."
         )
     if f1.pwat.shape != f2.pwat.shape or not np.array_equal(f1.lon, f2.lon):
         raise ValueError(

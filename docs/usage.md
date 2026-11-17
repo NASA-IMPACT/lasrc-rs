@@ -85,10 +85,24 @@ uv run lasrc-ancillary gdas --metadata $SCENE/LC09_..._MTL.txt --fetch gdas.h5
 
 It reads the acquisition time from the metadata (`--acquisition-time 2026-03-14T15:12:34Z` works
 too), downloads the two GDAS 0-hour files that bracket it from the public NOAA Open Data bucket
-(`s3://noaa-gfs-bdp-pds`, no credentials), and interpolates them linearly in time and bilinearly
-onto the CMG grid. Without `--fetch`, give the two GRIB files instead. Exit codes: 0 done, 1
-error, 2 usage error, 75 when the later GDAS cycle is not published yet (retry later). A cycle
-still missing 24 hours after its time is an error.
+(`s3://noaa-gfs-bdp-pds`), and interpolates them linearly in time and bilinearly onto the CMG
+grid. Without `--fetch`, give the two GRIB files instead. Exit codes: 0 done, 1 error, 2 usage
+error, 75 when the later GDAS cycle is not published yet (retry later). A cycle still missing 24
+hours after its time is an error.
+
+When a cycle is missing, the command prints one line per missing cycle to stderr, in a fixed
+`key=value` form for log filters and alerts:
+
+```text
+GDAS_MISSING status=not-yet-published cycle=2026-11-15T06:00Z resolution=1p00 acquisition=2026-11-15T03:00:00Z searched=s3://noaa-gfs-bdp-pds/gdas.20261115/06/
+```
+
+`status=not-yet-published` comes with exit code 75. `status=missing-past-cutoff` comes with exit
+code 1, and most likely means a gap in the archive, so it is the one to alert on.
+
+`--fetch` uses the default AWS credential chain. The bucket is public, so credentials from any AWS
+account work. `--bucket` (or `LASRC_ANCILLARY_GDAS_BUCKET`) points it at another bucket with the
+same key layout, for example a mirror holding known files for integration tests.
 
 #### Finding the GDAS files for a granule
 
