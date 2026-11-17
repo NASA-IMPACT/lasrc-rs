@@ -131,6 +131,7 @@ def prepare_gdas(
     if not fetch:
         if len(local_files) != 2:
             raise ValueError("without fetch, give the two local GDAS files")
+
         return gdas_to_viirs_shaped(local_files, acquisition_time, dest)
     if local_files and _local_files_match(local_files, cycles):
         return gdas_to_viirs_shaped(local_files, acquisition_time, dest)
@@ -144,6 +145,7 @@ def prepare_gdas(
             GdasNotYetPublished if clock() < cycles[1] + RETRY_CUTOFF else GdasMissing
         )
         raise error.from_missing(acquisition_time, cycles, missing, bucket, resolution)
+
     keys = [key for key in located if key is not None]
 
     with tempfile.TemporaryDirectory() as tmp:

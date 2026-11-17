@@ -46,6 +46,7 @@ def interpolate_to_cmg(
     """PWAT and TOZNE at ``acquisition_time`` on the CMG grid (3600 x 7200, float64)."""
     if len(fields) != 2:
         raise ValueError(f"expected two GDAS fields, got {len(fields)}")
+
     f1, f2 = sorted(fields, key=lambda f: f.valid_time)
     t = to_utc(acquisition_time)
     needed = gdas_cycles(t)
@@ -58,10 +59,12 @@ def interpolate_to_cmg(
             f"{files}\n"
             f"It needs the cycles {_iso_minutes(needed[0])} and {_iso_minutes(needed[1])}."
         )
+
     if f1.pwat.shape != f2.pwat.shape or not np.array_equal(f1.lon, f2.lon):
         raise ValueError(
             f"GDAS fields are on different grids: {f1.source}, {f2.source}"
         )
+
     w1, w2 = cycle_weights(t, (f1.valid_time, f2.valid_time))
     pwat = _to_cmg(w1 * f1.pwat + w2 * f2.pwat, f1.lat, f1.lon)
     tozne = _to_cmg(w1 * f1.tozne + w2 * f2.tozne, f1.lat, f1.lon)

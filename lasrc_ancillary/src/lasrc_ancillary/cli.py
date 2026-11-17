@@ -80,8 +80,10 @@ def gdas(
     """
     if (acquisition_time is None) == (metadata is None):
         raise click.UsageError("give exactly one of --acquisition-time or --metadata")
+
     if not fetch and len(grib) != 2:
         raise click.UsageError("give two local GDAS files, or --fetch")
+
     if fetch and len(grib) not in (0, 2):
         raise click.UsageError("give two local GDAS files or none with --fetch")
 

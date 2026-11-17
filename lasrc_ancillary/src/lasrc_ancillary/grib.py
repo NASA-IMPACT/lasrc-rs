@@ -50,6 +50,7 @@ def read_gdas(path: Path) -> GdasField:
                     f"{name}: {element} forecast seconds is "
                     f"{tags.get('GRIB_FORECAST_SECONDS')}, expected 0 (0-hour forecast)"
                 )
+
             valid.add(int(tags["GRIB_VALID_TIME"]))
         if len(valid) != 1:
             raise ValueError(f"{name}: PWAT and TOZNE have different valid time")
@@ -69,11 +70,13 @@ def read_gdas(path: Path) -> GdasField:
                 f"{name}: unexpected grid {ds.shape} with transform {tuple(t)[:6]}, expected "
                 "a global regular grid at 1 or 0.25 degree starting at 90N, 180W"
             )
+
         pwat = ds.read(bands["PWAT"][0]).astype(np.float64)
         tozne = ds.read(bands["TOZNE"][0]).astype(np.float64)
 
     if not (np.isfinite(pwat).all() and np.isfinite(tozne).all()):
         raise ValueError(f"{name}: PWAT or TOZNE has values that are not finite")
+
     nrows, ncols = GRIDS[step]
     return GdasField(
         valid_time=dt.datetime.fromtimestamp(valid.pop(), tz=dt.UTC),

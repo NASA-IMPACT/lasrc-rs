@@ -38,6 +38,7 @@ def _landsat_mtl_time(path: Path) -> dt.datetime:
         raise ValueError(
             f"{path.name}: unexpected SCENE_CENTER_TIME {fields['SCENE_CENTER_TIME']}"
         )
+
     hh, mm, ss, frac = m.groups()
     day = dt.datetime.strptime(fields["DATE_ACQUIRED"], "%Y-%m-%d")
     micro = int((frac or "0")[:6].ljust(6, "0"))

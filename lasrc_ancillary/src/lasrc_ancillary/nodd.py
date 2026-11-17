@@ -64,6 +64,7 @@ def locate_gdas(
     """The 0-hour file key for each cycle, in order, with None for a cycle that isn't there."""
     if resolution not in RESOLUTIONS:
         raise ValueError(f"resolution must be one of {RESOLUTIONS}, got {resolution!r}")
+
     found: list[str | None] = []
     for cycle in cycles:
         prefix = cycle_prefix(cycle)

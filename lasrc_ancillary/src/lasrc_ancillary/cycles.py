@@ -13,6 +13,7 @@ def to_utc(t: dt.datetime) -> dt.datetime:
     """Return ``t`` in UTC. Naive datetimes are rejected."""
     if t.tzinfo is None or t.utcoffset() is None:
         raise ValueError(f"datetime must be timezone-aware (UTC), got naive {t!r}")
+
     return t.astimezone(dt.UTC)
 
 
@@ -31,5 +32,6 @@ def cycle_weights(
     t1, t2 = (to_utc(c) for c in cycles)
     if not t1 <= t <= t2 or t1 == t2:
         raise ValueError(f"{t.isoformat()} is not within the cycles {t1} to {t2}")
+
     w2 = (t - t1) / (t2 - t1)
     return 1.0 - w2, w2
