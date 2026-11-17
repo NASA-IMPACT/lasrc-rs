@@ -3,7 +3,7 @@ from pathlib import Path
 
 import boto3
 import pytest
-from lasrc_ancillary.nodd import BUCKET
+from lasrc_ancillary.nodd import NODD_BUCKET
 from moto import mock_aws
 
 DATA = Path(__file__).parent / "data"
@@ -21,7 +21,7 @@ def s3(monkeypatch: pytest.MonkeyPatch) -> Iterator:
     monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
     with mock_aws():
         client = boto3.client("s3", region_name="us-east-1")
-        client.create_bucket(Bucket=BUCKET)
+        client.create_bucket(Bucket=NODD_BUCKET)
         yield client
 
 
@@ -31,7 +31,7 @@ def put(s3) -> Callable[[dict[str, bytes]], None]:
 
     def _put(objects: dict[str, bytes]) -> None:
         for key, body in objects.items():
-            s3.put_object(Bucket=BUCKET, Key=key, Body=body)
+            s3.put_object(Bucket=NODD_BUCKET, Key=key, Body=body)
 
     return _put
 

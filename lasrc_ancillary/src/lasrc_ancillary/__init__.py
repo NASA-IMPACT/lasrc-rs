@@ -13,14 +13,14 @@ from lasrc_ancillary.estimate import (
 )
 from lasrc_ancillary.metadata import read_acquisition_time
 from lasrc_ancillary.nodd import (
-    BUCKET,
+    NODD_BUCKET,
     fetch_gdas,
     find_gdas,
     locate_gdas,
 )
 
 __all__ = [
-    "BUCKET",
+    "NODD_BUCKET",
     "cycle_weights",
     "estimate_acquisition_time",
     "estimate_acquisition_windows",

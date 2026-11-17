@@ -12,7 +12,7 @@ import click
 
 from lasrc_ancillary.gdas import GdasMissing, GdasNotYetPublished, prepare_gdas
 from lasrc_ancillary.metadata import read_acquisition_time
-from lasrc_ancillary.nodd import BUCKET, RESOLUTIONS
+from lasrc_ancillary.nodd import NODD_BUCKET, RESOLUTIONS
 
 EX_TEMPFAIL = 75
 
@@ -50,7 +50,7 @@ def main() -> None:
 )
 @click.option(
     "--bucket",
-    default=BUCKET,
+    default=NODD_BUCKET,
     show_default=True,
     envvar="LASRC_ANCILLARY_GDAS_BUCKET",
     show_envvar=True,

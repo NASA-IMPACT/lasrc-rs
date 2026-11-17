@@ -17,7 +17,7 @@ from lasrc_ancillary.cycles import to_utc
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
 
-BUCKET = "noaa-gfs-bdp-pds"
+NODD_BUCKET = "noaa-gfs-bdp-pds"
 RESOLUTIONS = ("1p00", "0p25")
 VARIABLES = ("PWAT", "TOZNE")
 
@@ -58,7 +58,7 @@ def locate_gdas(
     cycles: Sequence[datetime],
     s3_client: S3Client,
     resolution: str = "1p00",
-    bucket: str = BUCKET,
+    bucket: str = NODD_BUCKET,
 ) -> list[str | None]:
     """The 0-hour file key for each cycle, in order, with None for a cycle that isn't there."""
     if resolution not in RESOLUTIONS:
@@ -80,7 +80,7 @@ def find_gdas(
     cycles: Sequence[datetime],
     s3_client: S3Client,
     resolution: str = "1p00",
-    bucket: str = BUCKET,
+    bucket: str = NODD_BUCKET,
 ) -> list[str] | None:
     """The 0-hour file key for each cycle, in order, or None while any of them is missing."""
     keys = locate_gdas(cycles, s3_client, resolution, bucket)
@@ -109,7 +109,9 @@ def _idx_ranges(idx_text: str, key: str) -> list[tuple[int, int | None]]:
     return ranges
 
 
-def fetch_gdas(key: str, dest: Path, s3_client: S3Client, bucket: str = BUCKET) -> Path:
+def fetch_gdas(
+    key: str, dest: Path, s3_client: S3Client, bucket: str = NODD_BUCKET
+) -> Path:
     """Download the PWAT and TOZNE messages of ``key`` into ``dest``.
 
     With a ``.idx`` inventory, only the two messages are fetched, with range requests. Older
