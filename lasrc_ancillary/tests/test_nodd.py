@@ -131,3 +131,20 @@ def test_fetch_requires_both_messages(s3, put, tmp_path):
     put({KEY: GRIB, KEY + ".idx": IDX.replace(b"TOZNE", b"TCOLW")})
     with pytest.raises(ValueError, match="TOZNE"):
         fetch_gdas(KEY, tmp_path / "g.grib2", s3)
+
+
+def test_other_bucket(s3, tmp_path):
+    s3.create_bucket(Bucket="my-mirror")
+    s3.put_object(Bucket="my-mirror", Key=KEY, Body=GRIB)
+    s3.put_object(Bucket="my-mirror", Key=KEY + ".idx", Body=IDX)
+    assert find_gdas([dt("2026-03-14T12:00Z")], s3) is None
+    assert find_gdas([dt("2026-03-14T12:00Z")], s3, bucket="my-mirror") == [KEY]
+    out = fetch_gdas(KEY, tmp_path / "g.grib2", s3, bucket="my-mirror")
+    assert out.read_bytes() == b"PWAT-MESSAGE" + b"TOZNE-MSG"
+
+
+def test_client_uses_the_default_credential_chain(s3):
+    from botocore import UNSIGNED
+    from lasrc_ancillary.nodd import default_s3_client
+
+    assert default_s3_client().meta.config.signature_version is not UNSIGNED

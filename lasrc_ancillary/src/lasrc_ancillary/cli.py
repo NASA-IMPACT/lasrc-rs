@@ -12,7 +12,7 @@ import click
 
 from lasrc_ancillary.gdas import GdasMissing, GdasNotYetPublished, prepare_gdas
 from lasrc_ancillary.metadata import read_acquisition_time
-from lasrc_ancillary.nodd import RESOLUTIONS
+from lasrc_ancillary.nodd import BUCKET, RESOLUTIONS
 
 EX_TEMPFAIL = 75
 
@@ -49,6 +49,14 @@ def main() -> None:
     "--resolution", type=click.Choice(RESOLUTIONS), default="1p00", show_default=True
 )
 @click.option(
+    "--bucket",
+    default=BUCKET,
+    show_default=True,
+    envvar="LASRC_ANCILLARY_GDAS_BUCKET",
+    show_envvar=True,
+    help="S3 bucket with the NODD GDAS layout, for example a mirror for testing.",
+)
+@click.option(
     "--work-dir",
     type=click.Path(file_okay=False, path_type=Path),
     help="Where fetched GDAS files go (default: a temporary directory).",
@@ -64,6 +72,7 @@ def gdas(
     metadata: Path | None,
     fetch: bool,
     resolution: str,
+    bucket: str,
     work_dir: Path | None,
     grib: tuple[Path, ...],
     output: Path,
@@ -92,6 +101,7 @@ def gdas(
             fetch=fetch,
             s3_client=obj.get("s3_client"),
             resolution=resolution,
+            bucket=bucket,
             work_dir=work_dir,
             now=obj.get("now"),
         )

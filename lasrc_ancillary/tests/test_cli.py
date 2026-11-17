@@ -109,3 +109,43 @@ def test_local_files_not_bracketing_with_fetch_are_replaced(nodd, tmp_path):
     args = ["--acquisition-time", "2026-11-15T03:00:00Z", "--fetch", F06, F06, out]
     assert run(args, s3_client=nodd(K00, K06)).exit_code == 0
     assert acquisition(out) == "2026-11-15T03:00:00Z"
+
+
+def mirror(s3):
+    s3.create_bucket(Bucket="my-mirror")
+    s3.put_object(Bucket="my-mirror", Key=K00, Body=F00.read_bytes())
+    s3.put_object(Bucket="my-mirror", Key=K06, Body=F06.read_bytes())
+    return s3
+
+
+def test_bucket_option(s3, tmp_path):
+    out = tmp_path / "g.h5"
+    args = [
+        "--acquisition-time",
+        "2026-11-15T03:00:00Z",
+        "--fetch",
+        "--bucket",
+        "my-mirror",
+        out,
+    ]
+    result = run(args, s3_client=mirror(s3))
+    assert result.exit_code == 0, result.output
+
+
+def test_bucket_from_environment(s3, tmp_path):
+    out = tmp_path / "g.h5"
+    args = ["gdas", "--acquisition-time", "2026-11-15T03:00:00Z", "--fetch", str(out)]
+    result = CliRunner().invoke(
+        main,
+        args,
+        obj={"s3_client": mirror(s3)},
+        env={"LASRC_ANCILLARY_GDAS_BUCKET": "my-mirror"},
+    )
+    assert result.exit_code == 0, result.output
+
+
+def test_bucket_default_is_nodd():
+    result = CliRunner().invoke(main, ["gdas", "--help"])
+    text = "".join(result.output.split())  # click wraps long values across lines
+    assert "default:noaa-gfs-bdp-pds" in text
+    assert "LASRC_ANCILLARY_GDAS_BUCKET" in text

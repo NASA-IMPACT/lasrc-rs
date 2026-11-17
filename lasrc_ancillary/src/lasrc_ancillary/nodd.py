@@ -22,13 +22,14 @@ RESOLUTIONS = ("1p00", "0p25")
 VARIABLES = ("PWAT", "TOZNE")
 
 
-def public_s3_client() -> S3Client:
-    """An anonymous boto3 S3 client for the public NODD bucket. Needs ``boto3`` installed."""
-    import boto3
-    from botocore import UNSIGNED
-    from botocore.config import Config
+def default_s3_client() -> S3Client:
+    """A boto3 S3 client with the default AWS credential chain. Needs ``boto3`` installed.
 
-    return boto3.client("s3", config=Config(signature_version=UNSIGNED))
+    The NODD bucket is public, so any AWS credentials can read it.
+    """
+    import boto3
+
+    return boto3.client("s3")
 
 
 def _name_pattern(hh: str, resolution: str) -> re.Pattern[str]:
@@ -41,15 +42,15 @@ def _name_pattern(hh: str, resolution: str) -> re.Pattern[str]:
     return re.compile(rf"^gdas1?\.t{hh}z\.(?:{'|'.join(forms)})$")
 
 
-def _list_keys(s3_client: S3Client, prefix: str) -> list[str]:
+def _list_keys(s3_client: S3Client, bucket: str, prefix: str) -> list[str]:
     keys: list[str] = []
     token = None
     while True:
         if token is None:
-            page = s3_client.list_objects_v2(Bucket=BUCKET, Prefix=prefix)
+            page = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
         else:
             page = s3_client.list_objects_v2(
-                Bucket=BUCKET, Prefix=prefix, ContinuationToken=token
+                Bucket=bucket, Prefix=prefix, ContinuationToken=token
             )
         keys.extend(obj["Key"] for obj in page.get("Contents", []))
         if not page.get("IsTruncated"):
@@ -58,7 +59,10 @@ def _list_keys(s3_client: S3Client, prefix: str) -> list[str]:
 
 
 def find_gdas(
-    cycles: Sequence[datetime], s3_client: S3Client, resolution: str = "1p00"
+    cycles: Sequence[datetime],
+    s3_client: S3Client,
+    resolution: str = "1p00",
+    bucket: str = BUCKET,
 ) -> list[str] | None:
     """The 0-hour file key for each cycle, in order, or None while any of them is missing."""
     if resolution not in RESOLUTIONS:
@@ -71,7 +75,7 @@ def find_gdas(
         pattern = _name_pattern(hh, resolution)
         matches = sorted(
             key
-            for key in _list_keys(s3_client, prefix)
+            for key in _list_keys(s3_client, bucket, prefix)
             if pattern.match(key.removeprefix(prefix).removeprefix("atmos/"))
         )
         if not matches:
@@ -100,15 +104,15 @@ def _idx_ranges(idx_text: str, key: str) -> list[tuple[int, int | None]]:
     return ranges
 
 
-def fetch_gdas(key: str, dest: Path, s3_client: S3Client) -> Path:
+def fetch_gdas(key: str, dest: Path, s3_client: S3Client, bucket: str = BUCKET) -> Path:
     """Download the PWAT and TOZNE messages of ``key`` into ``dest``.
 
     With a ``.idx`` inventory, only the two messages are fetched, with range requests. Older
     files have no inventory, so the whole file is fetched.
     """
     dest = Path(dest)
-    if key + ".idx" in _list_keys(s3_client, key + ".idx"):
-        idx = s3_client.get_object(Bucket=BUCKET, Key=key + ".idx")["Body"].read()
+    if key + ".idx" in _list_keys(s3_client, bucket, key + ".idx"):
+        idx = s3_client.get_object(Bucket=bucket, Key=key + ".idx")["Body"].read()
         ranges = _idx_ranges(idx.decode(), key)
     else:
         ranges = [(0, None)]
@@ -116,10 +120,10 @@ def fetch_gdas(key: str, dest: Path, s3_client: S3Client) -> Path:
     with open(partial, "wb") as f:
         for first, last in ranges:
             if (first, last) == (0, None):
-                obj = s3_client.get_object(Bucket=BUCKET, Key=key)
+                obj = s3_client.get_object(Bucket=bucket, Key=key)
             else:
                 rng = f"bytes={first}-{'' if last is None else last}"
-                obj = s3_client.get_object(Bucket=BUCKET, Key=key, Range=rng)
+                obj = s3_client.get_object(Bucket=bucket, Key=key, Range=rng)
             f.write(obj["Body"].read())
     partial.replace(dest)
     return dest
