@@ -86,9 +86,8 @@ uv run lasrc-ancillary gdas --metadata $SCENE/LC09_..._MTL.txt --fetch gdas.h5
 It reads the acquisition time from the metadata (`--acquisition-time 2026-03-14T15:12:34Z` works
 too), downloads the two GDAS 0-hour files that bracket it from the public NOAA Open Data bucket
 (`s3://noaa-gfs-bdp-pds`), and interpolates them linearly in time and bilinearly onto the CMG
-grid. Without `--fetch`, give the two GRIB files instead. Exit codes: 0 done, 1 error, 2 usage
-error, 75 when the later GDAS cycle is not published yet (retry later). A cycle still missing 24
-hours after its time is an error.
+grid. Without `--fetch`, give the two GRIB files instead. It exits 0 on success and 1 on any
+error (2 for usage errors).
 
 When a cycle is missing, the command prints one line per missing cycle to stderr, in a fixed
 `key=value` form for log filters and alerts:
@@ -97,8 +96,10 @@ When a cycle is missing, the command prints one line per missing cycle to stderr
 GDAS_MISSING status=not-yet-published cycle=2026-11-15T06:00Z resolution=1p00 acquisition=2026-11-15T03:00:00Z searched=s3://noaa-gfs-bdp-pds/gdas.20261115/06/
 ```
 
-`status=not-yet-published` comes with exit code 75. `status=missing-past-cutoff` comes with exit
-code 1, and most likely means a gap in the archive, so it is the one to alert on.
+`status=not-yet-published` means a retry later can succeed. `status=missing-past-cutoff` means
+the cycle is still missing 24 hours after its time, most likely a gap in the archive, so it is the
+one to alert on. Both exit 1. Deciding when to retry is up to the wrapper (from Python, catch
+`GdasNotYetPublished` and `GdasMissing` from `lasrc_ancillary.gdas`).
 
 `--fetch` uses the default AWS credential chain. The bucket is public, so credentials from any AWS
 account work. `--bucket` (or `LASRC_ANCILLARY_GDAS_BUCKET`) points it at another bucket with the
@@ -119,7 +120,7 @@ granule's GDAS input is ready 7 to 13 hours after acquisition. The functions beh
   once `find_gdas` finds all of them.
 - **Processing**: `lasrc-ancillary gdas --fetch` (or `lasrc_ancillary.gdas.prepare_gdas` from
   Python) uses the exact time from the metadata and finds the files itself, so a wrong estimate
-  only costs a retry (exit code 75, or `GdasNotYetPublished`).
+  only costs a retry (`status=not-yet-published`, or `GdasNotYetPublished`).
 
 [`gdas-support.md`](gdas-support.md) has the details: the NODD key layouts, the gaps in the
 archive before 2020, the latency by longitude, and the faster GFS alternative.

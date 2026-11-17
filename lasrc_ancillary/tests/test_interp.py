@@ -115,3 +115,15 @@ def test_rejects_mixed_resolutions():
 def test_rejects_wrong_number_of_fields():
     with pytest.raises(ValueError, match="two"):
         interpolate_to_cmg([field(T0, 1.0, lambda la, lo: 1.0)], T0)
+
+
+def test_not_bracketing_message_names_files_and_cycles():
+    fields = [field(T0, 1.0, lambda la, lo: 1.0), field(T1, 1.0, lambda la, lo: 1.0)]
+    with pytest.raises(ValueError) as exc:
+        interpolate_to_cmg(fields, T1 + dt.timedelta(hours=2))
+    assert str(exc.value).splitlines() == [
+        "GDAS files do not bracket the acquisition time 2026-03-14T20:00:00Z:",
+        "  12Z: valid 2026-03-14T12:00Z",
+        "  18Z: valid 2026-03-14T18:00Z",
+        "It needs the cycles 2026-03-14T18:00Z and 2026-03-15T00:00Z.",
+    ]

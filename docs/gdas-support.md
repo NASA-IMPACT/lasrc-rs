@@ -505,7 +505,7 @@ When the orchestration layer was wrong:
 
 | Case                                                                               | What happens                                                                          |
 | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Triggered early: `cycle2` is not on NODD yet                                       | Exit with code 75 (`EX_TEMPFAIL`) so the orchestration retries                        |
+| Triggered early: `cycle2` is not on NODD yet                                       | Report it as not yet published, so the orchestration retries                          |
 | Still missing well past the expected latency (for example 24 hours after `cycle2`) | Fail with a normal error, so a gap in the archive doesn't retry forever               |
 | Staged files that don't bracket the acquisition time                               | Ignore them and fetch the right pair, or fail with a clear error when fetching is off |
 
