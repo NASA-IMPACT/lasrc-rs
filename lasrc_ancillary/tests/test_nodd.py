@@ -1,12 +1,11 @@
 from datetime import datetime, timedelta
 
 import pytest
-from lasrc_ancillary.cycles import parse_iso
 from lasrc_ancillary.nodd import fetch_gdas, find_gdas
 
 
 def dt(s: str) -> datetime:
-    return parse_iso(s)
+    return datetime.fromisoformat(s)
 
 
 def cycle_dir(day: str, hh: str, atmos: bool) -> str:

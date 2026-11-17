@@ -1,15 +1,15 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import h5py
 import pytest
 from conftest import F00, F06, K00, K06
 from lasrc_ancillary.gdas import GdasMissing, GdasNotYetPublished, prepare_gdas
 
-T = datetime(2026, 11, 15, 3, tzinfo=timezone.utc)
+T = datetime(2026, 11, 15, 3, tzinfo=UTC)
 
 
 def utc(*args):
-    return datetime(*args, tzinfo=timezone.utc)
+    return datetime(*args, tzinfo=UTC)
 
 
 def acquisition(out):

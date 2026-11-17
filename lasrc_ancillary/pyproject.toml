@@ -6,7 +6,7 @@ build-backend = "uv_build"
 name = "lasrc-ancillary"
 version = "0.1.0"
 description = "Find, fetch and convert ancillary inputs for lasrc"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = []
 
 [project.optional-dependencies]

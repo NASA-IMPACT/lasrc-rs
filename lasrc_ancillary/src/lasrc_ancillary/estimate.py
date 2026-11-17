@@ -9,11 +9,9 @@ The estimate only decides when to look for GDAS files. The processing job uses t
 """
 
 import math
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 
 from lasrc_ancillary.cycles import CYCLE, gdas_cycles, to_utc
-
-UTC = timezone.utc
 
 # name -> (inclination in degrees, descending node local time in hours)
 # Landsat 8 is nominally 10:00, but crossed at about 10:12 in 2019-2020 scenes.

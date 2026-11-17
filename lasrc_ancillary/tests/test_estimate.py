@@ -1,7 +1,6 @@
 from datetime import date, datetime, timedelta
 
 import pytest
-from lasrc_ancillary.cycles import parse_iso
 from lasrc_ancillary.estimate import (
     estimate_acquisition_time,
     estimate_acquisition_windows,
@@ -10,7 +9,7 @@ from lasrc_ancillary.estimate import (
 
 
 def dt(s: str) -> datetime:
-    return parse_iso(s)
+    return datetime.fromisoformat(s)
 
 
 def covers(windows, t):

@@ -1,11 +1,11 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import numpy as np
 import pytest
 from lasrc_ancillary.grib import GRIDS, GdasField
 from lasrc_ancillary.interp import CMG_LAT, CMG_LON, interpolate_to_cmg
 
-T0 = datetime(2026, 3, 14, 12, tzinfo=timezone.utc)
+T0 = datetime(2026, 3, 14, 12, tzinfo=UTC)
 T1 = T0 + timedelta(hours=6)
 
 

@@ -5,7 +5,7 @@ centers, with the grid shifted to start at longitude -180.
 """
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -77,7 +77,7 @@ def read_gdas(path: Path) -> GdasField:
         raise ValueError(f"{name}: PWAT or TOZNE has values that are not finite")
     nrows, ncols = GRIDS[step]
     return GdasField(
-        valid_time=datetime.fromtimestamp(valid.pop(), tz=timezone.utc),
+        valid_time=datetime.fromtimestamp(valid.pop(), tz=UTC),
         lat=90.0 - step * np.arange(nrows),
         lon=-180.0 + step * np.arange(ncols),
         pwat=pwat,
