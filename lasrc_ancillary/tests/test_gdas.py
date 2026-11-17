@@ -74,3 +74,17 @@ def test_missing_after_cutoff(nodd, tmp_path):
             s3_client=nodd(K00),
             now=lambda: utc(2026, 11, 16, 7),
         )
+
+
+def test_other_bucket(s3, tmp_path):
+    s3.create_bucket(Bucket="my-mirror")
+    s3.put_object(Bucket="my-mirror", Key=K00, Body=F00.read_bytes())
+    s3.put_object(Bucket="my-mirror", Key=K06, Body=F06.read_bytes())
+    out = prepare_gdas(T, tmp_path / "g.h5", s3_client=s3, bucket="my-mirror")
+    assert acquisition(out) == "2026-11-15T03:00:00Z"
+
+
+def test_default_client_when_none_given(nodd, tmp_path):
+    nodd(K00, K06)  # moto intercepts the client prepare_gdas builds itself
+    out = prepare_gdas(T, tmp_path / "g.h5")
+    assert acquisition(out) == "2026-11-15T03:00:00Z"

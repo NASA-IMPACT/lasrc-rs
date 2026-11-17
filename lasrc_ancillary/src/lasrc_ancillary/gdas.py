@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from lasrc_ancillary.cycles import gdas_cycles
-from lasrc_ancillary.nodd import fetch_gdas, find_gdas, public_s3_client
+from lasrc_ancillary.nodd import BUCKET, default_s3_client, fetch_gdas, find_gdas
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
@@ -62,6 +62,7 @@ def prepare_gdas(
     fetch: bool = True,
     s3_client: S3Client | None = None,
     resolution: str = "1p00",
+    bucket: str = BUCKET,
     work_dir: Path | None = None,
     now: Callable[[], datetime] | None = None,
 ) -> Path:
@@ -84,22 +85,22 @@ def prepare_gdas(
     if local_files and _local_files_match(local_files, cycles):
         return gdas_to_viirs_shaped(local_files, acquisition_time, dest)
 
-    s3 = s3_client or public_s3_client()
-    keys = find_gdas(cycles, s3, resolution)
+    s3 = s3_client or default_s3_client()
+    keys = find_gdas(cycles, s3, resolution, bucket)
     if keys is None:
         names = f"{cycles[0]:%Y-%m-%d %HZ} and {cycles[1]:%Y-%m-%d %HZ}"
         clock = now or (lambda: datetime.now(timezone.utc))
         if clock() < cycles[1] + RETRY_CUTOFF:
             raise GdasNotYetPublished(
-                f"GDAS cycles {names} are not both on NODD yet", cycles
+                f"GDAS cycles {names} are not both in s3://{bucket} yet", cycles
             )
         raise GdasMissing(
-            f"GDAS cycles {names} are still missing from NODD more than {RETRY_CUTOFF} "
+            f"GDAS cycles {names} are still missing from s3://{bucket} more than {RETRY_CUTOFF} "
             "after the later cycle",
             cycles,
         )
 
     with tempfile.TemporaryDirectory() as tmp:
         work = Path(work_dir) if work_dir is not None else Path(tmp)
-        paths = [fetch_gdas(k, work / k.replace("/", "_"), s3) for k in keys]
+        paths = [fetch_gdas(k, work / k.replace("/", "_"), s3, bucket) for k in keys]
         return gdas_to_viirs_shaped(paths, acquisition_time, dest)
