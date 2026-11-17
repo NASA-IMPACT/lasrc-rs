@@ -22,19 +22,6 @@ RESOLUTIONS = ("1p00", "0p25")
 VARIABLES = ("PWAT", "TOZNE")
 
 
-def default_s3_client() -> S3Client:
-    """A boto3 S3 client with the default AWS credential chain. Needs ``boto3`` installed.
-
-    The NODD bucket is public, so any AWS credentials can read it. Throttling and transient
-    network errors are retried (botocore's standard mode).
-    """
-    import boto3
-    from botocore.config import Config
-
-    config = Config(retries={"mode": "standard", "total_max_attempts": 10})
-    return boto3.client("s3", config=config)
-
-
 def _name_pattern(hh: str, resolution: str) -> re.Pattern[str]:
     # The key layout changed over time (see docs/gdas-support.md): gdas1.tHHz.pgrbf00.grib2
     # (1 degree only, until early 2015), then gdas1. and later gdas. with pgrb2.RES.f000, and

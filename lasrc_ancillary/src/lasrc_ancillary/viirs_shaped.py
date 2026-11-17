@@ -10,6 +10,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
 
+import h5py
 import numpy as np
 
 from lasrc_ancillary.cycles import cycle_weights, to_utc
@@ -45,8 +46,6 @@ def gdas_to_viirs_shaped(
     paths: Sequence[Path], acquisition_time: datetime, dest: Path
 ) -> Path:
     """Interpolate two GDAS files to ``acquisition_time`` and write a VIIRS-shaped HDF5 file."""
-    import h5py
-
     fields = sorted((read_gdas(Path(p)) for p in paths), key=lambda f: f.valid_time)
     pwat, tozne = interpolate_to_cmg(fields, acquisition_time)
     weights = cycle_weights(

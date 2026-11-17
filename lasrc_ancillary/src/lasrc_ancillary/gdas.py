@@ -14,14 +14,18 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Self
 
+import boto3
+from botocore.config import Config
+
 from lasrc_ancillary.cycles import gdas_cycles, to_utc
+from lasrc_ancillary.grib import read_gdas
 from lasrc_ancillary.nodd import (
     BUCKET,
     cycle_prefix,
-    default_s3_client,
     fetch_gdas,
     locate_gdas,
 )
+from lasrc_ancillary.viirs_shaped import gdas_to_viirs_shaped
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
@@ -80,11 +84,19 @@ class GdasMissing(GdasUnavailable):
     status = "missing-past-cutoff"
 
 
+def default_s3_client() -> S3Client:
+    """A boto3 S3 client with the default AWS credential chain.
+
+    The NODD bucket is public, so any AWS credentials can read it. Throttling and transient
+    network errors are retried (botocore's standard mode).
+    """
+    config = Config(retries={"mode": "standard", "total_max_attempts": 10})
+    return boto3.client("s3", config=config)
+
+
 def _local_files_match(
     paths: Sequence[Path], cycles: tuple[datetime, datetime]
 ) -> bool:
-    from lasrc_ancillary.grib import read_gdas
-
     try:
         times = sorted(read_gdas(p).valid_time for p in paths)
     except (OSError, ValueError) as e:
@@ -114,8 +126,6 @@ def prepare_gdas(
     Raises ``GdasNotYetPublished`` while a cycle is not on NODD yet, and ``GdasMissing`` once it is
     still missing ``RETRY_CUTOFF`` after the later cycle.
     """
-    from lasrc_ancillary.viirs_shaped import gdas_to_viirs_shaped
-
     cycles = gdas_cycles(acquisition_time)
     if not fetch:
         if len(local_files) != 2:

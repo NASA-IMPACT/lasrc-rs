@@ -14,7 +14,6 @@ from lasrc_ancillary.estimate import (
 from lasrc_ancillary.metadata import read_acquisition_time
 from lasrc_ancillary.nodd import (
     BUCKET,
-    default_s3_client,
     fetch_gdas,
     find_gdas,
     locate_gdas,
@@ -23,7 +22,6 @@ from lasrc_ancillary.nodd import (
 __all__ = [
     "BUCKET",
     "cycle_weights",
-    "default_s3_client",
     "estimate_acquisition_time",
     "estimate_acquisition_windows",
     "fetch_gdas",

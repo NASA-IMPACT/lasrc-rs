@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 
 import numpy as np
+import xarray as xr
 
 from lasrc_ancillary.cycles import cycle_weights, gdas_cycles, to_utc
 from lasrc_ancillary.grib import GdasField
@@ -20,8 +21,6 @@ CMG_LON = -179.975 + CMG_STEP * np.arange(7200)
 
 
 def _to_cmg(values: np.ndarray, lat: np.ndarray, lon: np.ndarray) -> np.ndarray:
-    import xarray as xr
-
     # GDAS has no column at +180, so wrap the -180 column there for cells east of the last one.
     wrapped = xr.DataArray(
         np.concatenate([values, values[:, :1]], axis=1),
