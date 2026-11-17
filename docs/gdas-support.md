@@ -521,6 +521,9 @@ leaves two things to get right:
 
 ### Appendix: latency, GDAS vs GFS
 
+[`notebooks/gdas-latency.ipynb`](notebooks/gdas-latency.ipynb) reproduces the numbers in this section and the archive
+gaps above from the bucket.
+
 **GDAS cycles are slow by design.** GDAS waits about 6 hours after each cycle for late observations before it runs. Its
 0-hour file is published about 7 hours after the cycle. Hours from cycle to the NODD `LastModified` time for the 1460
 cycles from 2025-11-16 to 2026-11-15, with none missing:

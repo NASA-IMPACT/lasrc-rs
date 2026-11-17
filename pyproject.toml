@@ -14,6 +14,10 @@ members = ["lasrc_py"]
 lasrc = { workspace = true }
 
 [dependency-groups]
+notebook = [
+    "jupyterlab>=4.6.6",
+    "pandas>=2.3.3",
+]
 dev = [
     "mypy>=2.4.0",
     "pytest>=9.1.1",
