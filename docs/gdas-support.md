@@ -392,6 +392,11 @@ These notes come from spot checks of `s3://noaa-gfs-bdp-pds` (public, no credent
   `bufr_d`/`prepbufr` (observations), `abias`/`satang` (satellite bias corrections).
 - The bucket goes back to 2006, so it covers the whole Landsat 8 and Sentinel-2 record. Years
   before 2013 were not checked for these files.
+- The bucket has gaps before 2020. Checking the 12Z 1 degree 0-hour file for every day from
+  2013-04-01 to 2026-11-15, it is missing on 129 days: 2 in 2014, 17 in 2015, 16 in 2016, 1 in
+  2017, 34 in 2018 and 59 in 2019, none from 2020 on. The longest gap is 2019-04-25 to
+  2019-06-14. In May and June 2019, 191 of 244 cycles are missing. Historical processing needs
+  another archive (NCAR RDA is a candidate, not checked) or a fallback for these dates.
 - The older `pgrbf00.grib2` files (checked for 2013-06-01) are the same 1 degree, 360 x 181 GRIB2
   grid, with PWAT and TOZNE at forecast hour 0. They have no `.idx` file, so the whole file
   (about 17 MB) has to be fetched.
