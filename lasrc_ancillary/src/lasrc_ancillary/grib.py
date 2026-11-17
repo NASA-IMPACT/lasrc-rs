@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
+import rasterio
 
 # grid spacing in degrees -> (rows, columns)
 GRIDS = {1.0: (181, 360), 0.25: (721, 1440)}
@@ -27,8 +28,6 @@ class GdasField:
 
 def read_gdas(path: Path) -> GdasField:
     """PWAT (kg m-2) and TOZNE (DU) from a GDAS file, on its grid points, as float64."""
-    import rasterio
-
     path = Path(path)
     name = path.name
     with rasterio.open(path) as ds:
