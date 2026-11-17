@@ -1,8 +1,6 @@
 """Interpolate two GDAS cycles to an acquisition time and onto the CMG grid.
 
-Linear in time, then bilinear in space at the CMG cell centers. The spatial step interpolates by
-coordinate label with xarray, so there is no index arithmetic to get wrong (the upstream C code
-is off by one column and samples cell corners, see docs/gdas-support.md, section 3).
+Linear in time, then bilinear in space at the CMG cell centers, by coordinate label with xarray.
 """
 
 from collections.abc import Sequence
