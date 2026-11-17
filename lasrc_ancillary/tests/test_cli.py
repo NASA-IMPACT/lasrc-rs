@@ -50,7 +50,7 @@ def test_needs_a_time(tmp_path):
     assert run([F00, F06, tmp_path / "o.h5"]).exit_code == 2
 
 
-def test_needs_two_files_without_fetch(tmp_path):
+def test_one_grib_file_is_a_usage_error(tmp_path):
     result = run(["--acquisition-time", "2026-11-15T03:00:00Z", F00, tmp_path / "o.h5"])
     assert result.exit_code == 2
 
@@ -64,19 +64,18 @@ def mirror(s3):
 
 def test_bucket_from_environment(s3, tmp_path):
     out = tmp_path / "g.h5"
-    args = ["gdas", "--acquisition-time", "2026-11-15T03:00:00Z", "--fetch", str(out)]
+    args = ["gdas", "--acquisition-time", "2026-11-15T03:00:00Z", str(out)]
+    mirror(s3)
     result = CliRunner().invoke(
-        main,
-        args,
-        obj={"s3_client": mirror(s3)},
-        env={"LASRC_ANCILLARY_GDAS_BUCKET": "my-mirror"},
+        main, args, env={"LASRC_ANCILLARY_GDAS_BUCKET": "my-mirror"}
     )
     assert result.exit_code == 0, result.output
 
 
 def test_missing_cycles_are_reported_one_per_line(nodd, tmp_path):
-    args = ["--acquisition-time", "2026-11-15T03:00:00Z", "--fetch", tmp_path / "g.h5"]
-    result = run(args, s3_client=nodd(K00), now=lambda: utc(2026, 11, 15, 8))
+    args = ["--acquisition-time", "2026-11-15T03:00:00Z", tmp_path / "g.h5"]
+    nodd(K00)
+    result = run(args, now=lambda: utc(2026, 11, 15, 8))
     assert result.exit_code == 1
     lines = [
         line for line in result.output.splitlines() if line.startswith("GDAS_MISSING")

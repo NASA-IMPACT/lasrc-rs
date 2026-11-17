@@ -79,15 +79,15 @@ needs its own.
 
 ```shell
 uv sync   # lasrc-ancillary[gdas] is part of the dev environment
-uv run lasrc-ancillary gdas --metadata $SCENE/LC09_..._MTL.txt --fetch gdas.h5
+uv run lasrc-ancillary gdas --metadata $SCENE/LC09_..._MTL.txt gdas.h5
 # Sentinel-2: --metadata $SAFE/GRANULE/*/MTD_TL.xml
 ```
 
 It reads the acquisition time from the metadata (`--acquisition-time 2026-03-14T15:12:34Z` works
 too), downloads the two GDAS 0-hour files that bracket it from the public NOAA Open Data bucket
-(`s3://noaa-gfs-bdp-pds`), and interpolates them linearly in time and bilinearly onto the CMG
-grid. Without `--fetch`, give the two GRIB files instead. It exits 0 on success and 1 on any
-error (2 for usage errors).
+(`s3://noaa-gfs-bdp-pds`), and interpolates them linearly in time and bilinearly onto the CMG grid.
+To convert GRIB files you already have, give the two of them before the output path. It exits 0 on
+success and 1 on any error (2 for usage errors).
 
 When a cycle is missing, the command prints one line per missing cycle to stderr, in a fixed
 `key=value` form for log filters and alerts:
@@ -101,7 +101,7 @@ the cycle is still missing 24 hours after its time, most likely a gap in the arc
 one to alert on. Both exit 1. Deciding when to retry is up to the wrapper (from Python, catch
 `GdasNotYetPublished` and `GdasMissing` from `lasrc_ancillary.gdas`).
 
-`--fetch` uses the default AWS credential chain. The bucket is public, so credentials from any AWS
+Fetching uses the default AWS credential chain. The bucket is public, so credentials from any AWS
 account work. `--bucket` (or `LASRC_ANCILLARY_GDAS_BUCKET`) points it at another bucket with the
 same key layout, for example a mirror holding known files for integration tests.
 
@@ -118,7 +118,7 @@ granule's GDAS input is ready 7 to 13 hours after acquisition. The functions beh
   and the scene or tile center (`estimate_acquisition_windows`, with the Sentinel-2 datatake start
   as `not_before`), list every cycle the windows touch (`gdas_cycles_for_windows`), and trigger
   once `find_gdas` finds all of them.
-- **Processing**: `lasrc-ancillary gdas --fetch` (or `lasrc_ancillary.gdas.prepare_gdas` from
+- **Processing**: `lasrc-ancillary gdas` (or `lasrc_ancillary.gdas.prepare_gdas` from
   Python) uses the exact time from the metadata and finds the files itself, so a wrong estimate
   only costs a retry (`status=not-yet-published`, or `GdasNotYetPublished`).
 

@@ -4,18 +4,38 @@ Exits 0 on success and 1 on error (2 for usage errors). Missing GDAS cycles are 
 ``GDAS_MISSING`` lines on stderr, whose ``status`` says whether a retry could help.
 """
 
+from __future__ import annotations
+
 import datetime as dt
 import logging
+import tempfile
 from pathlib import Path
+from typing import TYPE_CHECKING
 
+import boto3
 import click
+from botocore.config import Config
 
 from lasrc_ancillary.gdas import GdasUnavailable, prepare_gdas
 from lasrc_ancillary.metadata import read_acquisition_time
 from lasrc_ancillary.nodd import NODD_BUCKET, RESOLUTIONS, Resolution
+from lasrc_ancillary.viirs_shaped import gdas_to_viirs_shaped
+
+if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3Client
 
 # Every format requires a timezone. %z accepts "Z" as well as offsets such as +00:00.
 ISO_FORMATS = ["%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dT%H:%M%z"]
+
+
+def default_s3_client() -> S3Client:
+    """A boto3 S3 client with the default AWS credential chain.
+
+    The NODD bucket is public, so any AWS credentials can read it. Throttling and transient
+    network errors are retried (botocore's standard mode).
+    """
+    config = Config(retries={"mode": "standard", "total_max_attempts": 10})
+    return boto3.client("s3", config=config)
 
 
 @click.group()
@@ -36,11 +56,6 @@ def main() -> None:
     "--metadata",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
     help="Landsat *_MTL.txt or Sentinel-2 tile MTD_TL.xml to read the time from.",
-)
-@click.option(
-    "--fetch",
-    is_flag=True,
-    help="Find and download the GDAS files from NODD (replaces local files that don't match).",
 )
 @click.option(
     "--resolution", type=click.Choice(RESOLUTIONS), default="1p00", show_default=True
@@ -67,7 +82,6 @@ def gdas(
     ctx: click.Context,
     acquisition_time: dt.datetime | None,
     metadata: Path | None,
-    fetch: bool,
     resolution: Resolution,
     bucket: str,
     work_dir: Path | None,
@@ -76,37 +90,36 @@ def gdas(
 ) -> None:
     """GDAS water vapor and ozone as a VIIRS-shaped file for lasrc --wv-oz-hdf.
 
-    GRIB is the two local GDAS 0-hour files, or none with --fetch.
+    GRIB is the two GDAS 0-hour files that bracket the acquisition time. Without them, they are
+    fetched from the bucket.
     """
     if (acquisition_time is None) == (metadata is None):
         raise click.UsageError("give exactly one of --acquisition-time or --metadata")
 
-    if not fetch and len(grib) != 2:
-        raise click.UsageError("give two local GDAS files, or --fetch")
-
-    if fetch and len(grib) not in (0, 2):
-        raise click.UsageError("give two local GDAS files or none with --fetch")
-
-    obj = ctx.obj or {}
+    if len(grib) not in (0, 2):
+        raise click.UsageError("give the two GDAS files, or none to fetch them")
 
     if acquisition_time is None:
         assert metadata is not None
         acquisition_time = read_acquisition_time(metadata)
-    if work_dir is not None:
-        work_dir.mkdir(parents=True, exist_ok=True)
 
-    try:
-        prepare_gdas(
-            acquisition_time,
-            output,
-            local_files=grib,
-            fetch=fetch,
-            s3_client=obj.get("s3_client"),
-            resolution=resolution,
-            bucket=bucket,
-            work_dir=work_dir,
-            now=obj.get("now"),
-        )
-    except GdasUnavailable as e:
-        click.echo(str(e), err=True)
-        ctx.exit(1)
+    if grib:
+        gdas_to_viirs_shaped(list(grib), acquisition_time, output)
+        return
+
+    with tempfile.TemporaryDirectory() as tmp:
+        work = work_dir or Path(tmp)
+        work.mkdir(parents=True, exist_ok=True)
+        try:
+            prepare_gdas(
+                acquisition_time,
+                output,
+                s3_client=default_s3_client(),
+                work_dir=work,
+                resolution=resolution,
+                bucket=bucket,
+                now=(ctx.obj or {}).get("now"),
+            )
+        except GdasUnavailable as e:
+            click.echo(str(e), err=True)
+            ctx.exit(1)
