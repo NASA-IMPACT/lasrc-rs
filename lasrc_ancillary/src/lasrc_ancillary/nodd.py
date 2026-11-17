@@ -68,10 +68,15 @@ def locate_gdas(
     found: list[str | None] = []
     for cycle in cycles:
         prefix = cycle_prefix(cycle)
-        pattern = _name_pattern(f"{to_utc(cycle).hour:02d}", resolution)
+        hh = f"{to_utc(cycle).hour:02d}"
+        pattern = _name_pattern(hh, resolution)
+        # A cycle directory since 2021 holds thousands of keys, so list only where 0-hour files
+        # can be: files at its top level (older layouts) and atmos/ GRIB2 files (current layout).
+        top_level = _list_keys(s3_client, bucket, f"{prefix}gdas")
+        atmos = _list_keys(s3_client, bucket, f"{prefix}atmos/gdas.t{hh}z.pgrb2")
         matches = sorted(
             key
-            for key in _list_keys(s3_client, bucket, prefix)
+            for key in [*top_level, *atmos]
             if pattern.match(key.removeprefix(prefix).removeprefix("atmos/"))
         )
         found.append(matches[-1] if matches else None)
