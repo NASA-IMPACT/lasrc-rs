@@ -8,10 +8,11 @@ dependencies = ["lasrc"]
 package = false
 
 [tool.uv.workspace]
-members = ["lasrc_py"]
+members = ["lasrc_py", "lasrc_ancillary"]
 
 [tool.uv.sources]
 lasrc = { workspace = true }
+lasrc-ancillary = { workspace = true }
 
 [dependency-groups]
 notebook = [
@@ -19,6 +20,8 @@ notebook = [
     "pandas>=2.3.3",
 ]
 dev = [
+    "boto3-stubs[s3]>=1.44.3",
+    "lasrc-ancillary[gdas]",
     "mypy>=2.4.0",
     "pytest>=9.1.1",
     "ruff>=0.17.2",

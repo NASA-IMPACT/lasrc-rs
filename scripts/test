@@ -18,5 +18,5 @@ if [[ "$target" == "all" || "$target" == "rust" ]]; then
 fi
 
 if [[ "$target" == "all" || "$target" == "python" ]]; then
-    uv run pytest lasrc_py "$@"
+    uv run pytest lasrc_py lasrc_ancillary "$@"
 fi
