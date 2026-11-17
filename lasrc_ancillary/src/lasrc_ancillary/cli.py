@@ -10,7 +10,6 @@ from pathlib import Path
 
 import click
 
-from lasrc_ancillary.cycles import parse_iso
 from lasrc_ancillary.gdas import GdasMissing, GdasNotYetPublished, prepare_gdas
 from lasrc_ancillary.metadata import read_acquisition_time
 from lasrc_ancillary.nodd import RESOLUTIONS
@@ -18,25 +17,8 @@ from lasrc_ancillary.nodd import RESOLUTIONS
 EX_TEMPFAIL = 75
 
 
-class _UtcTime(click.ParamType):
-    name = "time"
-
-    def convert(
-        self, value: object, param: click.Parameter | None, ctx: click.Context | None
-    ) -> datetime:
-        if isinstance(value, datetime):
-            return value
-        try:
-            t = parse_iso(str(value))
-        except ValueError:
-            self.fail(f"not an ISO 8601 time: {value!r}", param, ctx)
-        if t.tzinfo is None:
-            self.fail(
-                f"{value!r} has no timezone, add 'Z' or a UTC offset such as +00:00",
-                param,
-                ctx,
-            )
-        return t
+# Every format requires a timezone. %z accepts "Z" as well as offsets such as +00:00.
+ISO_FORMATS = ["%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dT%H:%M%z"]
 
 
 @click.group()
@@ -49,7 +31,9 @@ def main() -> None:
 
 @main.command()
 @click.option(
-    "--acquisition-time", type=_UtcTime(), help="ISO 8601 time with a timezone."
+    "--acquisition-time",
+    type=click.DateTime(formats=ISO_FORMATS),
+    help="ISO 8601 time with a timezone, such as 2026-03-14T15:12:34Z.",
 )
 @click.option(
     "--metadata",
