@@ -7,10 +7,10 @@ files, so a wrong estimate costs a retry, never a wrong result.
 
 from __future__ import annotations
 
+import datetime as dt
 import logging
 import tempfile
 from collections.abc import Callable, Sequence
-from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Self
 
@@ -33,10 +33,10 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-RETRY_CUTOFF = timedelta(hours=24)
+RETRY_CUTOFF = dt.timedelta(hours=24)
 
 
-def _iso_minutes(t: datetime) -> str:
+def _iso_minutes(t: dt.datetime) -> str:
     return to_utc(t).strftime("%Y-%m-%dT%H:%MZ")
 
 
@@ -48,15 +48,15 @@ class GdasUnavailable(Exception):
     """
 
     status = "unavailable"
-    cycles: tuple[datetime, datetime]
-    missing: list[datetime]
+    cycles: tuple[dt.datetime, dt.datetime]
+    missing: list[dt.datetime]
 
     @classmethod
     def from_missing(
         cls,
-        acquisition_time: datetime,
-        cycles: tuple[datetime, datetime],
-        missing: list[datetime],
+        acquisition_time: dt.datetime,
+        cycles: tuple[dt.datetime, dt.datetime],
+        missing: list[dt.datetime],
         bucket: str,
         resolution: Resolution,
     ) -> Self:
@@ -96,7 +96,7 @@ def default_s3_client() -> S3Client:
 
 
 def _local_files_match(
-    paths: Sequence[Path], cycles: tuple[datetime, datetime]
+    paths: Sequence[Path], cycles: tuple[dt.datetime, dt.datetime]
 ) -> bool:
     try:
         times = sorted(read_gdas(p).valid_time for p in paths)
@@ -107,7 +107,7 @@ def _local_files_match(
 
 
 def prepare_gdas(
-    acquisition_time: datetime,
+    acquisition_time: dt.datetime,
     dest: Path,
     *,
     local_files: Sequence[Path] = (),
@@ -116,7 +116,7 @@ def prepare_gdas(
     resolution: Resolution = "1p00",
     bucket: str = NODD_BUCKET,
     work_dir: Path | None = None,
-    now: Callable[[], datetime] | None = None,
+    now: Callable[[], dt.datetime] | None = None,
 ) -> Path:
     """Write the VIIRS-shaped GDAS file for ``acquisition_time`` to ``dest``.
 
@@ -139,7 +139,7 @@ def prepare_gdas(
     located = locate_gdas(cycles, s3, resolution, bucket)
     missing = [c for c, key in zip(cycles, located) if key is None]
     if missing:
-        clock = now or (lambda: datetime.now(UTC))
+        clock = now or (lambda: dt.datetime.now(dt.UTC))
         error = (
             GdasNotYetPublished if clock() < cycles[1] + RETRY_CUTOFF else GdasMissing
         )

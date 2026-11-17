@@ -4,8 +4,8 @@ Exit codes: 0 done, 1 error, 2 usage error, 75 (EX_TEMPFAIL) when the later GDAS
 NODD yet, so the orchestration can retry.
 """
 
+import datetime as dt
 import logging
-from datetime import datetime
 from pathlib import Path
 
 import click
@@ -68,7 +68,7 @@ def main() -> None:
 @click.pass_context
 def gdas(
     ctx: click.Context,
-    acquisition_time: datetime | None,
+    acquisition_time: dt.datetime | None,
     metadata: Path | None,
     fetch: bool,
     resolution: Resolution,

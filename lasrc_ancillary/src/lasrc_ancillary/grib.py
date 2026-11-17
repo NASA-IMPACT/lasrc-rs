@@ -4,8 +4,8 @@ Uses the GDAL GRIB driver bundled with rasterio. GDAL reports the GDAS grid poin
 centers, with the grid shifted to start at longitude -180.
 """
 
+import datetime as dt
 from dataclasses import dataclass
-from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -18,7 +18,7 @@ LEVEL = "0-EATM"
 
 @dataclass(frozen=True)
 class GdasField:
-    valid_time: datetime
+    valid_time: dt.datetime
     lat: np.ndarray
     lon: np.ndarray
     pwat: np.ndarray
@@ -76,7 +76,7 @@ def read_gdas(path: Path) -> GdasField:
         raise ValueError(f"{name}: PWAT or TOZNE has values that are not finite")
     nrows, ncols = GRIDS[step]
     return GdasField(
-        valid_time=datetime.fromtimestamp(valid.pop(), tz=UTC),
+        valid_time=dt.datetime.fromtimestamp(valid.pop(), tz=dt.UTC),
         lat=90.0 - step * np.arange(nrows),
         lon=-180.0 + step * np.arange(ncols),
         pwat=pwat,

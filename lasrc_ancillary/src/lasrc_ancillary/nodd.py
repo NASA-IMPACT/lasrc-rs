@@ -6,9 +6,9 @@ client with boto3's ``list_objects_v2`` and ``get_object``, passed in by the cal
 
 from __future__ import annotations
 
+import datetime as dt
 import re
 from collections.abc import Sequence
-from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, get_args
 
@@ -49,14 +49,14 @@ def _list_keys(s3_client: S3Client, bucket: str, prefix: str) -> list[str]:
         token = page["NextContinuationToken"]
 
 
-def cycle_prefix(cycle: datetime) -> str:
+def cycle_prefix(cycle: dt.datetime) -> str:
     """The key prefix of a GDAS cycle directory, for example ``gdas.20261115/06/``."""
     c = to_utc(cycle)
     return f"gdas.{c:%Y%m%d}/{c.hour:02d}/"
 
 
 def locate_gdas(
-    cycles: Sequence[datetime],
+    cycles: Sequence[dt.datetime],
     s3_client: S3Client,
     resolution: Resolution = "1p00",
     bucket: str = NODD_BUCKET,
@@ -78,7 +78,7 @@ def locate_gdas(
 
 
 def find_gdas(
-    cycles: Sequence[datetime],
+    cycles: Sequence[dt.datetime],
     s3_client: S3Client,
     resolution: Resolution = "1p00",
     bucket: str = NODD_BUCKET,

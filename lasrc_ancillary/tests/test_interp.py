@@ -1,12 +1,12 @@
-from datetime import UTC, datetime, timedelta
+import datetime as dt
 
 import numpy as np
 import pytest
 from lasrc_ancillary.grib import GRIDS, GdasField
 from lasrc_ancillary.interp import CMG_LAT, CMG_LON, interpolate_to_cmg
 
-T0 = datetime(2026, 3, 14, 12, tzinfo=UTC)
-T1 = T0 + timedelta(hours=6)
+T0 = dt.datetime(2026, 3, 14, 12, tzinfo=dt.UTC)
+T1 = T0 + dt.timedelta(hours=6)
 
 
 def grid(step):
@@ -69,7 +69,11 @@ def test_delta_stays_local(step):
 
 @pytest.mark.parametrize(
     ("t", "expected"),
-    [(T0, 10.0), (T0 + timedelta(hours=2), 12.0), (T0 + timedelta(hours=5), 15.0)],
+    [
+        (T0, 10.0),
+        (T0 + dt.timedelta(hours=2), 12.0),
+        (T0 + dt.timedelta(hours=5), 15.0),
+    ],
 )
 def test_time_weights(t, expected):
     f0 = field(T0, 1.0, lambda la, lo: 10.0)
@@ -81,7 +85,7 @@ def test_time_weights(t, expected):
 def test_reverse_order_accepted():
     f0 = field(T0, 1.0, lambda la, lo: 10.0)
     f1 = field(T1, 1.0, lambda la, lo: 16.0)
-    t = T0 + timedelta(hours=3)
+    t = T0 + dt.timedelta(hours=3)
     a, _ = interpolate_to_cmg([f0, f1], t)
     b, _ = interpolate_to_cmg([f1, f0], t)
     assert np.array_equal(a, b)
@@ -90,8 +94,8 @@ def test_reverse_order_accepted():
 @pytest.mark.parametrize(
     ("later", "t"),
     [
-        (T0 + timedelta(hours=12), T0 + timedelta(hours=3)),  # 12 hours apart
-        (T1, T1 + timedelta(minutes=1)),  # after the later cycle
+        (T0 + dt.timedelta(hours=12), T0 + dt.timedelta(hours=3)),  # 12 hours apart
+        (T1, T1 + dt.timedelta(minutes=1)),  # after the later cycle
         (T1, T1),  # exactly on the later cycle, which needs T1 and T1 + 6 h
     ],
 )

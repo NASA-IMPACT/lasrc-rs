@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+import datetime as dt
 
 import h5py
 from click.testing import CliRunner
@@ -8,7 +8,7 @@ from lasrc_ancillary.viirs_shaped import WV_DATASET
 
 
 def utc(*args):
-    return datetime(*args, tzinfo=UTC)
+    return dt.datetime(*args, tzinfo=dt.UTC)
 
 
 def run(args, **obj):

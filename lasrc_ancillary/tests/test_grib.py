@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+import datetime as dt
 from pathlib import Path
 
 import numpy as np
@@ -9,7 +9,7 @@ from rasterio.transform import from_origin
 
 DATA = Path(__file__).parent / "data"
 F00 = DATA / "gdas.20261115.t00z.1p00.grib2"
-VALID = int(datetime(2026, 11, 15, tzinfo=UTC).timestamp())
+VALID = int(dt.datetime(2026, 11, 15, tzinfo=dt.UTC).timestamp())
 
 
 def write_fake(path, bands, shape=(181, 360), step=1.0, values=None):
@@ -47,7 +47,7 @@ def band(element, valid=VALID, fcst="0", short="0-EATM"):
 
 def test_reads_fixture():
     f = read_gdas(F00)
-    assert f.valid_time == datetime(2026, 11, 15, tzinfo=UTC)
+    assert f.valid_time == dt.datetime(2026, 11, 15, tzinfo=dt.UTC)
     assert f.pwat.shape == f.tozne.shape == (181, 360)
     assert f.lat[0] == 90.0 and f.lat[1] == 89.0 and f.lat[-1] == -90.0
     assert f.lon[0] == -180.0 and f.lon[1] == -179.0 and f.lon[-1] == 179.0
