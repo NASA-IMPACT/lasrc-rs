@@ -1,17 +1,10 @@
 from datetime import datetime, timezone
-from pathlib import Path
 
 import h5py
 from click.testing import CliRunner
-from fake_s3 import FakeS3
+from conftest import F00, F06, K00, K06
 from lasrc_ancillary.cli import EX_TEMPFAIL, main
 from lasrc_ancillary.viirs_shaped import WV_DATASET
-
-DATA = Path(__file__).parent / "data"
-F00 = DATA / "gdas.20261115.t00z.1p00.grib2"
-F06 = DATA / "gdas.20261115.t06z.1p00.grib2"
-K00 = "gdas.20261115/00/atmos/gdas.t00z.pgrb2.1p00.f000"
-K06 = "gdas.20261115/06/atmos/gdas.t06z.pgrb2.1p00.f000"
 
 
 def utc(*args):
@@ -26,11 +19,6 @@ def acquisition(out):
     with h5py.File(out, "r") as f:
         assert f[WV_DATASET].shape == (3600, 7200)
         return f.attrs["acquisition_time"]
-
-
-def fake_nodd(*keys):
-    data = {K00: F00.read_bytes(), K06: F06.read_bytes()}
-    return FakeS3({k: data[k] for k in keys})
 
 
 def test_local_files(tmp_path):
@@ -74,7 +62,7 @@ def test_needs_two_files_without_fetch(tmp_path):
     assert result.exit_code == 2
 
 
-def test_fetch_ok(tmp_path):
+def test_fetch_ok(nodd, tmp_path):
     out = tmp_path / "g.h5"
     work = tmp_path / "new" / "work"
     args = [
@@ -85,27 +73,27 @@ def test_fetch_ok(tmp_path):
         work,
         out,
     ]
-    result = run(args, s3_client=fake_nodd(K00, K06))
+    result = run(args, s3_client=nodd(K00, K06))
     assert result.exit_code == 0, result.output
     assert acquisition(out) == "2026-11-15T03:00:00Z"
 
 
-def test_fetch_missing_later_cycle_is_tempfail(tmp_path):
+def test_fetch_missing_later_cycle_is_tempfail(nodd, tmp_path):
     args = ["--acquisition-time", "2026-11-15T03:00:00Z", "--fetch", tmp_path / "g.h5"]
-    result = run(args, s3_client=fake_nodd(K00), now=lambda: utc(2026, 11, 15, 8))
+    result = run(args, s3_client=nodd(K00), now=lambda: utc(2026, 11, 15, 8))
     assert result.exit_code == EX_TEMPFAIL == 75
     assert not (tmp_path / "g.h5").exists()
 
 
-def test_on_cycle_with_only_earlier_file_is_tempfail(tmp_path):
+def test_on_cycle_with_only_earlier_file_is_tempfail(nodd, tmp_path):
     args = ["--acquisition-time", "2026-11-15T00:00:00Z", "--fetch", tmp_path / "g.h5"]
-    result = run(args, s3_client=fake_nodd(K00), now=lambda: utc(2026, 11, 15, 8))
+    result = run(args, s3_client=nodd(K00), now=lambda: utc(2026, 11, 15, 8))
     assert result.exit_code == EX_TEMPFAIL
 
 
-def test_fetch_missing_after_cutoff_is_error(tmp_path):
+def test_fetch_missing_after_cutoff_is_error(nodd, tmp_path):
     args = ["--acquisition-time", "2026-11-15T03:00:00Z", "--fetch", tmp_path / "g.h5"]
-    result = run(args, s3_client=fake_nodd(K00), now=lambda: utc(2026, 11, 16, 7))
+    result = run(args, s3_client=nodd(K00), now=lambda: utc(2026, 11, 16, 7))
     assert result.exit_code == 1
 
 
@@ -116,8 +104,8 @@ def test_local_files_not_bracketing_without_fetch_is_error(tmp_path):
     assert "bracket" in result.output
 
 
-def test_local_files_not_bracketing_with_fetch_are_replaced(tmp_path):
+def test_local_files_not_bracketing_with_fetch_are_replaced(nodd, tmp_path):
     out = tmp_path / "g.h5"
     args = ["--acquisition-time", "2026-11-15T03:00:00Z", "--fetch", F06, F06, out]
-    assert run(args, s3_client=fake_nodd(K00, K06)).exit_code == 0
+    assert run(args, s3_client=nodd(K00, K06)).exit_code == 0
     assert acquisition(out) == "2026-11-15T03:00:00Z"

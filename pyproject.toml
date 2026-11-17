@@ -22,6 +22,7 @@ notebook = [
 dev = [
     "boto3-stubs[s3]>=1.44.3",
     "lasrc-ancillary[gdas]",
+    "moto[s3]>=5.2.5",
     "mypy>=2.4.0",
     "pytest>=9.1.1",
     "ruff>=0.17.2",
