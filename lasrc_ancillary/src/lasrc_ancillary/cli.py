@@ -1,7 +1,7 @@
 """Command-line interface: ``lasrc-ancillary gdas``.
 
-Exit codes: 0 done, 1 error, 2 usage error, 75 (EX_TEMPFAIL) when the later GDAS cycle is not on
-NODD yet, so the orchestration can retry.
+Exits 0 on success and 1 on error (2 for usage errors). Missing GDAS cycles are reported as
+``GDAS_MISSING`` lines on stderr, whose ``status`` says whether a retry could help.
 """
 
 import datetime as dt
@@ -10,12 +10,9 @@ from pathlib import Path
 
 import click
 
-from lasrc_ancillary.gdas import GdasMissing, GdasNotYetPublished, prepare_gdas
+from lasrc_ancillary.gdas import GdasUnavailable, prepare_gdas
 from lasrc_ancillary.metadata import read_acquisition_time
 from lasrc_ancillary.nodd import NODD_BUCKET, RESOLUTIONS, Resolution
-
-EX_TEMPFAIL = 75
-
 
 # Every format requires a timezone. %z accepts "Z" as well as offsets such as +00:00.
 ISO_FORMATS = ["%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dT%H:%M%z"]
@@ -87,13 +84,16 @@ def gdas(
         raise click.UsageError("give two local GDAS files, or --fetch")
     if fetch and len(grib) not in (0, 2):
         raise click.UsageError("give two local GDAS files or none with --fetch")
+
     obj = ctx.obj or {}
+
+    if acquisition_time is None:
+        assert metadata is not None
+        acquisition_time = read_acquisition_time(metadata)
+    if work_dir is not None:
+        work_dir.mkdir(parents=True, exist_ok=True)
+
     try:
-        if acquisition_time is None:
-            assert metadata is not None
-            acquisition_time = read_acquisition_time(metadata)
-        if work_dir is not None:
-            work_dir.mkdir(parents=True, exist_ok=True)
         prepare_gdas(
             acquisition_time,
             output,
@@ -105,12 +105,6 @@ def gdas(
             work_dir=work_dir,
             now=obj.get("now"),
         )
-    except GdasNotYetPublished as e:
+    except GdasUnavailable as e:
         click.echo(str(e), err=True)
-        ctx.exit(EX_TEMPFAIL)
-    except GdasMissing as e:
-        click.echo(str(e), err=True)
-        ctx.exit(1)
-    except (OSError, ValueError) as e:
-        click.echo(f"error: {e}", err=True)
         ctx.exit(1)

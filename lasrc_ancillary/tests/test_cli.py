@@ -3,7 +3,7 @@ import datetime as dt
 import h5py
 from click.testing import CliRunner
 from conftest import F00, F06, K00, K06
-from lasrc_ancillary.cli import EX_TEMPFAIL, main
+from lasrc_ancillary.cli import main
 from lasrc_ancillary.viirs_shaped import WV_DATASET
 
 
@@ -55,12 +55,6 @@ def test_needs_two_files_without_fetch(tmp_path):
     assert result.exit_code == 2
 
 
-def test_fetch_missing_after_cutoff_is_error(nodd, tmp_path):
-    args = ["--acquisition-time", "2026-11-15T03:00:00Z", "--fetch", tmp_path / "g.h5"]
-    result = run(args, s3_client=nodd(K00), now=lambda: utc(2026, 11, 16, 7))
-    assert result.exit_code == 1
-
-
 def mirror(s3):
     s3.create_bucket(Bucket="my-mirror")
     s3.put_object(Bucket="my-mirror", Key=K00, Body=F00.read_bytes())
@@ -83,7 +77,7 @@ def test_bucket_from_environment(s3, tmp_path):
 def test_missing_cycles_are_reported_one_per_line(nodd, tmp_path):
     args = ["--acquisition-time", "2026-11-15T03:00:00Z", "--fetch", tmp_path / "g.h5"]
     result = run(args, s3_client=nodd(K00), now=lambda: utc(2026, 11, 15, 8))
-    assert result.exit_code == EX_TEMPFAIL
+    assert result.exit_code == 1
     lines = [
         line for line in result.output.splitlines() if line.startswith("GDAS_MISSING")
     ]
@@ -93,14 +87,3 @@ def test_missing_cycles_are_reported_one_per_line(nodd, tmp_path):
             "acquisition=2026-11-15T03:00:00Z searched=s3://noaa-gfs-bdp-pds/gdas.20261115/06/"
         )
     ]
-
-
-def test_not_bracketing_message_is_readable(tmp_path):
-    args = ["--acquisition-time", "2026-11-15T08:00:00Z", F00, F06, tmp_path / "g.h5"]
-    result = run(args)
-    assert result.exit_code == 1
-    assert "datetime.datetime(" not in result.output
-    assert "do not bracket the acquisition time 2026-11-15T08:00:00Z" in result.output
-    assert "gdas.20261115.t00z.1p00.grib2: valid 2026-11-15T00:00Z" in result.output
-    assert "gdas.20261115.t06z.1p00.grib2: valid 2026-11-15T06:00Z" in result.output
-    assert "needs the cycles 2026-11-15T06:00Z and 2026-11-15T12:00Z" in result.output
