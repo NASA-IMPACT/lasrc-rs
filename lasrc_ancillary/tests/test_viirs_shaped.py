@@ -3,6 +3,7 @@ from pathlib import Path
 
 import h5py
 import numpy as np
+import pytest
 from lasrc.aux import load_auxiliary_data
 from lasrc_ancillary.grib import read_gdas
 from lasrc_ancillary.interp import interpolate_to_cmg
@@ -55,3 +56,17 @@ def test_attributes(tmp_path):
         ]
         assert list(f.attrs["weights"]) == [0.5, 0.5]
         assert "gdas.20261115.t00z.1p00.grib2" in f.attrs["source"]
+
+
+def test_failed_write_leaves_existing_output_alone(tmp_path, monkeypatch):
+    dest = tmp_path / "g.h5"
+    dest.write_bytes(b"old")
+
+    def disk_full(*args, **kwargs):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(h5py.Group, "create_dataset", disk_full)
+    with pytest.raises(OSError, match="disk full"):
+        gdas_to_viirs_shaped([F00, F06], T, dest)
+    assert dest.read_bytes() == b"old"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["g.h5"]

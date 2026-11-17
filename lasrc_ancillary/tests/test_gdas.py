@@ -88,3 +88,30 @@ def test_default_client_when_none_given(nodd, tmp_path):
     nodd(K00, K06)  # moto intercepts the client prepare_gdas builds itself
     out = prepare_gdas(T, tmp_path / "g.h5")
     assert acquisition(out) == "2026-11-15T03:00:00Z"
+
+
+def test_unavailable_reports_each_missing_cycle(nodd, tmp_path):
+    with pytest.raises(GdasNotYetPublished) as exc:
+        prepare_gdas(
+            T, tmp_path / "g.h5", s3_client=nodd(K00), now=lambda: utc(2026, 11, 15, 8)
+        )
+    assert exc.value.missing == [utc(2026, 11, 15, 6)]
+    assert str(exc.value).splitlines() == [
+        (
+            "GDAS_MISSING status=not-yet-published cycle=2026-11-15T06:00Z resolution=1p00 "
+            "acquisition=2026-11-15T03:00:00Z searched=s3://noaa-gfs-bdp-pds/gdas.20261115/06/"
+        )
+    ]
+
+
+def test_missing_past_cutoff_status(nodd, tmp_path):
+    with pytest.raises(GdasMissing) as exc:
+        prepare_gdas(
+            T, tmp_path / "g.h5", s3_client=nodd(), now=lambda: utc(2026, 11, 16, 7)
+        )
+    lines = str(exc.value).splitlines()
+    assert len(lines) == 2
+    assert all("status=missing-past-cutoff" in line for line in lines)
+    assert (
+        "cycle=2026-11-15T00:00Z" in lines[0] and "cycle=2026-11-15T06:00Z" in lines[1]
+    )

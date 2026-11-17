@@ -61,20 +61,26 @@ def gdas_to_viirs_shaped(
     wv, oz = to_dn(pwat, tozne)
 
     dest = Path(dest)
-    with h5py.File(dest, "w") as f:
-        for name, data, scale in (
-            (WV_DATASET, wv, WV_SCALE),
-            (OZ_DATASET, oz, OZ_SCALE),
-        ):
-            ds = f.create_dataset(
-                name, data=data, chunks=(360, 720), compression="gzip"
+    partial = dest.with_name(dest.name + ".partial")
+    try:
+        with h5py.File(partial, "w") as f:
+            for name, data, scale in (
+                (WV_DATASET, wv, WV_SCALE),
+                (OZ_DATASET, oz, OZ_SCALE),
+            ):
+                ds = f.create_dataset(
+                    name, data=data, chunks=(360, 720), compression="gzip"
+                )
+                ds.attrs["scale_factor"] = scale
+            f.attrs["source"] = ", ".join(field.source for field in fields)
+            f.attrs["acquisition_time"] = _iso(acquisition_time)
+            f.attrs["valid_times"] = [_iso(field.valid_time) for field in fields]
+            f.attrs["weights"] = list(weights)
+            f.attrs["description"] = (
+                "GDAS water vapor and ozone in the layout of a VIIRS V*04ANC file"
             )
-            ds.attrs["scale_factor"] = scale
-        f.attrs["source"] = ", ".join(field.source for field in fields)
-        f.attrs["acquisition_time"] = _iso(acquisition_time)
-        f.attrs["valid_times"] = [_iso(field.valid_time) for field in fields]
-        f.attrs["weights"] = list(weights)
-        f.attrs["description"] = (
-            "GDAS water vapor and ozone in the layout of a VIIRS V*04ANC file"
-        )
+    except BaseException:
+        partial.unlink(missing_ok=True)
+        raise
+    partial.replace(dest)
     return dest

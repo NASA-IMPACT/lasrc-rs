@@ -1,28 +1,25 @@
-"""The lookup the orchestration runs in a Lambda must not pull in the converter's dependencies."""
+"""The lookup the orchestration runs in a Lambda must not pull in the converter's dependencies.
+
+``import lasrc_ancillary`` exposes the lookup, so importing it must load only the standard
+library. The converters live in submodules that import their extras.
+"""
 
 import os
 import subprocess
 import sys
 
-import pytest
-
-LOOKUP = [
-    "lasrc_ancillary.cycles",
-    "lasrc_ancillary.estimate",
-    "lasrc_ancillary.metadata",
-    "lasrc_ancillary.nodd",
-]
-HEAVY = ["numpy", "rasterio", "xarray", "scipy", "h5py", "boto3", "botocore"]
+NEW_THIRD_PARTY = """
+import importlib, sys
+before = set(sys.modules)
+importlib.import_module({module!r})
+new = {{m.split(".")[0] for m in set(sys.modules) - before}}
+print(",".join(sorted(new - set(sys.stdlib_module_names) - {{"lasrc_ancillary"}})))
+"""
 
 
-def imported_heavy(modules: list[str]) -> list[str]:
-    code = (
-        "import importlib, sys\n"
-        f"for m in {modules!r}: importlib.import_module(m)\n"
-        f"print(','.join(m for m in {HEAVY!r} if m in sys.modules))\n"
-    )
+def new_third_party(module: str) -> list[str]:
     out = subprocess.run(
-        [sys.executable, "-c", code],
+        [sys.executable, "-c", NEW_THIRD_PARTY.format(module=module)],
         capture_output=True,
         text=True,
         check=True,
@@ -31,10 +28,17 @@ def imported_heavy(modules: list[str]) -> list[str]:
     return [m for m in out.split(",") if m]
 
 
-def test_lookup_imports_only_the_standard_library():
-    assert imported_heavy(LOOKUP) == []
+def test_package_import_is_standard_library_only():
+    assert new_third_party("lasrc_ancillary") == []
 
 
-@pytest.mark.parametrize("module", ["lasrc_ancillary.grib"])
-def test_check_detects_heavy_imports(module):
-    assert "numpy" in imported_heavy([module])
+def test_check_detects_third_party_imports():
+    import pkgutil
+
+    import lasrc_ancillary
+
+    submodules = [
+        m.name
+        for m in pkgutil.iter_modules(lasrc_ancillary.__path__, "lasrc_ancillary.")
+    ]
+    assert any(new_third_party(m) for m in submodules)

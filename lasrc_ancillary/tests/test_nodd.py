@@ -148,3 +148,18 @@ def test_client_uses_the_default_credential_chain(s3):
     from lasrc_ancillary.nodd import default_s3_client
 
     assert default_s3_client().meta.config.signature_version is not UNSIGNED
+
+
+def test_locate_gdas_reports_each_cycle(s3, put):
+    from lasrc_ancillary.nodd import locate_gdas
+
+    put({KEY: GRIB})
+    cycles = [dt("2026-03-14T12:00Z"), dt("2026-03-14T18:00Z")]
+    assert locate_gdas(cycles, s3) == [KEY, None]
+
+
+def test_default_client_retries():
+    from lasrc_ancillary.nodd import default_s3_client
+
+    retries = default_s3_client().meta.config.retries
+    assert retries["mode"] == "standard" and retries["total_max_attempts"] == 10

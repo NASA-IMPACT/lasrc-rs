@@ -98,7 +98,7 @@ def test_reverse_order_accepted():
 def test_rejects_12_hours_apart():
     f0 = field(T0, 1.0, lambda la, lo: 1.0)
     f2 = field(T0 + timedelta(hours=12), 1.0, lambda la, lo: 1.0)
-    with pytest.raises(ValueError, match="6 hours"):
+    with pytest.raises(ValueError, match="needs the cycles"):
         interpolate_to_cmg([f0, f2], T0 + timedelta(hours=3))
 
 

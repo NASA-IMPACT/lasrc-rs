@@ -25,11 +25,14 @@ VARIABLES = ("PWAT", "TOZNE")
 def default_s3_client() -> S3Client:
     """A boto3 S3 client with the default AWS credential chain. Needs ``boto3`` installed.
 
-    The NODD bucket is public, so any AWS credentials can read it.
+    The NODD bucket is public, so any AWS credentials can read it. Throttling and transient
+    network errors are retried (botocore's standard mode).
     """
     import boto3
+    from botocore.config import Config
 
-    return boto3.client("s3")
+    config = Config(retries={"mode": "standard", "total_max_attempts": 10})
+    return boto3.client("s3", config=config)
 
 
 def _name_pattern(hh: str, resolution: str) -> re.Pattern[str]:
@@ -58,6 +61,34 @@ def _list_keys(s3_client: S3Client, bucket: str, prefix: str) -> list[str]:
         token = page["NextContinuationToken"]
 
 
+def cycle_prefix(cycle: datetime) -> str:
+    """The key prefix of a GDAS cycle directory, for example ``gdas.20261115/06/``."""
+    c = to_utc(cycle)
+    return f"gdas.{c:%Y%m%d}/{c.hour:02d}/"
+
+
+def locate_gdas(
+    cycles: Sequence[datetime],
+    s3_client: S3Client,
+    resolution: str = "1p00",
+    bucket: str = BUCKET,
+) -> list[str | None]:
+    """The 0-hour file key for each cycle, in order, with None for a cycle that isn't there."""
+    if resolution not in RESOLUTIONS:
+        raise ValueError(f"resolution must be one of {RESOLUTIONS}, got {resolution!r}")
+    found: list[str | None] = []
+    for cycle in cycles:
+        prefix = cycle_prefix(cycle)
+        pattern = _name_pattern(f"{to_utc(cycle).hour:02d}", resolution)
+        matches = sorted(
+            key
+            for key in _list_keys(s3_client, bucket, prefix)
+            if pattern.match(key.removeprefix(prefix).removeprefix("atmos/"))
+        )
+        found.append(matches[-1] if matches else None)
+    return found
+
+
 def find_gdas(
     cycles: Sequence[datetime],
     s3_client: S3Client,
@@ -65,23 +96,10 @@ def find_gdas(
     bucket: str = BUCKET,
 ) -> list[str] | None:
     """The 0-hour file key for each cycle, in order, or None while any of them is missing."""
-    if resolution not in RESOLUTIONS:
-        raise ValueError(f"resolution must be one of {RESOLUTIONS}, got {resolution!r}")
-    found = []
-    for cycle in cycles:
-        c = to_utc(cycle)
-        hh = f"{c.hour:02d}"
-        prefix = f"gdas.{c:%Y%m%d}/{hh}/"
-        pattern = _name_pattern(hh, resolution)
-        matches = sorted(
-            key
-            for key in _list_keys(s3_client, bucket, prefix)
-            if pattern.match(key.removeprefix(prefix).removeprefix("atmos/"))
-        )
-        if not matches:
-            return None
-        found.append(matches[-1])
-    return found
+    keys = locate_gdas(cycles, s3_client, resolution, bucket)
+    if any(key is None for key in keys):
+        return None
+    return [key for key in keys if key is not None]
 
 
 def _idx_ranges(idx_text: str, key: str) -> list[tuple[int, int | None]]:
