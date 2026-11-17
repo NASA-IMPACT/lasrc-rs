@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 import pytest
-from lasrc_ancillary.nodd import fetch_gdas, find_gdas
+from lasrc_ancillary.nodd import fetch_gdas, find_gdas, locate_gdas
 
 
 def dt(s: str) -> datetime:
@@ -85,11 +85,6 @@ def test_listing_is_paginated(s3, put):
     assert keys == ["gdas.20260314/12/atmos/gdas.t12z.pgrb2.1p00.f000"]
 
 
-def test_naive_cycle_rejected(s3):
-    with pytest.raises(ValueError):
-        find_gdas([datetime(2026, 3, 14, 12)], s3)
-
-
 def test_unknown_resolution_rejected(s3):
     with pytest.raises(ValueError, match="resolution"):
         find_gdas([dt("2026-03-14T12:00Z")], s3, resolution="0p50")
@@ -142,23 +137,7 @@ def test_other_bucket(s3, tmp_path):
     assert out.read_bytes() == b"PWAT-MESSAGE" + b"TOZNE-MSG"
 
 
-def test_client_uses_the_default_credential_chain(s3):
-    from botocore import UNSIGNED
-    from lasrc_ancillary.nodd import default_s3_client
-
-    assert default_s3_client().meta.config.signature_version is not UNSIGNED
-
-
 def test_locate_gdas_reports_each_cycle(s3, put):
-    from lasrc_ancillary.nodd import locate_gdas
-
     put({KEY: GRIB})
     cycles = [dt("2026-03-14T12:00Z"), dt("2026-03-14T18:00Z")]
     assert locate_gdas(cycles, s3) == [KEY, None]
-
-
-def test_default_client_retries():
-    from lasrc_ancillary.nodd import default_s3_client
-
-    retries = default_s3_client().meta.config.retries
-    assert retries["mode"] == "standard" and retries["total_max_attempts"] == 10

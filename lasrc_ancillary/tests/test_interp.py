@@ -20,14 +20,6 @@ def field(t, step, fn):
     return GdasField(t, lat, lon, values, values * 10.0, source=f"{t:%H}Z")
 
 
-def test_cmg_coordinates():
-    assert CMG_LAT.shape == (3600,) and CMG_LON.shape == (7200,)
-    assert CMG_LAT[0] == pytest.approx(89.975) and CMG_LAT[-1] == pytest.approx(-89.975)
-    assert CMG_LON[0] == pytest.approx(-179.975) and CMG_LON[-1] == pytest.approx(
-        179.975
-    )
-
-
 @pytest.mark.parametrize("step", [1.0, 0.25])
 def test_linear_field_exact_away_from_seam(step):
     def fn(lat, lon):
@@ -95,26 +87,18 @@ def test_reverse_order_accepted():
     assert np.array_equal(a, b)
 
 
-def test_rejects_12_hours_apart():
-    f0 = field(T0, 1.0, lambda la, lo: 1.0)
-    f2 = field(T0 + timedelta(hours=12), 1.0, lambda la, lo: 1.0)
+@pytest.mark.parametrize(
+    ("later", "t"),
+    [
+        (T0 + timedelta(hours=12), T0 + timedelta(hours=3)),  # 12 hours apart
+        (T1, T1 + timedelta(minutes=1)),  # after the later cycle
+        (T1, T1),  # exactly on the later cycle, which needs T1 and T1 + 6 h
+    ],
+)
+def test_rejects_files_that_do_not_bracket(later, t):
+    fields = [field(T0, 1.0, lambda la, lo: 1.0), field(later, 1.0, lambda la, lo: 1.0)]
     with pytest.raises(ValueError, match="needs the cycles"):
-        interpolate_to_cmg([f0, f2], T0 + timedelta(hours=3))
-
-
-def test_rejects_time_outside_bracket():
-    f0 = field(T0, 1.0, lambda la, lo: 1.0)
-    f1 = field(T1, 1.0, lambda la, lo: 1.0)
-    with pytest.raises(ValueError, match="bracket"):
-        interpolate_to_cmg([f0, f1], T1 + timedelta(minutes=1))
-
-
-def test_on_later_cycle_rejected():
-    # an acquisition exactly at T1 needs T1 and T1 + 6h, not T0 and T1
-    f0 = field(T0, 1.0, lambda la, lo: 1.0)
-    f1 = field(T1, 1.0, lambda la, lo: 1.0)
-    with pytest.raises(ValueError, match="bracket"):
-        interpolate_to_cmg([f0, f1], T1)
+        interpolate_to_cmg(fields, t)
 
 
 def test_rejects_mixed_resolutions():

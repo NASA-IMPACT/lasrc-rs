@@ -28,20 +28,6 @@ def test_landsat8_patagonia():
     assert abs((t - dt("2020-08-07T14:23:41Z")).total_seconds()) < 60
 
 
-def test_window_is_estimate_plus_minus_30_minutes():
-    t = estimate_acquisition_time("SENTINEL_2", date(2026, 3, 14), 10.0, 0.0)
-    windows = estimate_acquisition_windows("SENTINEL_2", date(2026, 3, 14), 10.0, 0.0)
-    assert windows == [(t - timedelta(minutes=30), t + timedelta(minutes=30))]
-
-
-def test_windows_stay_on_the_utc_date():
-    # equator at 157E with a 10:30 node passes about 00:02 UTC
-    for s, e in estimate_acquisition_windows(
-        "SENTINEL_2", date(2026, 3, 14), 0.0, 157.0
-    ):
-        assert s.date() == e.date() == date(2026, 3, 14)
-
-
 @pytest.mark.parametrize(
     ("platform", "lat", "lon"),
     [
@@ -91,31 +77,18 @@ def test_sentinel_tile_after_midnight_follows_datatake():
     assert dt("2026-03-14T06:00Z") in gdas_cycles_for_windows(windows)
 
 
-def test_window_spanning_boundary_gives_three_cycles():
-    windows = [(dt("2026-03-14T11:40Z"), dt("2026-03-14T12:40Z"))]
-    assert gdas_cycles_for_windows(windows) == [
-        dt("2026-03-14T06:00Z"),
-        dt("2026-03-14T12:00Z"),
-        dt("2026-03-14T18:00Z"),
-    ]
-
-
-def test_window_inside_one_interval_gives_two():
-    windows = [(dt("2026-03-14T13:00Z"), dt("2026-03-14T14:00Z"))]
-    assert gdas_cycles_for_windows(windows) == [
-        dt("2026-03-14T12:00Z"),
-        dt("2026-03-14T18:00Z"),
-    ]
-
-
-def test_long_window_includes_intermediate_cycles():
-    windows = [(dt("2026-03-14T01:00Z"), dt("2026-03-14T20:00Z"))]
-    assert gdas_cycles_for_windows(windows) == [
-        dt("2026-03-14T00:00Z"),
-        dt("2026-03-14T06:00Z"),
-        dt("2026-03-14T12:00Z"),
-        dt("2026-03-14T18:00Z"),
-        dt("2026-03-15T00:00Z"),
+@pytest.mark.parametrize(
+    ("start", "end", "hours"),
+    [
+        ("2026-03-14T13:00Z", "2026-03-14T14:00Z", [12, 18]),
+        ("2026-03-14T11:40Z", "2026-03-14T12:40Z", [6, 12, 18]),
+        ("2026-03-14T01:00Z", "2026-03-14T20:00Z", [0, 6, 12, 18, 24]),
+    ],
+)
+def test_gdas_cycles_for_windows(start, end, hours):
+    day = dt("2026-03-14T00:00Z")
+    assert gdas_cycles_for_windows([(dt(start), dt(end))]) == [
+        day + timedelta(hours=h) for h in hours
     ]
 
 

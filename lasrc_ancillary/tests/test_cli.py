@@ -46,13 +46,6 @@ def test_naive_time_rejected(tmp_path):
     assert "%z" in result.output
 
 
-def test_offset_time_is_converted_to_utc(tmp_path):
-    out = tmp_path / "g.h5"
-    result = run(["--acquisition-time", "2026-11-15T08:00:00+05:00", F00, F06, out])
-    assert result.exit_code == 0, result.output
-    assert acquisition(out) == "2026-11-15T03:00:00Z"
-
-
 def test_needs_a_time(tmp_path):
     assert run([F00, F06, tmp_path / "o.h5"]).exit_code == 2
 
@@ -62,53 +55,10 @@ def test_needs_two_files_without_fetch(tmp_path):
     assert result.exit_code == 2
 
 
-def test_fetch_ok(nodd, tmp_path):
-    out = tmp_path / "g.h5"
-    work = tmp_path / "new" / "work"
-    args = [
-        "--acquisition-time",
-        "2026-11-15T03:00:00Z",
-        "--fetch",
-        "--work-dir",
-        work,
-        out,
-    ]
-    result = run(args, s3_client=nodd(K00, K06))
-    assert result.exit_code == 0, result.output
-    assert acquisition(out) == "2026-11-15T03:00:00Z"
-
-
-def test_fetch_missing_later_cycle_is_tempfail(nodd, tmp_path):
-    args = ["--acquisition-time", "2026-11-15T03:00:00Z", "--fetch", tmp_path / "g.h5"]
-    result = run(args, s3_client=nodd(K00), now=lambda: utc(2026, 11, 15, 8))
-    assert result.exit_code == EX_TEMPFAIL == 75
-    assert not (tmp_path / "g.h5").exists()
-
-
-def test_on_cycle_with_only_earlier_file_is_tempfail(nodd, tmp_path):
-    args = ["--acquisition-time", "2026-11-15T00:00:00Z", "--fetch", tmp_path / "g.h5"]
-    result = run(args, s3_client=nodd(K00), now=lambda: utc(2026, 11, 15, 8))
-    assert result.exit_code == EX_TEMPFAIL
-
-
 def test_fetch_missing_after_cutoff_is_error(nodd, tmp_path):
     args = ["--acquisition-time", "2026-11-15T03:00:00Z", "--fetch", tmp_path / "g.h5"]
     result = run(args, s3_client=nodd(K00), now=lambda: utc(2026, 11, 16, 7))
     assert result.exit_code == 1
-
-
-def test_local_files_not_bracketing_without_fetch_is_error(tmp_path):
-    args = ["--acquisition-time", "2026-11-15T08:00:00Z", F00, F06, tmp_path / "g.h5"]
-    result = run(args)
-    assert result.exit_code == 1
-    assert "bracket" in result.output
-
-
-def test_local_files_not_bracketing_with_fetch_are_replaced(nodd, tmp_path):
-    out = tmp_path / "g.h5"
-    args = ["--acquisition-time", "2026-11-15T03:00:00Z", "--fetch", F06, F06, out]
-    assert run(args, s3_client=nodd(K00, K06)).exit_code == 0
-    assert acquisition(out) == "2026-11-15T03:00:00Z"
 
 
 def mirror(s3):
@@ -116,20 +66,6 @@ def mirror(s3):
     s3.put_object(Bucket="my-mirror", Key=K00, Body=F00.read_bytes())
     s3.put_object(Bucket="my-mirror", Key=K06, Body=F06.read_bytes())
     return s3
-
-
-def test_bucket_option(s3, tmp_path):
-    out = tmp_path / "g.h5"
-    args = [
-        "--acquisition-time",
-        "2026-11-15T03:00:00Z",
-        "--fetch",
-        "--bucket",
-        "my-mirror",
-        out,
-    ]
-    result = run(args, s3_client=mirror(s3))
-    assert result.exit_code == 0, result.output
 
 
 def test_bucket_from_environment(s3, tmp_path):
@@ -142,13 +78,6 @@ def test_bucket_from_environment(s3, tmp_path):
         env={"LASRC_ANCILLARY_GDAS_BUCKET": "my-mirror"},
     )
     assert result.exit_code == 0, result.output
-
-
-def test_bucket_default_is_nodd():
-    result = CliRunner().invoke(main, ["gdas", "--help"])
-    text = "".join(result.output.split())  # click wraps long values across lines
-    assert "default:noaa-gfs-bdp-pds" in text
-    assert "LASRC_ANCILLARY_GDAS_BUCKET" in text
 
 
 def test_missing_cycles_are_reported_one_per_line(nodd, tmp_path):

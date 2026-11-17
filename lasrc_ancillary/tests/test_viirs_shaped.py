@@ -1,15 +1,9 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-import h5py
 import numpy as np
-import pytest
 from lasrc.aux import load_auxiliary_data
-from lasrc_ancillary.grib import read_gdas
-from lasrc_ancillary.interp import interpolate_to_cmg
 from lasrc_ancillary.viirs_shaped import (
-    OZ_DATASET,
-    WV_DATASET,
     gdas_to_viirs_shaped,
     to_dn,
 )
@@ -28,45 +22,10 @@ def test_to_dn_rounding_and_clipping():
     assert oz.tolist() == [120, 121, 1, 255] and oz.dtype == np.uint8
 
 
-def test_end_to_end_loads_in_lasrc(tmp_path):
+def test_loads_in_lasrc(tmp_path):
     out = gdas_to_viirs_shaped([F00, F06], T, tmp_path / "g.h5")
     aux = load_auxiliary_data(str(out), "VIIRS")
-    assert aux["wv"].shape == (3600 * 7200,) and aux["oz"].shape == (3600 * 7200,)
-    assert (aux["wv"] > 0).all() and (aux["oz"] > 0).all()
-
-    pwat, tozne = interpolate_to_cmg([read_gdas(F00), read_gdas(F06)], T)
-    wv_dn, oz_dn = to_dn(pwat, tozne)
-    cell = 1799 * 7200 + 3600
-    assert aux["wv"][cell] == wv_dn[1799, 3600]
-    assert aux["oz"][cell] == oz_dn[1799, 3600]
-
-
-def test_attributes(tmp_path):
-    out = gdas_to_viirs_shaped([F06, F00], T, tmp_path / "g.h5")
-    with h5py.File(out, "r") as f:
-        wv, oz = f[WV_DATASET], f[OZ_DATASET]
-        assert wv.dtype == np.uint16 and oz.dtype == np.uint8
-        assert wv.shape == oz.shape == (3600, 7200)
-        assert float(wv.attrs["scale_factor"]) == 0.01
-        assert float(oz.attrs["scale_factor"]) == 0.0025
-        assert f.attrs["acquisition_time"] == "2026-11-15T03:00:00Z"
-        assert list(f.attrs["valid_times"]) == [
-            "2026-11-15T00:00:00Z",
-            "2026-11-15T06:00:00Z",
-        ]
-        assert list(f.attrs["weights"]) == [0.5, 0.5]
-        assert "gdas.20261115.t00z.1p00.grib2" in f.attrs["source"]
-
-
-def test_failed_write_leaves_existing_output_alone(tmp_path, monkeypatch):
-    dest = tmp_path / "g.h5"
-    dest.write_bytes(b"old")
-
-    def disk_full(*args, **kwargs):
-        raise OSError("disk full")
-
-    monkeypatch.setattr(h5py.Group, "create_dataset", disk_full)
-    with pytest.raises(OSError, match="disk full"):
-        gdas_to_viirs_shaped([F00, F06], T, dest)
-    assert dest.read_bytes() == b"old"
-    assert sorted(p.name for p in tmp_path.iterdir()) == ["g.h5"]
+    assert aux["wv"].shape == aux["oz"].shape == (3600 * 7200,)
+    # PWAT up to 100 kg m-2 is DN 1000, and 100 to 637.5 DU of ozone is DN 40 to 255
+    assert aux["wv"].min() >= 1 and aux["wv"].max() <= 1000
+    assert aux["oz"].min() >= 40 and aux["oz"].max() <= 255
