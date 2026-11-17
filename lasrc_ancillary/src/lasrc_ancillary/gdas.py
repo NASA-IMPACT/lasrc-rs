@@ -21,6 +21,7 @@ from lasrc_ancillary.cycles import gdas_cycles, to_utc
 from lasrc_ancillary.grib import read_gdas
 from lasrc_ancillary.nodd import (
     NODD_BUCKET,
+    Resolution,
     cycle_prefix,
     fetch_gdas,
     locate_gdas,
@@ -57,7 +58,7 @@ class GdasUnavailable(Exception):
         cycles: tuple[datetime, datetime],
         missing: list[datetime],
         bucket: str,
-        resolution: str,
+        resolution: Resolution,
     ) -> Self:
         acquisition = to_utc(acquisition_time).strftime("%Y-%m-%dT%H:%M:%SZ")
         message = "\n".join(
@@ -112,7 +113,7 @@ def prepare_gdas(
     local_files: Sequence[Path] = (),
     fetch: bool = True,
     s3_client: S3Client | None = None,
-    resolution: str = "1p00",
+    resolution: Resolution = "1p00",
     bucket: str = NODD_BUCKET,
     work_dir: Path | None = None,
     now: Callable[[], datetime] | None = None,
