@@ -55,7 +55,14 @@ def test_naive_time_rejected(tmp_path):
         ["--acquisition-time", "2026-11-15T03:00:00", F00, F06, tmp_path / "o.h5"]
     )
     assert result.exit_code == 2
-    assert "add 'Z' or a UTC offset" in result.output
+    assert "%z" in result.output
+
+
+def test_offset_time_is_converted_to_utc(tmp_path):
+    out = tmp_path / "g.h5"
+    result = run(["--acquisition-time", "2026-11-15T08:00:00+05:00", F00, F06, out])
+    assert result.exit_code == 0, result.output
+    assert acquisition(out) == "2026-11-15T03:00:00Z"
 
 
 def test_needs_a_time(tmp_path):
