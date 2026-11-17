@@ -4,9 +4,9 @@
 defaults and the water vapor halving apply unchanged.
 """
 
+import datetime as dt
 import logging
 from collections.abc import Sequence
-from datetime import datetime
 from pathlib import Path
 
 import h5py
@@ -25,7 +25,7 @@ WV_SCALE = 0.01  # g cm-2 per DN, as in VIIRS
 OZ_SCALE = 0.0025  # cm-atm per DN, as in VIIRS
 
 
-def _iso(t: datetime) -> str:
+def _iso(t: dt.datetime) -> str:
     return to_utc(t).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
 
 
@@ -42,7 +42,7 @@ def to_dn(pwat: np.ndarray, tozne: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 
 def gdas_to_viirs_shaped(
-    paths: Sequence[Path], acquisition_time: datetime, dest: Path
+    paths: Sequence[Path], acquisition_time: dt.datetime, dest: Path
 ) -> Path:
     """Interpolate two GDAS files to ``acquisition_time`` and write a VIIRS-shaped HDF5 file."""
     fields = sorted((read_gdas(Path(p)) for p in paths), key=lambda f: f.valid_time)

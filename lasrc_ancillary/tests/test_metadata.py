@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+import datetime as dt
 
 import pytest
 from lasrc_ancillary.metadata import read_acquisition_time
@@ -21,16 +21,16 @@ def test_mtl_seven_digit_time(tmp_path):
         '    SCENE_CENTER_TIME = "15:12:34.1234567Z"\n'
         "END_GROUP = IMAGE_ATTRIBUTES\n"
     )
-    assert read_acquisition_time(p) == datetime(
-        2026, 3, 14, 15, 12, 34, 123456, tzinfo=UTC
+    assert read_acquisition_time(p) == dt.datetime(
+        2026, 3, 14, 15, 12, 34, 123456, tzinfo=dt.UTC
     )
 
 
 def test_mtd_tl_sensing_time(tmp_path):
     p = tmp_path / "MTD_TL.xml"
     p.write_text(MTD_TL)
-    assert read_acquisition_time(p) == datetime(
-        2026, 1, 24, 7, 45, 13, 375000, tzinfo=UTC
+    assert read_acquisition_time(p) == dt.datetime(
+        2026, 1, 24, 7, 45, 13, 375000, tzinfo=dt.UTC
     )
 
 

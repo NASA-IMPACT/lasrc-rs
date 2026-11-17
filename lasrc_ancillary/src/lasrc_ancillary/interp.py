@@ -3,8 +3,8 @@
 Linear in time, then bilinear in space at the CMG cell centers, by coordinate label with xarray.
 """
 
+import datetime as dt
 from collections.abc import Sequence
-from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -32,7 +32,7 @@ def _to_cmg(values: np.ndarray, lat: np.ndarray, lon: np.ndarray) -> np.ndarray:
     return np.asarray(out.values, dtype=np.float64)
 
 
-def _iso_minutes(t: datetime) -> str:
+def _iso_minutes(t: dt.datetime) -> str:
     return to_utc(t).strftime("%Y-%m-%dT%H:%MZ")
 
 
@@ -41,7 +41,7 @@ def _name(field: GdasField) -> str:
 
 
 def interpolate_to_cmg(
-    fields: Sequence[GdasField], acquisition_time: datetime
+    fields: Sequence[GdasField], acquisition_time: dt.datetime
 ) -> tuple[np.ndarray, np.ndarray]:
     """PWAT and TOZNE at ``acquisition_time`` on the CMG grid (3600 x 7200, float64)."""
     if len(fields) != 2:

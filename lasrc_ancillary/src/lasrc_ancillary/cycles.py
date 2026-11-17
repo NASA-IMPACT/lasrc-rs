@@ -4,19 +4,19 @@ GDAS runs every 6 hours (00, 06, 12, 18 UTC). Each cycle is one instant for the 
 the cycles a granule needs depend only on its UTC acquisition time.
 """
 
-from datetime import UTC, datetime, timedelta
+import datetime as dt
 
-CYCLE = timedelta(hours=6)
+CYCLE = dt.timedelta(hours=6)
 
 
-def to_utc(t: datetime) -> datetime:
+def to_utc(t: dt.datetime) -> dt.datetime:
     """Return ``t`` in UTC. Naive datetimes are rejected."""
     if t.tzinfo is None or t.utcoffset() is None:
         raise ValueError(f"datetime must be timezone-aware (UTC), got naive {t!r}")
-    return t.astimezone(UTC)
+    return t.astimezone(dt.UTC)
 
 
-def gdas_cycles(acquisition_time: datetime) -> tuple[datetime, datetime]:
+def gdas_cycles(acquisition_time: dt.datetime) -> tuple[dt.datetime, dt.datetime]:
     """The GDAS cycle times at or before, and 6 hours after, acquisition_time (UTC)."""
     t = to_utc(acquisition_time)
     cycle1 = t.replace(hour=t.hour - t.hour % 6, minute=0, second=0, microsecond=0)
@@ -24,7 +24,7 @@ def gdas_cycles(acquisition_time: datetime) -> tuple[datetime, datetime]:
 
 
 def cycle_weights(
-    acquisition_time: datetime, cycles: tuple[datetime, datetime]
+    acquisition_time: dt.datetime, cycles: tuple[dt.datetime, dt.datetime]
 ) -> tuple[float, float]:
     """Linear interpolation weights of the two cycles at acquisition_time."""
     t = to_utc(acquisition_time)

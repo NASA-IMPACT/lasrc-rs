@@ -8,8 +8,8 @@ orbit's inclination, its descending node time and the point's latitude.
 The estimate only decides when to look for GDAS files. The processing job uses the exact time.
 """
 
+import datetime as dt
 import math
-from datetime import UTC, date, datetime, time, timedelta
 
 from lasrc_ancillary.cycles import CYCLE, gdas_cycles, to_utc
 
@@ -23,8 +23,8 @@ PLATFORMS: dict[str, tuple[float, float]] = {
 
 
 def estimate_acquisition_time(
-    platform: str, day: date, lat: float, lon: float
-) -> datetime:
+    platform: str, day: dt.date, lat: float, lon: float
+) -> dt.datetime:
     """Estimated UTC acquisition time on the UTC date ``day`` at (lat, lon) in degrees."""
     if platform not in PLATFORMS:
         raise ValueError(
@@ -38,17 +38,19 @@ def estimate_acquisition_time(
     dra = (dra + 180.0) % 360.0 - 180.0
     local = node_time + dra / 15.0
     utc_hours = (local - lon / 15.0) % 24.0
-    return datetime.combine(day, time(), tzinfo=UTC) + timedelta(hours=utc_hours)
+    return dt.datetime.combine(day, dt.time(), tzinfo=dt.UTC) + dt.timedelta(
+        hours=utc_hours
+    )
 
 
 def estimate_acquisition_windows(
     platform: str,
-    day: date,
+    day: dt.date,
     lat: float,
     lon: float,
-    not_before: datetime | None = None,
-    margin: timedelta = timedelta(minutes=30),
-) -> list[tuple[datetime, datetime]]:
+    not_before: dt.datetime | None = None,
+    margin: dt.timedelta = dt.timedelta(minutes=30),
+) -> list[tuple[dt.datetime, dt.datetime]]:
     """Time windows that contain the acquisition, from the estimate plus or minus ``margin``.
 
     The acquisition is on the UTC date ``day`` (Landsat), or within 24 hours after
@@ -58,13 +60,13 @@ def estimate_acquisition_windows(
     """
     t = estimate_acquisition_time(platform, day, lat, lon)
     if not_before is None:
-        low = datetime.combine(day, time(), tzinfo=UTC)
+        low = dt.datetime.combine(day, dt.time(), tzinfo=dt.UTC)
     else:
         low = to_utc(not_before)
-    high = low + timedelta(days=1) - timedelta(microseconds=1)
+    high = low + dt.timedelta(days=1) - dt.timedelta(microseconds=1)
     windows = []
     for days in (-1, 0, 1):
-        candidate = t + timedelta(days=days)
+        candidate = t + dt.timedelta(days=days)
         start = max(candidate - margin, low)
         end = min(candidate + margin, high)
         if start <= end:
@@ -72,9 +74,11 @@ def estimate_acquisition_windows(
     return windows
 
 
-def gdas_cycles_for_windows(windows: list[tuple[datetime, datetime]]) -> list[datetime]:
+def gdas_cycles_for_windows(
+    windows: list[tuple[dt.datetime, dt.datetime]],
+) -> list[dt.datetime]:
     """Every GDAS cycle needed by an acquisition anywhere in any of the windows."""
-    cycles: set[datetime] = set()
+    cycles: set[dt.datetime] = set()
     for start, end in windows:
         cycle, last = gdas_cycles(start)[0], gdas_cycles(end)[1]
         while cycle <= last:
