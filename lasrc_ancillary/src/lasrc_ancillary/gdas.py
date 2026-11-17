@@ -9,16 +9,11 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-import tempfile
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Self
 
-import boto3
-from botocore.config import Config
-
 from lasrc_ancillary.cycles import gdas_cycles, to_utc
-from lasrc_ancillary.grib import read_gdas
 from lasrc_ancillary.nodd import (
     NODD_BUCKET,
     Resolution,
@@ -85,59 +80,22 @@ class GdasMissing(GdasUnavailable):
     status = "missing-past-cutoff"
 
 
-def default_s3_client() -> S3Client:
-    """A boto3 S3 client with the default AWS credential chain.
-
-    The NODD bucket is public, so any AWS credentials can read it. Throttling and transient
-    network errors are retried (botocore's standard mode).
-    """
-    config = Config(retries={"mode": "standard", "total_max_attempts": 10})
-    return boto3.client("s3", config=config)
-
-
-def _local_files_match(
-    paths: Sequence[Path], cycles: tuple[dt.datetime, dt.datetime]
-) -> bool:
-    try:
-        times = sorted(read_gdas(p).valid_time for p in paths)
-    except (OSError, ValueError) as e:
-        log.info("Ignoring local GDAS files: %s", e)
-        return False
-    return tuple(times) == cycles
-
-
-def prepare_gdas(
+def fetch_gdas_pair(
     acquisition_time: dt.datetime,
-    dest: Path,
+    s3_client: S3Client,
+    work_dir: Path,
     *,
-    local_files: Sequence[Path] = (),
-    fetch: bool = True,
-    s3_client: S3Client | None = None,
     resolution: Resolution = "1p00",
     bucket: str = NODD_BUCKET,
-    work_dir: Path | None = None,
     now: Callable[[], dt.datetime] | None = None,
-) -> Path:
-    """Write the VIIRS-shaped GDAS file for ``acquisition_time`` to ``dest``.
+) -> list[Path]:
+    """Download the two GDAS cycles that bracket ``acquisition_time`` into ``work_dir``.
 
-    Uses ``local_files`` when they are the two cycles the acquisition needs. Otherwise, with
-    ``fetch``, finds and downloads them from NODD. Without ``fetch``, local files that don't
-    bracket the acquisition time raise ``ValueError``.
-
-    Raises ``GdasNotYetPublished`` while a cycle is not on NODD yet, and ``GdasMissing`` once it is
-    still missing ``RETRY_CUTOFF`` after the later cycle.
+    Raises ``GdasNotYetPublished`` while a cycle is not in the bucket yet, and ``GdasMissing`` once
+    it is still missing ``RETRY_CUTOFF`` after the later cycle.
     """
     cycles = gdas_cycles(acquisition_time)
-    if not fetch:
-        if len(local_files) != 2:
-            raise ValueError("without fetch, give the two local GDAS files")
-
-        return gdas_to_viirs_shaped(local_files, acquisition_time, dest)
-    if local_files and _local_files_match(local_files, cycles):
-        return gdas_to_viirs_shaped(local_files, acquisition_time, dest)
-
-    s3 = s3_client or default_s3_client()
-    located = locate_gdas(cycles, s3, resolution, bucket)
+    located = locate_gdas(cycles, s3_client, resolution, bucket)
     missing = [c for c, key in zip(cycles, located) if key is None]
     if missing:
         clock = now or (lambda: dt.datetime.now(dt.UTC))
@@ -146,9 +104,30 @@ def prepare_gdas(
         )
         raise error.from_missing(acquisition_time, cycles, missing, bucket, resolution)
 
-    keys = [key for key in located if key is not None]
+    return [
+        fetch_gdas(key, work_dir / key.replace("/", "_"), s3_client, bucket)
+        for key in located
+        if key is not None
+    ]
 
-    with tempfile.TemporaryDirectory() as tmp:
-        work = Path(work_dir) if work_dir is not None else Path(tmp)
-        paths = [fetch_gdas(k, work / k.replace("/", "_"), s3, bucket) for k in keys]
-        return gdas_to_viirs_shaped(paths, acquisition_time, dest)
+
+def prepare_gdas(
+    acquisition_time: dt.datetime,
+    dest: Path,
+    *,
+    s3_client: S3Client,
+    work_dir: Path,
+    resolution: Resolution = "1p00",
+    bucket: str = NODD_BUCKET,
+    now: Callable[[], dt.datetime] | None = None,
+) -> Path:
+    """Fetch the GDAS cycles for ``acquisition_time`` and write the VIIRS-shaped file to ``dest``."""
+    paths = fetch_gdas_pair(
+        acquisition_time,
+        s3_client,
+        work_dir,
+        resolution=resolution,
+        bucket=bucket,
+        now=now,
+    )
+    return gdas_to_viirs_shaped(paths, acquisition_time, dest)
