@@ -24,6 +24,7 @@ This repo contains a Rust port of LaSRC with Python bindings:
 |--------------------|--------------------------------------------------------------------------------|
 | `lasrc_core/`      | Pure Rust LaSRC algorithms (no Python)                                         |
 | `lasrc_py/`        | PyO3 bindings + Python package `lasrc` |
+| `lasrc_ancillary/` | Python package `lasrc_ancillary`: finds, fetches and converts ancillary inputs (GDAS) |
 
 ### Prerequisites
 
@@ -53,7 +54,7 @@ uv sync --reinstall-package lasrc
 ### Run the tests
 
 ```bash
-scripts/test                 # cargo test --workspace, then pytest lasrc_py
+scripts/test                 # cargo test --workspace, then pytest lasrc_py lasrc_ancillary
 scripts/test rust            # Rust tests only
 scripts/test python          # Python tests only
 scripts/test -k geometry     # extra arguments are passed to pytest
@@ -66,7 +67,7 @@ scripts/format         # apply cargo fmt + ruff format, and ruff auto-fixes, in 
 scripts/lint           # check-only: cargo fmt --check, clippy -D warnings, ruff
 scripts/lint rust      # Rust checks only
 scripts/lint python    # Python checks only
-scripts/typecheck      # mypy on lasrc_py/python, stubtest on the lasrc.lasrc extension stub
+scripts/typecheck      # mypy on lasrc_py/python and lasrc_ancillary/src, stubtest on the extension stub
 scripts/check-versions # CHANGELOG algorithm version matches the code (VERSIONING.md)
 ```
 
