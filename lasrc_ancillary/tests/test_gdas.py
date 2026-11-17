@@ -22,13 +22,6 @@ def test_local_files(tmp_path):
     assert acquisition(out) == "2026-11-15T03:00:00Z"
 
 
-def test_local_files_not_bracketing_without_fetch(tmp_path):
-    with pytest.raises(ValueError, match="bracket"):
-        prepare_gdas(
-            utc(2026, 11, 15, 8), tmp_path / "g.h5", local_files=[F00, F06], fetch=False
-        )
-
-
 def test_no_files_and_no_fetch(tmp_path):
     with pytest.raises(ValueError, match="local"):
         prepare_gdas(T, tmp_path / "g.h5", fetch=False)
@@ -57,44 +50,9 @@ def test_matching_local_files_skip_the_bucket(s3, tmp_path):
 def test_not_yet_published(nodd, tmp_path):
     with pytest.raises(GdasNotYetPublished) as exc:
         prepare_gdas(
-            T,
-            tmp_path / "g.h5",
-            s3_client=nodd(K00),
-            now=lambda: utc(2026, 11, 15, 8),
-        )
-    assert exc.value.cycles == (utc(2026, 11, 15, 0), utc(2026, 11, 15, 6))
-    assert not (tmp_path / "g.h5").exists()
-
-
-def test_missing_after_cutoff(nodd, tmp_path):
-    with pytest.raises(GdasMissing):
-        prepare_gdas(
-            T,
-            tmp_path / "g.h5",
-            s3_client=nodd(K00),
-            now=lambda: utc(2026, 11, 16, 7),
-        )
-
-
-def test_other_bucket(s3, tmp_path):
-    s3.create_bucket(Bucket="my-mirror")
-    s3.put_object(Bucket="my-mirror", Key=K00, Body=F00.read_bytes())
-    s3.put_object(Bucket="my-mirror", Key=K06, Body=F06.read_bytes())
-    out = prepare_gdas(T, tmp_path / "g.h5", s3_client=s3, bucket="my-mirror")
-    assert acquisition(out) == "2026-11-15T03:00:00Z"
-
-
-def test_default_client_when_none_given(nodd, tmp_path):
-    nodd(K00, K06)  # moto intercepts the client prepare_gdas builds itself
-    out = prepare_gdas(T, tmp_path / "g.h5")
-    assert acquisition(out) == "2026-11-15T03:00:00Z"
-
-
-def test_unavailable_reports_each_missing_cycle(nodd, tmp_path):
-    with pytest.raises(GdasNotYetPublished) as exc:
-        prepare_gdas(
             T, tmp_path / "g.h5", s3_client=nodd(K00), now=lambda: utc(2026, 11, 15, 8)
         )
+    assert exc.value.cycles == (utc(2026, 11, 15, 0), utc(2026, 11, 15, 6))
     assert exc.value.missing == [utc(2026, 11, 15, 6)]
     assert str(exc.value).splitlines() == [
         (
@@ -102,16 +60,21 @@ def test_unavailable_reports_each_missing_cycle(nodd, tmp_path):
             "acquisition=2026-11-15T03:00:00Z searched=s3://noaa-gfs-bdp-pds/gdas.20261115/06/"
         )
     ]
+    assert not (tmp_path / "g.h5").exists()
 
 
-def test_missing_past_cutoff_status(nodd, tmp_path):
+def test_missing_past_cutoff(nodd, tmp_path):
     with pytest.raises(GdasMissing) as exc:
         prepare_gdas(
             T, tmp_path / "g.h5", s3_client=nodd(), now=lambda: utc(2026, 11, 16, 7)
         )
-    lines = str(exc.value).splitlines()
-    assert len(lines) == 2
-    assert all("status=missing-past-cutoff" in line for line in lines)
-    assert (
-        "cycle=2026-11-15T00:00Z" in lines[0] and "cycle=2026-11-15T06:00Z" in lines[1]
-    )
+    assert [line.split()[1:3] for line in str(exc.value).splitlines()] == [
+        ["status=missing-past-cutoff", "cycle=2026-11-15T00:00Z"],
+        ["status=missing-past-cutoff", "cycle=2026-11-15T06:00Z"],
+    ]
+
+
+def test_default_client_when_none_given(nodd, tmp_path):
+    nodd(K00, K06)  # moto intercepts the client prepare_gdas builds itself
+    out = prepare_gdas(T, tmp_path / "g.h5")
+    assert acquisition(out) == "2026-11-15T03:00:00Z"

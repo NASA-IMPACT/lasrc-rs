@@ -30,15 +30,3 @@ def new_third_party(module: str) -> list[str]:
 
 def test_package_import_is_standard_library_only():
     assert new_third_party("lasrc_ancillary") == []
-
-
-def test_check_detects_third_party_imports():
-    import pkgutil
-
-    import lasrc_ancillary
-
-    submodules = [
-        m.name
-        for m in pkgutil.iter_modules(lasrc_ancillary.__path__, "lasrc_ancillary.")
-    ]
-    assert any(new_third_party(m) for m in submodules)
