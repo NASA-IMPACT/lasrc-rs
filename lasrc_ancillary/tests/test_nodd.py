@@ -79,7 +79,12 @@ def test_old_layout_has_no_0p25(s3, put):
 
 def test_listing_is_paginated(s3, put):
     # S3 returns at most 1000 keys per page, and the 0-hour file sorts after these
-    put({f"gdas.20260314/12/atmos/gdas.t12z.aaa{i:04d}": b"x" for i in range(1001)})
+    put(
+        {
+            f"gdas.20260314/12/atmos/gdas.t12z.pgrb2.0p50.f{i:04d}": b"x"
+            for i in range(1001)
+        }
+    )
     put({"gdas.20260314/12/atmos/gdas.t12z.pgrb2.1p00.f000": b"g"})
     keys = find_gdas([iso("2026-03-14T12:00Z")], s3)
     assert keys == ["gdas.20260314/12/atmos/gdas.t12z.pgrb2.1p00.f000"]
