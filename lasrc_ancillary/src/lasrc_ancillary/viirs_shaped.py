@@ -1,8 +1,7 @@
 """Write GDAS water vapor and ozone as a file shaped like a VIIRS ``V*04ANC`` file.
 
 ``lasrc_py`` reads it through ``--wv-oz-hdf`` exactly as it reads VIIRS, so its scale factors,
-defaults and the water vapor halving apply unchanged. This is how the upstream C code adds GDAS:
-it converts GDAS to the same DN arrays the VIIRS reader fills.
+defaults and the water vapor halving apply unchanged.
 """
 
 import logging
