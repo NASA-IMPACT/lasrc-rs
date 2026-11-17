@@ -20,7 +20,7 @@ from botocore.config import Config
 from lasrc_ancillary.cycles import gdas_cycles, to_utc
 from lasrc_ancillary.grib import read_gdas
 from lasrc_ancillary.nodd import (
-    BUCKET,
+    NODD_BUCKET,
     cycle_prefix,
     fetch_gdas,
     locate_gdas,
@@ -113,7 +113,7 @@ def prepare_gdas(
     fetch: bool = True,
     s3_client: S3Client | None = None,
     resolution: str = "1p00",
-    bucket: str = BUCKET,
+    bucket: str = NODD_BUCKET,
     work_dir: Path | None = None,
     now: Callable[[], datetime] | None = None,
 ) -> Path:
