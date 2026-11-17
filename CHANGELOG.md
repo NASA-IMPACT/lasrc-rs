@@ -12,7 +12,10 @@ with an additional version indicator for modifications of this fork.
 
 ### Added <!-- New features -->
 
--
+- `lasrc_ancillary`, a new workspace package with a `lasrc-ancillary gdas` command. It finds and
+  fetches the two GDAS 0-hour files that bracket a granule's acquisition time on the NOAA Open
+  Data bucket, interpolates them in time and onto the CMG grid, and writes a file in the layout
+  of a VIIRS `V*04ANC` file, for `--wv-oz-hdf`. GDAS is opt-in. `lasrc` itself is unchanged.
 
 ### Changed <!-- Changes in existing functionality -->
 
