@@ -405,6 +405,8 @@ These notes come from spot checks of `s3://noaa-gfs-bdp-pds` (public, no credent
   times in band tags (`GRIB_REF_TIME`, `GRIB_VALID_TIME`, `GRIB_FORECAST_SECONDS`), along with
   `GRIB_ELEMENT` (`PWAT`, `TOZNE`) and `GRIB_UNIT`.
 
+- Additional archive of GDAS data is available at https://bin.ssec.wisc.edu/pub/eosdb/ancillary/.
+  These files are available from 2000-2026.
 ### Finding the files for a granule
 
 A daily VIIRS or MODIS file has no single valid time. Each cell comes from an overpass at about
@@ -438,6 +440,8 @@ cross the equator at about 10:00 to 10:30 local time, so UTC time mostly follows
 the wait repeats roughly every 90 degrees of longitude. The local time also shifts with latitude
 (about 20 minutes at 30 degrees and an hour at 60 degrees), so the boundaries between short and
 long waits move with latitude too. Some examples, assuming 10:30 local and ignoring latitude:
+
+
 
 | Granule | UTC time | Cycles | Ready about | Wait |
 |---|---|---|---|---|
@@ -590,12 +594,17 @@ the rest, by coincidence. Waiting for `cycle2` every time, the median wait after
 5.7 hours, and about 45% of granules are published within 6 hours of entry, not 90%. GDAS is
 still far faster than VIIRS (about 39 hours from sensing to publish in the same study).
 
+**GFS-GDAS Production site** provides live production times of various GFS-GDAS data products.
+
 **GFS is the low-latency alternative.** GFS runs the same model on the same cycles with an early
 observation cutoff (about 2h45m), and its 0-hour file has `PWAT` and `TOZNE` on the same grid,
 published about 3.5 hours after the cycle (table above). It has fewer observations than GDAS.
 Whether that matters for water vapor and ozone is for the science team, and it is a different input
 from upstream.
 
+**Other alternatives**
+- GEOS-IT (50 km) spatial resolution is currently under consideration by USGS to obtain water vapor and ozone column concentrations (HLS F2F, Oct 2026).
+- ECMWF Integrated Forecasting System: Medium range forecast (up to 15 days ahead), produced daily 4 times with 0.25 degree resolution in GRIB2 format. 
 | Input for `cycle2` | Ready after acquisition | Wait after Sentinel-2 entry (median) |
 |---|---|---|
 | GDAS `f000` (upstream) | 7 to 13 h | about 5.7 h |
