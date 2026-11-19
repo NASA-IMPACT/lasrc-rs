@@ -405,7 +405,7 @@ These notes come from spot checks of `s3://noaa-gfs-bdp-pds` (public, no credent
   times in band tags (`GRIB_REF_TIME`, `GRIB_VALID_TIME`, `GRIB_FORECAST_SECONDS`), along with
   `GRIB_ELEMENT` (`PWAT`, `TOZNE`) and `GRIB_UNIT`.
 
-- Additional archive of GDAS data is available at https://bin.ssec.wisc.edu/pub/eosdb/ancillary/.
+- Additional archive of GDAS data is available at [link](https://bin.ssec.wisc.edu/pub/eosdb/ancillary/).
   These files are available from 2000-2026.
 ### Finding the files for a granule
 
