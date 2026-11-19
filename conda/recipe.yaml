@@ -36,7 +36,7 @@ build:
 requirements:
   build:
     # conda's rust has no rustup, so rust-toolchain.toml is ignored; keep this floor in sync
-    - rust >=1.96
+    - rust >=1.99
   host:
     - python 3.13.*
     - pip
