@@ -14,6 +14,9 @@ We have also discussed goals with much larger scope, including:
 1. Process Sentinel-2 at 30 m, which is the resolution of the final product
 2. Make the code general enough to support other sensors, possibly including commercial satellites
 
+Separately, the auxiliary inputs are moving to documented, self-describing formats, with source
+handling in a separate package (see [`plans/standardized-inputs.md`](plans/standardized-inputs.md)).
+
 The first two goals should leave outputs effectively unchanged. The second set of goals change the
 product on purpose and are tracked separately.
 
@@ -150,8 +153,7 @@ algorithm author's current version.
 
 ### Also in the Fortran
 
-These come from the algorithm's source and are not C port errors. Ask the algorithm author about
-them before changing anything.
+These come from the algorithm's source and are not C port errors.
 
 - [ ] **`eps` fit truncation ([#21](https://github.com/NASA-IMPACT/lasrc-rs/issues/21)).** `xd`
       truncates -3.1875 to -3, in both the Landsat and Sentinel-2 paths. This directly affects the
@@ -192,12 +194,8 @@ wastes work, since it is 9 times the pixels, but fixing it will likely change th
 significantly. It is therefore not a performance optimization. It needs an algorithm version bump,
 likely a major package version, and a reprocessing decision (`VERSIONING.md` section 4).
 
-Three configurations need to be supported, so this is also the time to generalize how input products
-are described:
-
-- Landsat at 30 m
-- Sentinel-2 at 30 m
-- Sentinel-2 at 10 m
+Generalizing how input products are described could help improve our code by reducing hard coded
+assumptions while opening the door to new sensors or sensors at resampled resolutions.
 
 ### What ties the code to specific sensors today
 
