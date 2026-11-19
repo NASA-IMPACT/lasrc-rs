@@ -28,7 +28,7 @@ module = ["h5py.*", "pyhdf.*"]
 ignore_missing_imports = true
 
 [tool.rumdl]
-line-length = 100
+line-length = 120
 
 [tool.rumdl.MD013]
 reflow = true
