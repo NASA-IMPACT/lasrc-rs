@@ -1,91 +1,85 @@
 name: Conda
 
+# Every pull request builds the package. Pull requests from this repo then publish to the "dev"
+# channel once a reviewer approves the "conda" environment deployment. Published releases publish
+# to the "stable" channel.
 on:
   pull_request:
-  push:
-    tags: ["v*"]
+  release:
+    types: [published]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
 
 jobs:
-  conda:
-    name: Build and publish conda package
+  build:
+    name: Build conda package
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write # OIDC for AWS
-    env:
-      OUTPUT_DIR: /tmp/conda-output
-      # Tags publish to the stable channel, same-repo PRs to the dev channel. Fork and
-      # Dependabot PRs can't get an OIDC token, so they only build.
-      PUBLISH: ${{ github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') }}
-      CHANNEL: s3://${{ vars.CONDA_CHANNEL_BUCKET }}/${{ github.event_name == 'push' && 'stable' || 'dev' }}
-      # rattler-build upload s3 / rattler-index s3 use S3_* vars
-      S3_REGION: ${{ vars.AWS_REGION }}
-      S3_ENDPOINT_URL: https://s3.${{ vars.AWS_REGION }}.amazonaws.com
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          # Full history + tags for `git describe`; PR head (not the merge commit) so the
+          # Full history + tags for scripts/version; PR head (not the merge commit) so the
           # version's sha matches the PR's commit
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Check tag matches package version
-        if: github.event_name == 'push'
-        run: scripts/check-versions "$GITHUB_REF_NAME"
+      - uses: ./.github/actions/conda-package
 
-      - uses: prefix-dev/setup-pixi@ad1da6449d9e506fd127fd67ab2d054a769f6a94 # v0.11.2
+  publish-dev:
+    name: Publish conda package (dev)
+    needs: build
+    # Fork and Dependabot PRs can't get an OIDC token
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    environment: conda
+    permissions:
+      contents: read
+      id-token: write # OIDC for AWS
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          run-install: false
+          persist-credentials: false
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Install rattler-build and rattler-index
-        run: pixi global install rattler-build rattler-index
-
-      - name: Configure AWS credentials (OIDC)
-        if: env.PUBLISH == 'true'
-        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+      - uses: ./.github/actions/conda-package
         with:
+          channel: dev
+          bucket: ${{ vars.CONDA_CHANNEL_BUCKET }}
           role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME_ARN }}
-          role-session-name: gha-${{ github.run_id }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Authenticate rattler-build with S3
-        if: env.PUBLISH == 'true'
-        run: |
-          rattler-build auth login "s3://${{ vars.CONDA_CHANNEL_BUCKET }}" \
-            --s3-access-key-id "$AWS_ACCESS_KEY_ID" \
-            --s3-secret-access-key "$AWS_SECRET_ACCESS_KEY" \
-            --s3-session-token "$AWS_SESSION_TOKEN"
+  publish-stable:
+    name: Publish conda package (stable)
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC for AWS
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Full history + tags for scripts/version
+          fetch-depth: 0
 
-      # When publishing, skip the build if the target channel already has this exact package
-      # (e.g. a re-run of the same commit), so nothing is ever overwritten
-      - name: Build
-        run: |
-          args=(--output-dir "$OUTPUT_DIR")
-          if [[ "$PUBLISH" == "true" ]]; then
-            args+=(--channel "$CHANNEL" --skip-existing=all)
-          fi
-          scripts/conda-build "${args[@]}"
+      - name: Check release tag matches package version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: scripts/check-versions "$TAG"
 
-      - name: Upload and index
-        if: env.PUBLISH == 'true'
-        run: |
-          shopt -s nullglob
-          pkgs=("$OUTPUT_DIR"/linux-64/*.conda)
-          if (( ${#pkgs[@]} == 0 )); then
-            echo "Already published to \`$CHANNEL\`; nothing to upload" >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          rattler-build upload s3 --channel "$CHANNEL" "${pkgs[@]}"
-          rattler-index s3 "$CHANNEL"
-          {
-            echo "Published to \`$CHANNEL\`:"
-            for f in "${pkgs[@]}"; do echo "- \`$(basename "$f")\`"; done
-          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: ./.github/actions/conda-package
+        with:
+          channel: stable
+          bucket: ${{ vars.CONDA_CHANNEL_BUCKET }}
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Print the package version for a build of this checkout (see VERSIONING.md):
+#   on tag vX.Y.Z              -> X.Y.Z
+#   commits past vX.Y.Z        -> X.Y.Z+g<sha>
+#   no tag yet                 -> 0.0.0+g<sha>
+#   uncommitted changes        -> ".dirty" appended (X.Y.Z+g<sha>.dirty)
+# Usage: scripts/version
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+sha=g$(git rev-parse --short=9 HEAD)
+if tag=$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null); then
+    base=${tag#v}
+    tagged=$([[ "$(git rev-list -n 1 "$tag")" == "$(git rev-parse HEAD)" ]] && echo 1 || true)
+else
+    base=0.0.0
+    tagged=
+fi
+
+dirty=
+if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
+    dirty=1
+fi
+
+if [[ -n "$tagged" && -z "$dirty" ]]; then
+    echo "$base"
+elif [[ -n "$dirty" ]]; then
+    echo "$base+$sha.dirty"
+else
+    echo "$base+$sha"
+fi

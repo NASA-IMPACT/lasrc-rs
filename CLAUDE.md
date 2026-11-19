@@ -27,6 +27,8 @@ Prefer the scripts in `scripts/` (CI runs the same ones):
 - `scripts/typecheck` - mypy on `lasrc_py/python`
 - `scripts/check-versions [TAG]` - CHANGELOG algorithm version matches the code, and TAG (if given)
   matches the `Cargo.toml` version (see `VERSIONING.md`)
+- `scripts/version` - version for a build of this checkout: the tag on a release, `X.Y.Z+g<sha>`
+  otherwise
 
 Running cargo directly: the `lasrc_py` crate builds against Python via PyO3, which uses the first
 `python3` on PATH. Set `PYO3_PYTHON="$(uv python find)"` to match the project interpreter (the

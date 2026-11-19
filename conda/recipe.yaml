@@ -17,6 +17,11 @@ build:
       SOURCE_DATE_EPOCH: "0"
       MATURIN_PEP517_ARGS: "--locked"
     content:
+      # maturin would take the version from Cargo.toml, which only changes on release. Pinning it in
+      # pyproject.toml (this source copy only) gives the wheel the full version, e.g. X.Y.Z+g<sha>,
+      # without touching Cargo.toml and Cargo.lock.
+      - sed -i.bak 's/^dynamic = \["version"\]$/version = "${{ version }}"/' lasrc_py/pyproject.toml
+      - grep -qxF 'version = "${{ version }}"' lasrc_py/pyproject.toml
       # lasrc_py depends on ../lasrc_core by path, so build from the subdir of the full checkout
       - cd lasrc_py
       - $PYTHON -m pip install . --no-deps --no-build-isolation -vv

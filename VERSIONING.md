@@ -33,14 +33,21 @@ The Rust crates (`lasrc_core`, `lasrc_py`), the Python package (`lasrc`), and th
 - **Source of truth:** the release tag `vX.Y.Z`.
   - `[workspace.package] version` in the root `Cargo.toml` must match the tag (CI rejects a
     mismatch). Both crates inherit it.
-  - The Python package version is read from `Cargo.toml` by maturin.
-  - The Conda package version is derived from the git tag by `scripts/conda-build`.
+  - The Python package version is read from `Cargo.toml` by maturin. It is exposed as
+    `lasrc.__version__`, in the package metadata, and by the CLI's `--version`.
+  - The Conda package version is derived from git tags by `scripts/version`. On a release tag it
+    equals the `Cargo.toml` version.
 - **Distribution:** releases are published only as a Conda package to the project's Conda channel.
   The crates and the Python package are not published to crates.io or PyPI.
-- **Scheme:** [SemVer 2.0.0](https://semver.org/). No pre-release (`-...`) or build-metadata
-  (`+...`) suffixes on releases because Cargo, PEP 440, and Conda handle them inconsistently. Builds
-  published to the `dev` Conda channel from pull requests are not releases and carry a
-  `X.Y.Z.postN+g<sha>` version.
+- **Scheme:** [SemVer 2.0.0](https://semver.org/). Releases have no pre-release (`-...`) or
+  build-metadata (`+...`) suffix, and CI rejects a tag that is not `vX.Y.Z`.
+- **Development builds:** Conda builds of any commit that is not a release tag carry the last
+  release tag plus the commit, `X.Y.Z+g<sha>`, with `.dirty` appended when the checkout has
+  uncommitted changes. The Python package inside has the same version. Builds from pull requests
+  are published this way to the `dev` Conda channel after a reviewer approves the `conda`
+  environment deployment. Development builds of the same release do not
+  sort in commit order, so install them by exact version. Local `uv sync` installs report the
+  `Cargo.toml` version.
 
 ### Public API
 
@@ -114,6 +121,7 @@ in section 4 for how each kind of change affects the package version.
 - New output bands, or new QA bits in previously unused bit positions (existing outputs and bits
   keep their values and meaning)
 - Packaging, build, or API changes
+- Switching to an equivalent ancillary data source (section 2.4)
 
 ### 2.3 Tolerance and the golden dataset
 
@@ -141,7 +149,23 @@ A fast tripwire runs in CI against small fixture scenes, using the same toleranc
 - Landsat on every PR
 - Sentinel-2 on PRs touching S2 or shared code
 
-A tripwire failure does not replace full validation. It signals that a release needs it.
+This doesn't replace full validation of new releases, but can signal that a release
+needs more attention.
+
+### 2.4 Ancillary data sources
+
+Atmospheric ancillary inputs such as water vapor and ozone can come from more than one source, for
+example GDAS, VIIRS, or MODIS. The algorithm version describes the algorithm, not the source of
+its inputs. Adding a source, or switching between sources, does not bump the algorithm version
+when the sources are equivalent. Equivalent means outputs made from each source agree within the
+tolerance in section 2.3, as shown by validation against the golden dataset.
+
+Instead, every output records which source supplied each ancillary input in its metadata, with
+one field per input. For example, `ANCILLARY_WATER_VAPOR` is one of `GDAS`, `VIIRS`, or `MODIS`.
+The algorithm version together with these fields identifies how a product was made.
+
+A source that moves outputs beyond tolerance is not equivalent. Adopting it is a science change
+that bumps the algorithm version (section 2.2).
 
 ---
 
@@ -152,8 +176,8 @@ repo:
 
 - An algorithm version bump is the **trigger for a reprocessing decision**. It does not force a
   product version bump on its own.
-- Changes validated as within scientific noise at the product level (e.g. VIIRS -> GDAS ancillary
-  data) stay within the current product version.
+- Changes validated as within scientific noise at the product level stay within the current
+  product version.
 - Link the validation evidence for any such change from the CHANGELOG.
 
 ---
@@ -203,8 +227,8 @@ versions. The HLS project still makes the reprocessing decision (section 3).
    - whether validation was run, with a link to the results.
 
    Then start a new, empty `[Unreleased]` entry that keeps the `**Algorithm version:**` line.
-7. Merge to `main`, then tag `vX.Y.Z` on that commit and push the tag. The Conda workflow checks the
-   tag against `Cargo.toml` and publishes to the stable channel.
+7. Merge to `main`, then publish a GitHub release with a new tag `vX.Y.Z` on that commit. The Conda
+   workflow checks the tag against `Cargo.toml` and publishes to the stable channel.
 
 ---
 
