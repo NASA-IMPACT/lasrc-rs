@@ -17,12 +17,10 @@ __all__ = [
     "SR_FILL_VALUE",
     "PyAuxiliaryData",
     "PyLookupTables",
-    "__version__",
     "process_sentinel_surface_reflectance",
     "process_surface_reflectance",
 ]
 
-__version__: Final[str]
 ALGORITHM_VERSION: Final[str]
 SR_FILL_VALUE: Final[int]
 AERO_FILL: Final[int]

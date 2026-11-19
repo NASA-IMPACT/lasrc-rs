@@ -343,7 +343,6 @@ fn process_sentinel_surface_reflectance<'py>(
 
 #[pymodule]
 fn lasrc(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add("ALGORITHM_VERSION", ALGORITHM_VERSION)?;
     m.add("SR_FILL_VALUE", SR_FILL_VALUE)?;
     m.add("AERO_FILL", AERO_FILL)?;

@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          # Full history + tags for `git describe`; PR head (not the merge commit) so the
+          # Full history + tags for scripts/version; PR head (not the merge commit) so the
           # version's sha matches the PR's commit
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}

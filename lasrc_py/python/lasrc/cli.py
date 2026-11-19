@@ -2,7 +2,8 @@
 
 import click
 
-from lasrc.lasrc import ALGORITHM_VERSION, __version__
+from lasrc import __version__
+from lasrc.lasrc import ALGORITHM_VERSION
 
 
 def _print_algorithm_version(

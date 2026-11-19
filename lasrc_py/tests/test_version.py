@@ -1,5 +1,6 @@
 """Package and algorithm version exposure (see VERSIONING.md)."""
 
+import importlib.metadata
 import re
 
 import lasrc
@@ -9,7 +10,12 @@ from lasrc.cli import landsat, sentinel
 
 
 def test_package_version_format():
-    assert re.fullmatch(r"\d+\.\d+\.\d+", lasrc.__version__)
+    # X.Y.Z, or X.Y.Z+g<sha>[.dirty] for a build between releases (see scripts/version)
+    assert re.fullmatch(r"\d+\.\d+\.\d+(\+g[0-9a-f]+(\.dirty)?)?", lasrc.__version__)
+
+
+def test_package_version_matches_metadata():
+    assert lasrc.__version__ == importlib.metadata.version("lasrc")
 
 
 def test_algorithm_version_format():

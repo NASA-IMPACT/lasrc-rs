@@ -2,32 +2,11 @@
 # Build the conda package (conda/recipe.yaml) with rattler-build.
 # Usage: scripts/conda-build [rattler-build build args...]
 #
-# The version is $LASRC_VERSION if set, otherwise derived from git:
-#   on tag vX.Y.Z              -> X.Y.Z
-#   N commits past vX.Y.Z      -> X.Y.Z.postN+g<sha>   (sorts above X.Y.Z)
-#   no tag yet                 -> 0.0.0.postN+g<sha>
+# The version is $LASRC_VERSION if set, otherwise derived from git tags by scripts/version.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-if [[ -z "${LASRC_VERSION:-}" ]]; then
-    if desc=$(git describe --tags --long --match 'v[0-9]*' 2>/dev/null); then
-        # vX.Y.Z-N-g<sha>
-        sha=${desc##*-}
-        rest=${desc%-*}
-        n=${rest##*-}
-        base=${rest%-*}
-        base=${base#v}
-    else
-        base=0.0.0
-        n=$(git rev-list --count HEAD)
-        sha=g$(git rev-parse --short HEAD)
-    fi
-    if [[ "$n" == 0 ]]; then
-        LASRC_VERSION=$base
-    else
-        LASRC_VERSION="$base.post$n+$sha"
-    fi
-fi
+LASRC_VERSION="${LASRC_VERSION:-$(scripts/version)}"
 export LASRC_VERSION
 echo "Building lasrc-rs $LASRC_VERSION"
 

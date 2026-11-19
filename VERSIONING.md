@@ -33,14 +33,20 @@ The Rust crates (`lasrc_core`, `lasrc_py`), the Python package (`lasrc`), and th
 - **Source of truth:** the release tag `vX.Y.Z`.
   - `[workspace.package] version` in the root `Cargo.toml` must match the tag (CI rejects a
     mismatch). Both crates inherit it.
-  - The Python package version is read from `Cargo.toml` by maturin.
-  - The Conda package version is derived from the git tag by `scripts/conda-build`.
+  - The Python package version is read from `Cargo.toml` by maturin. It is exposed as
+    `lasrc.__version__`, in the package metadata, and by the CLI's `--version`.
+  - The Conda package version is derived from git tags by `scripts/version`. On a release tag it
+    equals the `Cargo.toml` version.
 - **Distribution:** releases are published only as a Conda package to the project's Conda channel.
   The crates and the Python package are not published to crates.io or PyPI.
-- **Scheme:** [SemVer 2.0.0](https://semver.org/). No pre-release (`-...`) or build-metadata
-  (`+...`) suffixes on releases because Cargo, PEP 440, and Conda handle them inconsistently. Builds
-  published to the `dev` Conda channel from pull requests are not releases and carry a
-  `X.Y.Z.postN+g<sha>` version.
+- **Scheme:** [SemVer 2.0.0](https://semver.org/). Releases have no pre-release (`-...`) or
+  build-metadata (`+...`) suffix, and CI rejects a tag that is not `vX.Y.Z`.
+- **Development builds:** Conda builds of any commit that is not a release tag carry the last
+  release tag plus the commit, `X.Y.Z+g<sha>`, with `.dirty` appended when the checkout has
+  uncommitted changes. The Python package inside has the same version. Builds from pull requests
+  are published this way to the `dev` Conda channel. Development builds of the same release do not
+  sort in commit order, so install them by exact version. Local `uv sync` installs report the
+  `Cargo.toml` version.
 
 ### Public API
 
