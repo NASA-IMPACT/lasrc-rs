@@ -404,9 +404,8 @@ These notes come from spot checks of `s3://noaa-gfs-bdp-pds` (public, no credent
   start at longitude -180 (correctly, unlike the C reader's off-by-one rotation). It exposes the
   times in band tags (`GRIB_REF_TIME`, `GRIB_VALID_TIME`, `GRIB_FORECAST_SECONDS`), along with
   `GRIB_ELEMENT` (`PWAT`, `TOZNE`) and `GRIB_UNIT`.
-
-- Additional archive of GDAS data is available at [link](https://bin.ssec.wisc.edu/pub/eosdb/ancillary/).
-  These files are available from 2000-2026.
+- Additional archive of GDAS data is available at [link](https://bin.ssec.wisc.edu/pub/eosdb/ancillary/). These files are available from 2000-2026.
+- 
 ### Finding the files for a granule
 
 A daily VIIRS or MODIS file has no single valid time. Each cell comes from an overpass at about
@@ -440,8 +439,6 @@ cross the equator at about 10:00 to 10:30 local time, so UTC time mostly follows
 the wait repeats roughly every 90 degrees of longitude. The local time also shifts with latitude
 (about 20 minutes at 30 degrees and an hour at 60 degrees), so the boundaries between short and
 long waits move with latitude too. Some examples, assuming 10:30 local and ignoring latitude:
-
-
 
 | Granule | UTC time | Cycles | Ready about | Wait |
 |---|---|---|---|---|
