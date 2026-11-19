@@ -4,8 +4,8 @@ See `README.md` ("Developer getting started") for the full setup.
 
 ## Python Environment
 
-The repo root is a uv workspace (`pyproject.toml`, member `lasrc_py`) with a single `uv.lock` and
-`.venv` in the root. The Python version comes from `.python-version`.
+The repo root is a uv workspace (`pyproject.toml`, members `lasrc_py` and `lasrc_ancillary`) with a
+single `uv.lock` and `.venv` in the root. The Python version comes from `.python-version`.
 
 - Set up or refresh the environment with `uv sync`. It also builds and installs the `lasrc`
   extension (editable).
@@ -21,10 +21,11 @@ The repo root is a uv workspace (`pyproject.toml`, member `lasrc_py`) with a sin
 
 Prefer the scripts in `scripts/` (CI runs the same ones):
 
-- `scripts/test [rust|python] [pytest args...]` - `cargo test --workspace` and `pytest lasrc_py`
+- `scripts/test [rust|python] [pytest args...]` - `cargo test --workspace` and
+  `pytest lasrc_py lasrc_ancillary`
 - `scripts/lint [rust|python]` - check-only: cargo fmt, clippy `-D warnings`, ruff
 - `scripts/format` - apply cargo fmt, ruff format, ruff auto-fixes
-- `scripts/typecheck` - mypy on `lasrc_py/python`
+- `scripts/typecheck` - mypy on `lasrc_py/python` and `lasrc_ancillary/src`
 - `scripts/check-versions [TAG]` - CHANGELOG algorithm version matches the code, and TAG (if given)
   matches the `Cargo.toml` version (see `VERSIONING.md`)
 - `scripts/version` - version for a build of this checkout: the tag on a release, `X.Y.Z+g<sha>`

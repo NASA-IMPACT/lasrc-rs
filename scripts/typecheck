@@ -4,6 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 uv run mypy lasrc_py/python
+uv run mypy lasrc_ancillary/src
 
 # Check the hand-written stub (lasrc_py/python/lasrc/lasrc.pyi) against the compiled extension
 uv run python -m mypy.stubtest lasrc.lasrc

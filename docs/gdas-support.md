@@ -327,6 +327,11 @@ production values (3x3 for Landsat, 6 for Sentinel-2). The 1x1 values are left i
 
 ## Using GDAS in lasrc-rs
 
+lasrc-rs follows the upstream approach of making GDAS look like VIIRS, with the conversion outside
+`lasrc` itself. `lasrc-ancillary gdas` (in `lasrc_ancillary/`) finds and fetches the two cycles,
+interpolates them, and writes a file in the layout of a VIIRS `V*04ANC` file, which `lasrc` reads
+through `--wv-oz-hdf`. See [`usage.md`](usage.md) for how to run it.
+
 ### GDAS data on the NODD bucket
 
 These notes come from spot checks of `s3://noaa-gfs-bdp-pds` (public, no credentials) on 2026-11-11 to 2026-11-13. They
@@ -500,7 +505,7 @@ When the orchestration layer was wrong:
 
 | Case                                                                               | What happens                                                                          |
 | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Triggered early: `cycle2` is not on NODD yet                                       | Exit with code 75 (`EX_TEMPFAIL`) so the orchestration retries                        |
+| Triggered early: `cycle2` is not on NODD yet                                       | Report it as not yet published, so the orchestration retries                          |
 | Still missing well past the expected latency (for example 24 hours after `cycle2`) | Fail with a normal error, so a gap in the archive doesn't retry forever               |
 | Staged files that don't bracket the acquisition time                               | Ignore them and fetch the right pair, or fail with a clear error when fetching is off |
 
@@ -520,6 +525,9 @@ leaves two things to get right:
 - **The seam.** `interp` doesn't wrap longitude, so append a copy of the -180 column at +180 first.
 
 ### Appendix: latency, GDAS vs GFS
+
+[`notebooks/gdas-latency.ipynb`](notebooks/gdas-latency.ipynb) reproduces the numbers in this section and the archive
+gaps above from the bucket.
 
 **GDAS cycles are slow by design.** GDAS waits about 6 hours after each cycle for late observations before it runs. Its
 0-hour file is published about 7 hours after the cycle. Hours from cycle to the NODD `LastModified` time for the 1460

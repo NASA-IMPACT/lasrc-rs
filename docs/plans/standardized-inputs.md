@@ -6,7 +6,7 @@ We want to create standardized interface between the processing code and its aux
 
 - **`lasrc_py` and the Rust core** read a small set of documented, self-describing files, in
   physical units, on fixed grids. They know nothing about where the data came from.
-- **Producers** in a separate workspace member (`lasrc_inputs`, working name) find, download and
+- **Producers** in a separate workspace member (`lasrc_ancillary`, working name) find, download and
   convert real sources into those files.
 
 Swapping an input then means writing a producer, with no change to `lasrc_py`.
