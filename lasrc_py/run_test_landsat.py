@@ -1,7 +1,7 @@
 """Run LaSRC surface reflectance on the test Landsat 9 granule.
 
 Thin wrapper around the lasrc package pipeline (the single source of truth for
-LUT/ancillary loading and correction). See lasrc.pipeline_landsat.process_landsat_scene.
+LUT/ancillary loading and correction). See lasrc.landsat.process_scene.
 """
 
 import argparse
@@ -51,7 +51,7 @@ def main():
     )
     args = parser.parse_args()
 
-    from lasrc.pipeline_landsat import AuxFilePaths, process_landsat_scene
+    from lasrc.landsat import AuxFilePaths, process_scene
 
     viirs_path = (
         args.aux if args.aux is not None else find_viirs_aux(LADS_DIR, "2026", "073")
@@ -80,7 +80,7 @@ def main():
 
     print("Running surface reflectance correction...")
     t0 = time.time()
-    result = process_landsat_scene(
+    result = process_scene(
         input_path=SCENE_DIR,
         aux_files=aux_files,
         output_path=output_path,

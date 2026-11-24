@@ -217,7 +217,7 @@ it costs the same wall clock on any core count.
 
 ### 8. Input and output
 
-- **Band reads:** `read_sentinel_safe` decodes 13 JP2 files one at a time. Try a thread pool, since
+- **Band reads:** `lasrc.sentinel.read_scene` decodes 13 JP2 files one at a time. Try a thread pool, since
   rasterio releases the GIL during reads. Check how many threads GDAL already uses for each decode
   first, because nothing in this repo sets `GDAL_NUM_THREADS`.
 - **Band writes:** `write_espa_output` writes files one at a time. It could write them in parallel,

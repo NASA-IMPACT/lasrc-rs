@@ -7,12 +7,8 @@ import numpy as np
 
 import lasrc as _lasrc
 from lasrc.aux import load_auxiliary_data, load_dem, load_lut, load_ratio_file
-from lasrc.io import (
-    read_landsat_scene,
-    write_cog_output,
-    write_espa_output,
-    write_numpy,
-)
+from lasrc.landsat.io import read_scene
+from lasrc.output import write_cog_output, write_espa_output, write_numpy
 from lasrc.results import SurfaceReflectanceResult
 from lasrc.sensors import SENSORS
 
@@ -49,7 +45,7 @@ def _espa_solar_zenith(sun_elevation: float) -> float:
     return float(np.float32(float(f"{zenith:f}")))
 
 
-def process_landsat_scene(
+def process_scene(
     input_path: str | Path,
     aux_files: AuxFilePaths,
     output_path: str | Path,
@@ -76,7 +72,7 @@ def process_landsat_scene(
     """
     sensor_config = SENSORS[sensor_name]
 
-    scene = read_landsat_scene(input_path)
+    scene = read_scene(input_path)
 
     lut_data = load_lut(
         str(aux_files.angle_hdf),

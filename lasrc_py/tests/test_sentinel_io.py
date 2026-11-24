@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from lasrc.io.sentinel import (
+from lasrc.sentinel.io import (
     _dn_to_toa,
     _fill_mask,
     _find_band_file,

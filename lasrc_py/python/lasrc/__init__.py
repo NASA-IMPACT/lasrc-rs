@@ -9,7 +9,6 @@ from lasrc.lasrc import (
     process_landsat_surface_reflectance,
     process_sentinel_surface_reflectance,
 )
-from lasrc.pipeline_landsat import AuxFilePaths
 
 __version__ = _metadata.version("lasrc")
 
@@ -17,7 +16,6 @@ __all__ = [
     "AERO_FILL",
     "ALGORITHM_VERSION",
     "SR_FILL_VALUE",
-    "AuxFilePaths",
     "PyAuxiliaryData",
     "PyLookupTables",
     "__version__",

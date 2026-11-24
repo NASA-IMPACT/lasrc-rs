@@ -29,7 +29,7 @@ def main():
     parser.add_argument("--aux", type=Path, default=None)
     args = parser.parse_args()
 
-    from lasrc.pipeline_sentinel import process_sentinel_scene
+    from lasrc.sentinel import process_scene
 
     # Scene date: 2026-01-24 -> DOY 024
     if args.aux:
@@ -44,7 +44,7 @@ def main():
     output_dir = TEST_DATA / "output_espa_s2"
     t0 = time.time()
 
-    process_sentinel_scene(
+    process_scene(
         safe_dir=SAFE_DIR,
         angle_hdf=LUT_DIR / "ANGLE_NEW.hdf",
         intref_hdf=LUT_DIR / "RES_LUT_V3.0-URBANCLEAN-V3.0.hdf",

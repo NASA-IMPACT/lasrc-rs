@@ -229,14 +229,14 @@ data, run the correction, write the output, and also return the result arrays:
 ```python
 from pathlib import Path
 
-from lasrc.pipeline_landsat import AuxFilePaths, process_landsat_scene
+from lasrc import landsat
 
 aux = Path("lasrc_aux")
 lut = aux / "LDCMLUT"
 
-result = process_landsat_scene(
+result = landsat.process_scene(
     input_path="LC09_L1TP_001066_20260314_20260314_02_T1",
-    aux_files=AuxFilePaths(
+    aux_files=landsat.AuxFilePaths(
         angle_hdf=lut / "ANGLE_NEW.hdf",
         intref_hdf=lut / "RES_LUT_V3.0-URBANCLEAN-V2.0.hdf",
         transm_hdf=lut / "TRANS_LUT_V3.0-URBANCLEAN-V2.0.ASCII",
@@ -254,13 +254,13 @@ result["sr_bands"][0]  # (nlines, nsamps) uint16
 result["aerosol"]  # (nlines, nsamps) int16
 ```
 
-For Sentinel-2, `lasrc.pipeline_sentinel.process_sentinel_scene` takes the same inputs as flat
+For Sentinel-2, `lasrc.sentinel.process_scene` takes the same inputs as flat
 keyword arguments (`safe_dir`, `angle_hdf`, ..., `viirs_aux_path`, `dem_path`, `ratio_path`,
 `output_path`, `sensor_name`).
 
 To skip the file I/O, for example to feed in arrays you already have in memory, call the Rust
-extension directly: `lasrc.process_landsat_surface_reflectance` (Landsat) and
-`lasrc.process_sentinel_surface_reflectance` (Sentinel-2). They take TOA arrays, per-pixel angles,
+extension directly: `lasrc.process_landsat_surface_reflectance` and
+`lasrc.process_sentinel_surface_reflectance`. They take TOA arrays, per-pixel angles,
 a `PyLookupTables`, and a `PyAuxiliaryData`. `lasrc.aux` has loaders that build the constructor
 arguments for those last two from the files above. The pipeline functions show how the pieces fit
 together.
