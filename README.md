@@ -81,10 +81,13 @@ the full checklist, including validation.
 
 1. Keep a draft release up to date as changes merge to `main`. Its notes are the changelog for
    the next release (VERSIONING.md section 6).
-2. To release, set the draft's tag to `vX.Y.Z` on `main` and publish it.
+2. To release, set the draft's tag to `vX.Y.Z` on `main` and publish it. Only repository admins
+   can create `v*` tags.
 3. CI tests that commit. A reviewer of the `conda` environment then approves the publish job,
    which publishes `X.Y.Z` to the stable Conda channel. If the job fails after the release is
    published, fix the cause and re-run the job.
+
+Patch releases for an older version come from a `maint/vX.Y.x` branch (VERSIONING.md section 5).
 
 ## References
 
