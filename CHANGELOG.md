@@ -34,6 +34,15 @@ with an additional version indicator for modifications of this fork.
 
 -
 
+## [0.1.1]
+
+Release Date: November 24, 2026
+
+**Algorithm version:** 3.5.1.0 (unchanged)
+
+First release published to the stable Conda channel. The code is the same as `v0.1.0`, which was
+not published.
+
 ## [v3.5.1.0]
 
 Release Date: March, 2025
@@ -54,4 +63,5 @@ with releases from the upstream.
   [#17](https://github.com/NASA-IMPACT/espa-surface-reflectance/pull/17)
 
 [Unreleased]: https://github.com/NASA-IMPACT/lasrc-rs/commits/main
+[0.1.1]: https://github.com/NASA-IMPACT/lasrc-rs/releases/tag/v0.1.1
 [v3.5.1.0]: https://github.com/NASA-IMPACT/espa-surface-reflectance/tree/v3.5.1.0
