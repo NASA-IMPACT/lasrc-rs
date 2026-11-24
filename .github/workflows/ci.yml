@@ -5,12 +5,14 @@ name: CI
 # - Pull requests from this repo then publish to the "dev" channel once a reviewer
 #   approves the "conda" environment deployment.
 # - Pushes to main publish to the "dev" channel.
-# The Release workflow (release.yml) calls this workflow to test a release before publishing it.
+# - Published releases publish to the "stable" channel once a reviewer approves the "conda"
+#   environment deployment.
 on:
   push:
     branches: [main]
   pull_request:
-  workflow_call:
+  release:
+    types: [published]
 
 # Only pull requests cancel in-progress runs, so a publish is never interrupted mid-upload
 concurrency:
@@ -145,6 +147,38 @@ jobs:
       - uses: ./.github/actions/conda-package
         with:
           channel: dev
+          bucket: ${{ vars.CONDA_CHANNEL_BUCKET }}
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+  conda-publish-release:
+    name: Publish conda package (stable)
+    needs: [rust, python]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    environment: conda
+    permissions:
+      contents: read
+      id-token: write # OIDC for AWS
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Full history + tags for scripts/version
+          fetch-depth: 0
+
+      - name: Check release tag is vX.Y.Z
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "error: release tag $TAG is not a release version (vX.Y.Z)" >&2
+            exit 1
+          fi
+
+      - uses: ./.github/actions/conda-package
+        with:
+          channel: stable
           bucket: ${{ vars.CONDA_CHANNEL_BUCKET }}
           role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME_ARN }}
           aws-region: ${{ vars.AWS_REGION }}

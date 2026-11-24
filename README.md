@@ -75,32 +75,16 @@ builds and publishes the Conda package once they pass.
 
 ### Make a release
 
-Releases use [cargo-release](https://github.com/crate-ci/cargo-release) (`cargo install
-cargo-release`). See [VERSIONING.md](VERSIONING.md) section 4 to choose the version bump and
-section 5 for the full checklist, including validation.
+Releases are GitHub releases. The tag `vX.Y.Z` sets the version, and the release notes are the
+changelog. See [VERSIONING.md](VERSIONING.md) section 4 to choose the version and section 5 for
+the full checklist, including validation.
 
-1. Make sure the `[Unreleased]` entry in `CHANGELOG.md` describes the release.
-2. On a clean branch from `main`, bump the version and roll the CHANGELOG:
-
-   ```bash
-   git switch -c release/vX.Y.Z main
-   cargo release minor              # dry run: shows the version bump and CHANGELOG diff
-   cargo release minor --execute    # commits "chore: release vX.Y.Z"
-   ```
-
-   Use `major` or `patch` in place of `minor` as needed.
-3. Open a pull request and merge it to `main`.
-4. Run the Release workflow on `main`:
-
-   ```bash
-   gh workflow run release.yml      # or Actions tab -> Release -> Run workflow
-   gh run watch
-   ```
-
-   It checks the version and runs CI. A reviewer of the `conda` environment then approves the
-   publish job, which publishes to the stable Conda channel and creates the `vX.Y.Z` tag and
-   GitHub release. If any step fails, nothing is tagged or released. Fix the problem on `main`
-   and run the workflow again.
+1. Keep a draft release up to date as changes merge to `main`. Its notes are the changelog for
+   the next release (VERSIONING.md section 6).
+2. To release, set the draft's tag to `vX.Y.Z` on `main` and publish it.
+3. CI tests that commit. A reviewer of the `conda` environment then approves the publish job,
+   which publishes `X.Y.Z` to the stable Conda channel. If the job fails after the release is
+   published, fix the cause and re-run the job.
 
 ## References
 
