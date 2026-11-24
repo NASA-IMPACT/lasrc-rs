@@ -1,6 +1,7 @@
 """Command-line interfaces for LaSRC surface reflectance processing."""
 
 from importlib.metadata import entry_points
+from pathlib import Path
 
 import click
 
@@ -303,8 +304,6 @@ def sentinel(
 
 def _detect_landsat_sensor(input_path: str) -> str:
     """Auto-detect Landsat sensor from input path."""
-    from pathlib import Path
-
     name = Path(input_path).name.upper()
     if "LC08" in name or "LO08" in name:
         return "LANDSAT_8"
@@ -317,8 +316,6 @@ def _detect_landsat_sensor(input_path: str) -> str:
 
 def _detect_sentinel_sensor(input_path: str) -> str:
     """Auto-detect Sentinel sensor from input path."""
-    from pathlib import Path
-
     name = Path(input_path).name.upper()
     if "S2A" in name:
         return "SENTINEL_2A"
