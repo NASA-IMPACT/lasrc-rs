@@ -43,11 +43,11 @@ The Rust crates (`lasrc_core`, `lasrc_py`), the Python package (`lasrc`), and th
   build-metadata (`+...`) suffix, and CI rejects a tag that is not `vX.Y.Z`.
 - **Development builds:** Conda builds of any commit that is not a release tag carry the last
   release tag plus the commit, `X.Y.Z+g<sha>`, with `.dirty` appended when the checkout has
-  uncommitted changes. The Python package inside has the same version. Merges to `main`
-  are published this way to the `dev` Conda channel. Builds from pull requests are published
-  there too, after a reviewer approves the `conda` environment deployment. Development builds of
-  the same release do not sort in commit order, so install them by exact version. Local `uv sync`
-  installs report the `Cargo.toml` version.
+  uncommitted changes. The Python package inside has the same version. Merges to `main` are
+  published this way to the `dev` Conda channel once CI passes on them. Builds from pull requests
+  are published there too, after a reviewer approves the `conda` environment deployment.
+  Development builds of the same release do not sort in commit order, so install them by exact
+  version. Local `uv sync` installs report the `Cargo.toml` version.
 
 ### Public API
 
@@ -227,8 +227,8 @@ versions. The HLS project still makes the reprocessing decision (section 3).
    - whether validation was run, with a link to the results.
 
    Then start a new, empty `[Unreleased]` entry that keeps the `**Algorithm version:**` line.
-7. Merge to `main`, then publish a GitHub release with a new tag `vX.Y.Z` on that commit. The Conda
-   workflow checks the tag against `Cargo.toml` and publishes to the stable channel.
+7. Merge to `main`, then publish a GitHub release with a new tag `vX.Y.Z` on that commit. Once the
+   tests pass, CI checks the tag against `Cargo.toml` and publishes to the stable channel.
 
 ---
 

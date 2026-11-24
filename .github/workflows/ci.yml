@@ -1,13 +1,22 @@
 name: CI
 
+# Every run lints and tests. Conda packages are built and published only after those pass:
+# - Every pull request builds the package.
+# - Pull requests from this repo then publish to the "dev" channel once a reviewer
+#   approves the "conda" environment deployment.
+# - Pushes to main publish to the "dev" channel.
+# - Published releases publish to the "stable" channel.
 on:
   push:
     branches: [main]
   pull_request:
+  release:
+    types: [published]
 
+# Only pull requests cancel in-progress runs, so a publish is never interrupted mid-upload
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -78,3 +87,95 @@ jobs:
 
       - name: Test
         run: scripts/test python
+
+  conda-build:
+    name: Build conda package
+    needs: [rust, python]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Full history + tags for scripts/version; PR head (not the merge commit) so the
+          # version's sha matches the PR's commit
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/conda-package
+
+  conda-publish-pr:
+    name: Publish conda package (dev)
+    needs: conda-build
+    # Fork and Dependabot PRs can't get an OIDC token
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    environment: conda
+    permissions:
+      contents: read
+      id-token: write # OIDC for AWS
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/conda-package
+        with:
+          channel: dev
+          bucket: ${{ vars.CONDA_CHANNEL_BUCKET }}
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+  conda-publish-main:
+    name: Publish conda package (dev, main)
+    needs: [rust, python]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC for AWS
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Full history + tags for scripts/version
+          fetch-depth: 0
+
+      - uses: ./.github/actions/conda-package
+        with:
+          channel: dev
+          bucket: ${{ vars.CONDA_CHANNEL_BUCKET }}
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+  conda-publish-release:
+    name: Publish conda package (stable)
+    needs: [rust, python]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC for AWS
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Full history + tags for scripts/version
+          fetch-depth: 0
+
+      - name: Check release tag matches package version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: scripts/check-versions "$TAG"
+
+      - uses: ./.github/actions/conda-package
+        with:
+          channel: stable
+          bucket: ${{ vars.CONDA_CHANNEL_BUCKET }}
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}

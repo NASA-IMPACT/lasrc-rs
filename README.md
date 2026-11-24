@@ -71,7 +71,8 @@ scripts/typecheck      # mypy on lasrc_py/python and lasrc_ancillary/src, stubte
 scripts/check-versions # CHANGELOG algorithm version matches the code (VERSIONING.md)
 ```
 
-CI (`.github/workflows/ci.yml`) runs these same scripts in separate `rust` and `python` jobs.
+CI (`.github/workflows/ci.yml`) runs these same scripts in separate `rust` and `python` jobs, and
+builds and publishes the Conda package once they pass.
 
 ## References
 
