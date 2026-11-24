@@ -6,13 +6,13 @@ import sys
 
 import numpy as np
 
-DEFAULT_RUST_DIR = os.path.join(
+LANDSAT_RUST_DIR = os.path.join(
     os.path.dirname(__file__), "..", "test_data", "output_espa"
 )
-DEFAULT_C_DIR = os.path.join(os.path.dirname(__file__), "..", "test_data", "c_output")
-DEFAULT_PREFIX = "LC09_L1TP_001066_20260314_20260314_02_T1_"
+LANDSAT_C_DIR = os.path.join(os.path.dirname(__file__), "..", "test_data", "c_output")
+LANDSAT_PREFIX = "LC09_L1TP_001066_20260314_20260314_02_T1_"
 
-BANDS = [
+LANDSAT_BANDS = [
     ("sr_band1.img", np.uint16),
     ("sr_band2.img", np.uint16),
     ("sr_band3.img", np.uint16),
@@ -24,7 +24,7 @@ BANDS = [
     ("sr_aerosol_qa.img", np.uint8),
 ]
 
-NROWS, NCOLS = 7771, 7641
+LANDSAT_NROWS, LANDSAT_NCOLS = 7771, 7641
 
 SENTINEL_BANDS = [
     ("sr_band1.img", np.uint16),
@@ -54,14 +54,7 @@ def load_band(directory, fname, dtype, prefix=""):
     return np.fromfile(path, dtype=dtype)
 
 
-def compare(rust_dir, c_dir, c_prefix, bands=None, nrows=None, ncols=None):
-    if bands is None:
-        bands = BANDS
-    if nrows is None:
-        nrows = NROWS
-    if ncols is None:
-        ncols = NCOLS
-
+def compare(rust_dir, c_dir, c_prefix, bands, nrows, ncols):
     # Load aerosol to build valid-pixel mask (non-fill)
     c_aero = load_band(c_dir, "sr_aerosol.img", np.int16, c_prefix)
     rust_aero = load_band(rust_dir, "sr_aerosol.img", np.int16)
@@ -154,8 +147,8 @@ def main():
     parser.add_argument(
         "--sensor",
         choices=["landsat", "sentinel"],
-        default="landsat",
-        help="Sensor type: landsat (default) or sentinel",
+        required=True,
+        help="Sensor type",
     )
     parser.add_argument(
         "--rust-dir", default=None, help="Directory with Rust output .img files"
@@ -180,12 +173,12 @@ def main():
         nrows = SENTINEL_NROWS
         ncols = SENTINEL_NCOLS
     else:
-        rust_dir = args.rust_dir or DEFAULT_RUST_DIR
-        c_dir = args.c_dir or DEFAULT_C_DIR
-        c_prefix = args.c_prefix or DEFAULT_PREFIX
-        bands = BANDS
-        nrows = NROWS
-        ncols = NCOLS
+        rust_dir = args.rust_dir or LANDSAT_RUST_DIR
+        c_dir = args.c_dir or LANDSAT_C_DIR
+        c_prefix = args.c_prefix or LANDSAT_PREFIX
+        bands = LANDSAT_BANDS
+        nrows = LANDSAT_NROWS
+        ncols = LANDSAT_NCOLS
 
     compare(
         os.path.abspath(rust_dir),

@@ -1,4 +1,4 @@
-"""End-to-end pipeline validation tests.
+"""End-to-end Landsat pipeline validation tests.
 
 These tests require actual test data and auxiliary files.
 Skip if test data is not available.
@@ -23,6 +23,6 @@ def test_landsat_end_to_end():
 
 
 @pytest.mark.skipif(not HAS_TEST_DATA, reason="Test data not available")
-def test_output_matches_c_reference():
+def test_landsat_output_matches_c_reference():
     """Compare Rust+Python output to C output for numerical validation."""
     # Will compare ESPA-format outputs

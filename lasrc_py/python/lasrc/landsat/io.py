@@ -6,7 +6,7 @@ import numpy as np
 import rasterio
 
 
-def read_landsat_scene(scene_dir: str | Path) -> dict:
+def read_scene(scene_dir: str | Path) -> dict:
     """Read a Landsat Level-1 scene from GeoTIFF files.
 
     Returns dict with keys: toa_bands, bt_bands, qa_band, angles, metadata, profile.
@@ -16,7 +16,7 @@ def read_landsat_scene(scene_dir: str | Path) -> dict:
     if not mtl_files:
         raise FileNotFoundError(f"No MTL file found in {scene_dir}")
 
-    metadata = _parse_landsat_mtl(mtl_files[0])
+    metadata = _parse_mtl(mtl_files[0])
     if "product_id" not in metadata:
         raise ValueError(
             f"MTL file {mtl_files[0].name} is missing the required "
@@ -60,7 +60,7 @@ def read_landsat_scene(scene_dir: str | Path) -> dict:
     with rasterio.open(qa_files[0]) as src:
         qa_band = src.read(1).astype(np.uint16)
 
-    angles = _read_landsat_angles(scene_dir, metadata)
+    angles = _read_angles(scene_dir, metadata)
 
     return {
         "toa_bands": toa_bands,
@@ -82,7 +82,7 @@ def _find_band_file(band_files, band_id):
     return None
 
 
-def _parse_landsat_mtl(mtl_path):
+def _parse_mtl(mtl_path):
     """Parse Landsat MTL metadata file. Returns dict of calibration params."""
     metadata = {
         "refl_mult": {},
@@ -120,7 +120,7 @@ def _parse_landsat_mtl(mtl_path):
     return metadata
 
 
-def _read_landsat_angles(scene_dir, metadata):
+def _read_angles(scene_dir, metadata):
     """Read per-pixel angle bands or compute from scene-level metadata."""
     angle_files = list(scene_dir.glob("*_SZA.TIF"))
     if angle_files:

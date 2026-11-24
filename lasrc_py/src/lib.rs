@@ -5,7 +5,7 @@ use pyo3::types::PyDict;
 
 use lasrc_core::constants::{AERO_FILL, ALGORITHM_VERSION, NSOLAR_ZEN_VALS, SR_FILL_VALUE};
 use lasrc_core::correction::{
-    compute_sentinel_surface_reflectance, compute_surface_reflectance, AuxiliaryData,
+    compute_landsat_surface_reflectance, compute_sentinel_surface_reflectance, AuxiliaryData,
 };
 use lasrc_core::geometry::SpaceDef;
 use lasrc_core::lut::LookupTables;
@@ -156,7 +156,7 @@ impl PyAuxiliaryData {
 ///   "qa"        – 1-D uint8 array (flattened)
 #[pyfunction]
 #[pyo3(signature = (sensor_name, toa_bands, bt_bands, solar_zenith, solar_azimuth, view_zenith, view_azimuth, qa_band, lut, aux, ul_corner_x, ul_corner_y, pixel_size_x, pixel_size_y, utm_zone, num_threads=None, scene_solar_zenith=None))]
-fn process_surface_reflectance<'py>(
+fn process_landsat_surface_reflectance<'py>(
     py: Python<'py>,
     sensor_name: &str,
     toa_bands: Vec<PyReadonlyArray2<'py, f32>>,
@@ -206,7 +206,7 @@ fn process_surface_reflectance<'py>(
         zone: utm_zone,
     };
 
-    let result = compute_surface_reflectance(
+    let result = compute_landsat_surface_reflectance(
         sensor.as_ref(),
         &toa_views,
         &bt_views,
@@ -348,7 +348,7 @@ fn lasrc(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("AERO_FILL", AERO_FILL)?;
     m.add_class::<PyLookupTables>()?;
     m.add_class::<PyAuxiliaryData>()?;
-    m.add_function(wrap_pyfunction!(process_surface_reflectance, m)?)?;
+    m.add_function(wrap_pyfunction!(process_landsat_surface_reflectance, m)?)?;
     m.add_function(wrap_pyfunction!(process_sentinel_surface_reflectance, m)?)?;
     Ok(())
 }

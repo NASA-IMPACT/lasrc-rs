@@ -127,7 +127,7 @@ def landsat(
     num_threads,
 ):
     """LaSRC: Compute Landsat surface reflectance."""
-    from lasrc.pipeline import AuxFilePaths, process_scene
+    from lasrc.landsat import AuxFilePaths, process_scene
 
     if sensor is None:
         sensor = _detect_landsat_sensor(input_path)
@@ -249,13 +249,13 @@ def sentinel(
     num_threads,
 ):
     """LaSRC: Compute Sentinel-2 surface reflectance."""
-    from lasrc.pipeline_sentinel import process_sentinel_scene
+    from lasrc.sentinel import process_scene
 
     if sensor is None:
         sensor = _detect_sentinel_sensor(input_path)
 
     click.echo(f"Processing {input_path} with sensor {sensor}")
-    process_sentinel_scene(
+    process_scene(
         safe_dir=input_path,
         angle_hdf=angle_hdf,
         intref_hdf=intref_hdf,

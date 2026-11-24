@@ -154,8 +154,8 @@ anything else marks the window as failed. These outcomes are recorded per window
 
 Failed windows need an aerosol value, and every pixel needs a smooth aerosol field.
 
-- **Landsat**: `fix_invalid_aerosols` fills failed windows from nearby valid ones, then
-  `aerosol_interp` bilinearly interpolates AOT and `eps` between window centers.
+- **Landsat**: `fix_invalid_aerosols_landsat` fills failed windows from nearby valid ones, then
+  `aerosol_interp_landsat` bilinearly interpolates AOT and `eps` between window centers.
 - **Sentinel-2**:
   - `aerosol_interp_sentinel` interpolates AOT from each window toward its right and lower
     neighbors.

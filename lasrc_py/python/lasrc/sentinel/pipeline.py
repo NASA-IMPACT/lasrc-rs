@@ -1,4 +1,4 @@
-"""Sentinel-2 processing pipeline: SAFE archive → surface reflectance."""
+"""Sentinel-2 processing pipeline: SAFE archive -> surface reflectance."""
 
 from pathlib import Path
 
@@ -7,12 +7,13 @@ from rasterio.transform import from_origin
 
 import lasrc as _lasrc
 from lasrc.aux import load_auxiliary_data, load_dem, load_lut, load_ratio_file
-from lasrc.io import read_sentinel_safe, write_espa_output, write_numpy
+from lasrc.output import write_espa_output, write_numpy
 from lasrc.results import SurfaceReflectanceResult
 from lasrc.sensors import SENSORS
+from lasrc.sentinel.io import read_scene
 
 
-def process_sentinel_scene(
+def process_scene(
     safe_dir: str | Path,
     angle_hdf: str | Path,
     intref_hdf: str | Path,
@@ -38,7 +39,7 @@ def process_sentinel_scene(
         product_id = product_id[: -len(".SAFE")]
 
     # Read SAFE archive
-    scene = read_sentinel_safe(safe_dir)
+    scene = read_scene(safe_dir)
     angles = scene["angles"]
     profile = scene["profile"]
     nlines = profile["nlines"]

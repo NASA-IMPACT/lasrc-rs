@@ -7,7 +7,7 @@ import numpy as np
 
 # Band ordering matching the 13-band Rust layout
 # (B01, B02, B03, B04, B05, B06, B07, B08, B8A, B09, B10, B11, B12)
-SENTINEL_BAND_ORDER = [
+BAND_ORDER = [
     "B01",
     "B02",
     "B03",
@@ -41,7 +41,7 @@ BAND_RESOLUTION = {
 }
 
 
-def read_sentinel_safe(safe_dir: str | Path) -> dict:
+def read_scene(safe_dir: str | Path) -> dict:
     """Read a Sentinel-2 SAFE archive and return TOA bands + metadata.
 
     Parameters
@@ -87,7 +87,7 @@ def read_sentinel_safe(safe_dir: str | Path) -> dict:
     # Fill in any band (see _fill_mask) marks the pixel as fill (bit 0 of QA)
     fill_mask: np.ndarray | None = None
 
-    for band_name, radiometric_offset in zip(SENTINEL_BAND_ORDER, radiometric_offsets):
+    for band_name, radiometric_offset in zip(BAND_ORDER, radiometric_offsets):
         with rasterio.open(_find_band_file(safe_dir, band_name)) as src:
             dn = src.read(1).astype(np.float32)
 
@@ -252,7 +252,7 @@ def _parse_quantification(mtd_msil1c: Path) -> tuple[float, list[float]]:
     """Extract the quantification value and per-band offsets from MTD_MSIL1C.xml.
 
     Returns (quantification_value, offsets) with offsets ordered as
-    SENTINEL_BAND_ORDER, which matches the RADIO_ADD_OFFSET band_id order.
+    BAND_ORDER, which matches the RADIO_ADD_OFFSET band_id order.
     """
     root = ElementTree.parse(mtd_msil1c).getroot()
 
@@ -267,15 +267,15 @@ def _parse_quantification(mtd_msil1c: Path) -> tuple[float, list[float]]:
     offsets: dict[int, float] = {}
     for e in root.iterfind(".//{*}RADIO_ADD_OFFSET"):
         band_id = int(e.attrib["band_id"])
-        if band_id in offsets or not 0 <= band_id < len(SENTINEL_BAND_ORDER):
+        if band_id in offsets or not 0 <= band_id < len(BAND_ORDER):
             raise ValueError(
                 f"Duplicate or out-of-range RADIO_ADD_OFFSET band_id={band_id} in {mtd_msil1c}"
             )
         offsets[band_id] = float(_element_text(e))
-    if len(offsets) != len(SENTINEL_BAND_ORDER):
+    if len(offsets) != len(BAND_ORDER):
         raise ValueError(
-            f"Expected RADIO_ADD_OFFSET for {len(SENTINEL_BAND_ORDER)} bands in "
+            f"Expected RADIO_ADD_OFFSET for {len(BAND_ORDER)} bands in "
             f"{mtd_msil1c}, found {len(offsets)}"
         )
 
-    return quant[0], [offsets[i] for i in range(len(SENTINEL_BAND_ORDER))]
+    return quant[0], [offsets[i] for i in range(len(BAND_ORDER))]

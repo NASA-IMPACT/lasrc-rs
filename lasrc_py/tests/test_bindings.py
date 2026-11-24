@@ -81,7 +81,7 @@ def test_landsat_rejects_non_contiguous_qa_band():
     assert not qa_band.flags.c_contiguous
 
     with pytest.raises(ValueError, match="qa_band"):
-        lasrc.process_surface_reflectance(
+        lasrc.process_landsat_surface_reflectance(
             sensor_name="LANDSAT_8",
             toa_bands=toa_bands,
             bt_bands=[],

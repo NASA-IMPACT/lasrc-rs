@@ -96,7 +96,7 @@ helps SIMD.
 
 - [ ] `atmcorlamb2_new` and `eval_cubic`: `f32` values passed as `f64` and cast back on every call
 - [ ] `subaeroret_new`: residual accumulation with mixed `f32` and `f64` rounding steps
-- [ ] `compute_surface_reflectance`: the mixed-precision `rotoa` calculation and `clim_sr`
+- [ ] `compute_landsat_surface_reflectance`: the mixed-precision `rotoa` calculation and `clim_sr`
 - [ ] `precompute_coefficients`: `f32` truncation of values stored as `f64`
 - [ ] `lambda_sf`: rounded to `f32` in `atmcorlamb2_new` but `f64` in `atmcorlamb2`
 - [ ] `XTV_STEP_C` alongside `XTV_STEP`
@@ -171,7 +171,7 @@ These come from the algorithm's source and are not C port errors.
 
 ### In C
 
-- [ ] **Edge reads ([#13](https://github.com/NASA-IMPACT/lasrc-rs/issues/13)).** `aerosol_interp`
+- [ ] **Edge reads ([#13](https://github.com/NASA-IMPACT/lasrc-rs/issues/13)).** `aerosol_interp_landsat`
       reads past the end of a row or the buffer at the right and bottom edges. This doesn't happen
       in production, because Landsat scenes have a fill buffer, but input without one, such as a
       subset of a scene, would panic. Fixing it is a step toward supporting granule subsets, which
@@ -199,7 +199,7 @@ assumptions while opening the door to new sensors or sensors at resampled resolu
 
 ### What ties the code to specific sensors today
 
-- **Two scene orchestrators.** `compute_surface_reflectance` and
+- **Two scene orchestrators.** `compute_landsat_surface_reflectance` and
   `compute_sentinel_surface_reflectance` are about 750 lines each and largely parallel. Some
   differences are real algorithm choices, such as window placement, failed-window handling, and
   interpolation. Those should become explicit options, and the rest should merge.

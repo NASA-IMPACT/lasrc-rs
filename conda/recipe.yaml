@@ -65,7 +65,8 @@ tests:
       - test "$LASRC_ALGORITHM_VERSION" = "$(lasrc-landsat --algorithm-version)"
   - python:
       imports:
-        - lasrc.pipeline
+        - lasrc.landsat
+        - lasrc.sentinel
 
 about:
   homepage: https://github.com/NASA-IMPACT/lasrc-rs
