@@ -77,6 +77,9 @@ by `lasrc-ancillary gdas` into a file with the same layout as a VIIRS file. `las
 as it reads VIIRS. Unlike VIIRS, a GDAS file is made for one acquisition time, so each scene
 needs its own.
 
+The `lasrc-rs` Conda package includes `lasrc-ancillary` with its `gdas` dependencies. In a checkout
+of this repo:
+
 ```shell
 uv sync   # lasrc-ancillary[gdas] is part of the dev environment
 uv run lasrc-ancillary gdas --metadata $SCENE/LC09_..._MTL.txt gdas.h5

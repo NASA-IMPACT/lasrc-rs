@@ -4,7 +4,8 @@ build-backend = "uv_build"
 
 [project]
 name = "lasrc-ancillary"
-version = "0.1.0"
+# Placeholder: Conda builds set the release version from git tags (VERSIONING.md section 1)
+version = "0.0.0"
 description = "Find, fetch and convert ancillary inputs for lasrc"
 requires-python = ">=3.12"
 dependencies = []
