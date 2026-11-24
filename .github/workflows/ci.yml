@@ -87,10 +87,18 @@ jobs:
         run: scripts/test python
 
   conda-build:
-    name: Build conda package
+    name: Build conda package (${{ matrix.subdir }})
     needs: [rust, python]
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    # Conda platforms (subdirs) and the runners that build them natively. Every conda job reuses
+    # this strategy.
+    strategy: &conda-platforms
+      fail-fast: false
+      matrix:
+        include:
+          - { subdir: linux-64, runner: ubuntu-latest }
+          - { subdir: osx-arm64, runner: macos-15 }
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -102,15 +110,32 @@ jobs:
 
       - uses: ./.github/actions/conda-package
 
+  # One status for every platform build, under the name branch rules require
+  conda-build-result:
+    name: Build conda package
+    needs: conda-build
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check platform builds
+        env:
+          RESULT: ${{ needs.conda-build.result }}
+        run: |
+          if [[ "$RESULT" != success ]]; then
+            echo "error: conda package builds: $RESULT" >&2
+            exit 1
+          fi
+
   conda-publish-pr:
-    name: Publish conda package (dev)
+    name: Publish conda package (dev, ${{ matrix.subdir }})
     needs: conda-build
     # Fork and Dependabot PRs can't get an OIDC token
     if: >-
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.actor != 'dependabot[bot]'
-    runs-on: ubuntu-latest
+    strategy: *conda-platforms
+    runs-on: ${{ matrix.runner }}
     environment: conda
     permissions:
       contents: read
@@ -130,12 +155,13 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
   conda-publish-main:
-    name: Publish conda package (dev)
+    name: Publish conda package (dev, ${{ matrix.subdir }})
     needs: [rust, python]
     if: >-
       github.event_name == 'push' &&
       (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/maint/v'))
-    runs-on: ubuntu-latest
+    strategy: *conda-platforms
+    runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
       id-token: write # OIDC for AWS
@@ -154,10 +180,11 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
   conda-publish-release:
-    name: Publish conda package (stable)
+    name: Publish conda package (stable, ${{ matrix.subdir }})
     needs: [rust, python]
     if: github.event_name == 'release'
-    runs-on: ubuntu-latest
+    strategy: *conda-platforms
+    runs-on: ${{ matrix.runner }}
     environment: conda
     permissions:
       contents: read
