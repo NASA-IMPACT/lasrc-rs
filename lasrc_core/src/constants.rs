@@ -1,7 +1,7 @@
 //! Physical constants, LUT dimensions, and thresholds from the C LaSRC code.
 
 /// Algorithm version, `{upstream}.{fork_rev}` (see VERSIONING.md)
-pub const ALGORITHM_VERSION: &str = "3.5.1.0";
+pub const ALGORITHM_VERSION: &str = include_str!("../ALGORITHM_VERSION").trim_ascii();
 
 // Angle conversions
 pub const DEG2RAD: f64 = 0.017453293;

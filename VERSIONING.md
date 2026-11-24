@@ -88,14 +88,16 @@ NASA-IMPACT C release that added fixes on top of v3.5.1, including masking a pix
 invalid data (see its `CHANGELOG.md` entry). The Rust port did not change outputs. Later changes
 can come from either upstream, and neither follows a release schedule this project controls.
 
-The algorithm version is defined once in `lasrc_core` as `lasrc_core::ALGORITHM_VERSION`. It is
-exposed as:
+The algorithm version is defined once, in the file `lasrc_core/ALGORITHM_VERSION`. Tools that do
+not compile the code read that file directly. It is exposed as:
 
+- `lasrc_core::ALGORITHM_VERSION` in Rust
 - `lasrc.ALGORITHM_VERSION` in Python
 - `LASRC_ALGORITHM_VERSION`, exported when the Conda environment is activated
 - a field in every output's metadata
 
-It is a domain value, not a package version: it never appears in `Cargo.toml` or `pyproject.toml`.
+It is a domain value, not a package version, so it is kept apart from the package version in
+`Cargo.toml`.
 
 ### 2.2 When to bump
 
@@ -214,7 +216,7 @@ cargo-release`), configured in `release.toml` and `lasrc_core/Cargo.toml`.
 1. If the release could affect outputs (see section 2.3), run the golden-dataset validation and
    record the result.
 2. If science changed since the previous release:
-   - confirm `fork_rev` in `lasrc_core::ALGORITHM_VERSION` was bumped once (usually by the first
+   - confirm `fork_rev` in `lasrc_core/ALGORITHM_VERSION` was bumped once (usually by the first
      science PR)
    - refresh the golden reference outputs
    - confirm the `[Unreleased]` CHANGELOG entry has a `### Science` section (section 6)

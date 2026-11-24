@@ -82,9 +82,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          algorithm=$(grep '^pub const ALGORITHM_VERSION' lasrc_core/src/constants.rs | cut -d'"' -f2)
           {
-            echo "**Algorithm version:** $algorithm"
+            echo "**Algorithm version:** $(cat lasrc_core/ALGORITHM_VERSION)"
             awk -v header="## [$LASRC_VERSION] - " \
               'index($0, header) == 1 { found = 1; next } found && /^## \[/ { exit } found' \
               CHANGELOG.md
