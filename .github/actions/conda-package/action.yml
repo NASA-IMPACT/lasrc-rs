@@ -79,13 +79,16 @@ runs:
         S3_ENDPOINT_URL: https://s3.${{ inputs.aws-region }}.amazonaws.com
       run: |
         shopt -s nullglob
-        pkgs=("$RUNNER_TEMP"/conda-output/linux-64/*.conda)
+        pkgs=("$RUNNER_TEMP"/conda-output/*/*.conda)
         if (( ${#pkgs[@]} == 0 )); then
           echo "Already published to \`$CHANNEL\`; nothing to upload" >> "$GITHUB_STEP_SUMMARY"
           exit 0
         fi
         rattler-build upload s3 --channel "$CHANNEL" "${pkgs[@]}"
-        rattler-index s3 "$CHANNEL"
+        # Index only the platforms built here, so jobs for other platforms can index in parallel
+        for subdir in $(for f in "${pkgs[@]}"; do basename "$(dirname "$f")"; done | sort -u); do
+          rattler-index s3 --target-platform "$subdir" "$CHANNEL"
+        done
         {
           echo "Published to \`$CHANNEL\`:"
           for f in "${pkgs[@]}"; do echo "- \`$(basename "$f")\`"; done

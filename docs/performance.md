@@ -291,7 +291,8 @@ except from `aerosol_interp_sentinel`, which item 7 addresses. Revisit if item 0
 ### 15. ARM builds
 
 Graviton instances are often cheaper for the same throughput. `r6gd` is the Graviton counterpart to
-`r6id`, with local NVMe storage. CI publishes the Conda package only for `linux-64`. This depends on
+`r6id`, with local NVMe storage. CI publishes the Conda package for `linux-64` and `osx-arm64`,
+and adding `linux-aarch64` is one more entry in its build matrix. Running on Graviton depends on
 the whole job, including Fmask and the other HLS steps, and a different libm and CPU would need
 validation. It is a job-level decision that goes beyond this repo.
 

@@ -37,8 +37,10 @@ released in lockstep.
     `lasrc.__version__`, in the package metadata, and by `lasrc --version`.
   - `[workspace.package] version` in the root `Cargo.toml` and `version` in
     `lasrc_ancillary/pyproject.toml` are fixed placeholders, `0.0.0`.
-- **Distribution:** releases are published only as a Conda package to the project's Conda channel.
-  The crates and the Python packages are not published to crates.io or PyPI.
+- **Distribution:** releases are published only as a Conda package to the project's Conda channel,
+  for `linux-64` and `osx-arm64`. The platforms are listed in the `conda-build` job's strategy in
+  `.github/workflows/ci.yml`. The crates and the Python packages are not published to crates.io or
+  PyPI.
 - **Scheme:** [SemVer 2.0.0](https://semver.org/). Releases have no pre-release (`-...`) or
   build-metadata (`+...`) suffix, and CI rejects a release tag that is not `vX.Y.Z`.
 - **Development builds:** Conda builds of any commit that is not a release tag carry the last
