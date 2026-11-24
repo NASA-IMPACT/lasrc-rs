@@ -70,13 +70,68 @@ with `--wv-oz-hdf`. Either of two equivalent products works: `VNP04ANC` (Suomi N
 
 The examples below keep them under `lasrc_aux/LADS/<year>/`, but any path works.
 
+### GDAS atmosphere files (opt-in)
+
+Instead of a VIIRS file, `--wv-oz-hdf` also takes water vapor and ozone from NOAA GDAS, converted
+by `lasrc-ancillary gdas` into a file with the same layout as a VIIRS file. `lasrc` reads it exactly
+as it reads VIIRS. Unlike VIIRS, a GDAS file is made for one acquisition time, so each scene
+needs its own.
+
+```shell
+uv sync   # lasrc-ancillary[gdas] is part of the dev environment
+uv run lasrc-ancillary gdas --metadata $SCENE/LC09_..._MTL.txt gdas.h5
+# Sentinel-2: --metadata $SAFE/GRANULE/*/MTD_TL.xml
+```
+
+It reads the acquisition time from the metadata (`--acquisition-time 2026-03-14T15:12:34Z` works
+too), downloads the two GDAS 0-hour files that bracket it from the public NOAA Open Data bucket
+(`s3://noaa-gfs-bdp-pds`), and interpolates them linearly in time and bilinearly onto the CMG grid.
+To convert GRIB files you already have, give the two of them before the output path. It exits 0 on
+success and 1 on any error (2 for usage errors).
+
+When a cycle is missing, the command prints one line per missing cycle to stderr, in a fixed
+`key=value` form for log filters and alerts:
+
+```text
+GDAS_MISSING status=not-yet-published cycle=2026-11-15T06:00Z resolution=1p00 acquisition=2026-11-15T03:00:00Z searched=s3://noaa-gfs-bdp-pds/gdas.20261115/06/
+```
+
+`status=not-yet-published` means a retry later can succeed. `status=missing-past-cutoff` means
+the cycle is still missing 24 hours after its time, most likely a gap in the archive, so it is the
+one to alert on. Both exit 1. Deciding when to retry is up to the wrapper (from Python, catch
+`GdasNotYetPublished` and `GdasMissing` from `lasrc_ancillary.providers.gdas`).
+
+Fetching uses the default AWS credential chain. The bucket is public, so credentials from any AWS
+account work. `--bucket` (or `LASRC_ANCILLARY_GDAS_BUCKET`) points it at another bucket with the
+same key layout, for example a mirror holding known files for integration tests.
+
+#### Finding the GDAS files for a granule
+
+A granule needs the GDAS cycle at or before its UTC acquisition time and the one 6 hours later.
+The later 0-hour file is published a median 6.8 hours after its cycle (95% within 7.6), so a
+granule's GDAS input is ready 7 to 13 hours after acquisition. The functions behind
+`lasrc-ancillary gdas` are also the lookup for an orchestration layer. `lasrc_ancillary.acquisition`
+and `lasrc_ancillary.providers.gdas` use only the standard library, so a Lambda can install
+`lasrc-ancillary` without extras.
+
+- **Orchestration**, knowing only the granule ID: estimate the acquisition time from the UTC date
+  and the scene or tile center (`estimate_acquisition_windows`, with the Sentinel-2 datatake start
+  as `not_before`), list every cycle the windows touch (`gdas_cycles_for_windows`), and trigger
+  once `find_gdas` finds all of them.
+- **Processing**: `lasrc-ancillary gdas` (or `lasrc_ancillary.providers.gdas.convert.prepare_gdas` from
+  Python) uses the exact time from the metadata and finds the files itself, so a wrong estimate
+  only costs a retry (`status=not-yet-published`, or `GdasNotYetPublished`).
+
+[`gdas-support.md`](gdas-support.md) has the details: the NODD key layouts, the gaps in the
+archive before 2020, the latency by longitude, and the faster GFS alternative.
+
 ## 2. Install
 
 There are no prebuilt wheels yet, so `lasrc` builds from source. You need:
 
 - [rustup](https://rustup.rs/). The build picks up the pinned toolchain from
   `rust-toolchain.toml`.
-- Python >= 3.10
+- Python >= 3.12
 - The HDF4 library, if `pip`/`uv` can't find a prebuilt `pyhdf` wheel for your platform:
   `brew install hdf4` (macOS) or `apt install libhdf4-dev` (Debian/Ubuntu)
 

@@ -1,20 +1,28 @@
 [project]
 name = "lasrc-rs-dev"
 version = "0"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = ["lasrc"]
 
 [tool.uv]
 package = false
 
 [tool.uv.workspace]
-members = ["lasrc_py"]
+members = ["lasrc_py", "lasrc_ancillary"]
 
 [tool.uv.sources]
 lasrc = { workspace = true }
+lasrc-ancillary = { workspace = true }
 
 [dependency-groups]
+notebook = [
+    "jupyterlab>=4.6.6",
+    "pandas>=2.3.3",
+]
 dev = [
+    "boto3-stubs[s3]>=1.44.3",
+    "lasrc-ancillary[gdas]",
+    "moto[s3]>=5.2.5",
     "mypy>=2.4.0",
     "pytest>=9.1.1",
     "ruff>=0.17.2",

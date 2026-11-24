@@ -6,7 +6,7 @@ We want to create standardized interface between the processing code and its aux
 
 - **`lasrc_py` and the Rust core** read a small set of documented, self-describing files, in
   physical units, on fixed grids. They know nothing about where the data came from.
-- **Producers** in a separate workspace member (`lasrc_inputs`, working name) find, download and
+- **Producers** in a separate workspace member (`lasrc_ancillary`, working name) find, download and
   convert real sources into those files.
 
 Swapping an input then means writing a producer, with no change to `lasrc_py`.
@@ -37,6 +37,11 @@ Swapping an input then means writing a producer, with no change to `lasrc_py`.
   not the files.
 - **Zipped Zarr** (single `.zarr.zip` file, Zarr format 3) for gridded and array inputs.
 - **CMG grid** (0.05 degree, cell centered) for global gridded inputs. Subsets are allowed.
+- **File references.** Each input argument names a file and, optionally, the array inside it as a
+  URL fragment, for example `file:///data/atmos.zarr.zip#water_vapor` or
+  `s3://bucket/atmos.zarr.zip#ozone`. Several inputs can share one file. Without a fragment, the
+  reader uses the input's default array name. A `:` separator would clash with URL schemes and
+  Windows drive letters.
 - **Lossless conversion** of existing inputs, so the C-comparison tests still pass.
 - **Producers have minimal dependencies.** Anything the orchestration runs (lookups) uses only
   the standard library. Converters pull in heavier libraries as optional extras.
