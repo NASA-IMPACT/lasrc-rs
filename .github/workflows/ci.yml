@@ -4,12 +4,12 @@ name: CI
 # - Every pull request builds the package.
 # - Pull requests from this repo then publish to the "dev" channel once a reviewer
 #   approves the "conda" environment deployment.
-# - Pushes to main publish to the "dev" channel.
+# - Pushes to main and to maintenance branches (maint/vX.Y.x) publish to the "dev" channel.
 # - Published releases publish to the "stable" channel once a reviewer approves the "conda"
 #   environment deployment.
 on:
   push:
-    branches: [main]
+    branches: [main, "maint/v*"]
   pull_request:
   release:
     types: [published]
@@ -130,9 +130,11 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
   conda-publish-main:
-    name: Publish conda package (dev, main)
+    name: Publish conda package (dev)
     needs: [rust, python]
-    if: github.event_name == 'push'
+    if: >-
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/maint/v'))
     runs-on: ubuntu-latest
     permissions:
       contents: read

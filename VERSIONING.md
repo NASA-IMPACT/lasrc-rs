@@ -219,10 +219,27 @@ versions. The HLS project still makes the reprocessing decision (section 3).
    - confirm the draft release notes have a `### Science` section (section 6)
 3. Review changes to the Python API, CLI, and output metadata since the previous tag and choose
    the version from section 4.
-4. Set the draft release's tag to `vX.Y.Z` on `main` and publish it.
+4. Set the draft release's tag to `vX.Y.Z` on `main` and publish it. Only repository admins can
+   create `v*` tags.
 5. CI tests the tagged commit. A reviewer of the `conda` environment then approves the publish
    job, which publishes `X.Y.Z` to the stable Conda channel. If the job fails after the release
    is published, fix the cause and re-run the job.
+
+### Maintenance releases
+
+A patch release for an older minor version comes from a maintenance branch, `maint/vX.Y.x`:
+
+- An admin creates `maint/vX.Y.x` from the `vX.Y.0` tag the first time a patch is needed. Branch
+  rules match `main`: changes go through pull requests that pass CI.
+- Fixes land on `main` first and are cherry-picked to `maint/vX.Y.x` in a pull request.
+- The release is a GitHub release with tag `vX.Y.Z` targeting `maint/vX.Y.x`, following steps 3 to 5
+  above. Its notes cover only the patch.
+- A release runs the CI workflow from the tagged commit, so a maintenance branch follows the
+  release process of the version it was cut from.
+- Pushes to maintenance branches publish to the `dev` channel, like pushes to `main`. A dev build
+  takes its version from the nearest tag on its own branch, so until `main` has a newer release,
+  maintenance dev builds have higher versions than `main` dev builds. Install dev builds by exact
+  version.
 
 ---
 
