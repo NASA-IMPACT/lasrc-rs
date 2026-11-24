@@ -5,13 +5,12 @@ name: CI
 # - Pull requests from this repo then publish to the "dev" channel once a reviewer
 #   approves the "conda" environment deployment.
 # - Pushes to main publish to the "dev" channel.
-# - Published releases publish to the "stable" channel.
+# The Release workflow (release.yml) calls this workflow to test a release before publishing it.
 on:
   push:
     branches: [main]
   pull_request:
-  release:
-    types: [published]
+  workflow_call:
 
 # Only pull requests cancel in-progress runs, so a publish is never interrupted mid-upload
 concurrency:
@@ -43,9 +42,6 @@ jobs:
 
       - name: Install Python (from .python-version)
         run: uv python install
-
-      - name: Check versions
-        run: scripts/check-versions
 
       - name: Lint
         run: scripts/lint rust
@@ -149,33 +145,6 @@ jobs:
       - uses: ./.github/actions/conda-package
         with:
           channel: dev
-          bucket: ${{ vars.CONDA_CHANNEL_BUCKET }}
-          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
-
-  conda-publish-release:
-    name: Publish conda package (stable)
-    needs: [rust, python]
-    if: github.event_name == 'release'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write # OIDC for AWS
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          # Full history + tags for scripts/version
-          fetch-depth: 0
-
-      - name: Check release tag matches package version
-        env:
-          TAG: ${{ github.event.release.tag_name }}
-        run: scripts/check-versions "$TAG"
-
-      - uses: ./.github/actions/conda-package
-        with:
-          channel: stable
           bucket: ${{ vars.CONDA_CHANNEL_BUCKET }}
           role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME_ARN }}
           aws-region: ${{ vars.AWS_REGION }}

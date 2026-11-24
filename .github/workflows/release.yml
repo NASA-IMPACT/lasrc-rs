@@ -1,0 +1,93 @@
+name: Release
+
+# Run manually on main after merging a release commit from `cargo release` (VERSIONING.md
+# section 5). The version comes from Cargo.toml. The workflow checks it, runs CI, publishes the
+# Conda package to the "stable" channel, and only then creates the vX.Y.Z tag and GitHub release.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check release version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Require main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "error: run the Release workflow on main, not $GITHUB_REF" >&2
+          exit 1
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Tags, to reject a version that is already released
+          fetch-depth: 0
+
+      - name: Read version from Cargo.toml
+        id: version
+        run: echo "version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml)" >> "$GITHUB_OUTPUT"
+
+      - name: Check version
+        env:
+          TAG: v${{ steps.version.outputs.version }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/$TAG" > /dev/null; then
+            echo "error: tag $TAG already exists. Run cargo release for a new version." >&2
+            exit 1
+          fi
+          scripts/check-versions "$TAG"
+
+  ci:
+    name: CI
+    needs: check
+    uses: ./.github/workflows/ci.yml
+    # The most any job in ci.yml requests, including jobs that only run on pull_request or push
+    permissions:
+      contents: read
+      id-token: write
+
+  publish:
+    name: Publish conda package (stable) and GitHub release
+    needs: [check, ci]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the tag and release
+      id-token: write # OIDC for AWS
+    env:
+      # The tag does not exist yet, so scripts/version cannot derive the version from it
+      LASRC_VERSION: ${{ needs.check.outputs.version }}
+      TAG: v${{ needs.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/conda-package
+        with:
+          channel: stable
+          bucket: ${{ vars.CONDA_CHANNEL_BUCKET }}
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          algorithm=$(grep '^pub const ALGORITHM_VERSION' lasrc_core/src/constants.rs | cut -d'"' -f2)
+          {
+            echo "**Algorithm version:** $algorithm"
+            awk -v header="## [$LASRC_VERSION] - " \
+              'index($0, header) == 1 { found = 1; next } found && /^## \[/ { exit } found' \
+              CHANGELOG.md
+          } > "$RUNNER_TEMP/notes.md"
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "$TAG" \
+            --notes-file "$RUNNER_TEMP/notes.md"

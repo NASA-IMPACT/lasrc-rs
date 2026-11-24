@@ -8,40 +8,20 @@ with an additional version indicator for modifications of this fork.
 
 ## [Unreleased]
 
-**Algorithm version:** 3.5.1.0
-
-### Added <!-- New features -->
+### Added
 
 - `lasrc_ancillary`, a new workspace package with a `lasrc-ancillary gdas` command. It finds and
   fetches the two GDAS 0-hour files that bracket a granule's acquisition time on the NOAA Open
   Data bucket, interpolates them in time and onto the CMG grid, and writes a file in the layout
   of a VIIRS `V*04ANC` file, for `--wv-oz-hdf`. GDAS is opt-in. `lasrc` itself is unchanged.
 
-### Changed <!-- Changes in existing functionality -->
+### Changed
 
 - `lasrc` requires Python 3.12 or newer (was 3.10).
-
-### Deprecated <!-- Soon-to-be removed features -->
-
--
-
-### Removed <!-- Now removed features -->
-
--
-
-### Fixed <!-- Any bug fixes -->
-
--
-
-### Security <!-- In case of vulnerabilities -->
-
--
 
 ## [v3.5.1.0]
 
 Release Date: March, 2025
-
-**Algorithm version:** 3.5.1.0
 
 This release of the LaSRC code has been modified by the NASA-IMPACT team as part of
 maintenance for the HLS project based off of the USGS's version `v3.5.1`.
