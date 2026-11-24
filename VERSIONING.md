@@ -228,8 +228,9 @@ cargo-release`), configured in `release.toml` and `lasrc_core/Cargo.toml`.
 5. Open a pull request and merge it to `main`.
 6. Run the Release workflow (`.github/workflows/release.yml`) on `main` from the Actions tab or
    with `gh workflow run release.yml`. It checks that the version is not yet released and passes
-   `scripts/check-versions`, runs CI, and publishes to the stable Conda channel. Only after all
-   of that succeeds does it create the tag `vX.Y.Z` and a GitHub release. The release notes are
+   `scripts/check-versions`, and runs CI. A reviewer of the `conda` environment then approves the
+   publish job, which publishes to the stable Conda channel. Only after all of that succeeds does
+   it create the tag `vX.Y.Z` and a GitHub release. The release notes are
    the algorithm version followed by the CHANGELOG entry. If any step fails, fix it on `main`
    and run the workflow again.
 

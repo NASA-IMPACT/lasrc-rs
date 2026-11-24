@@ -59,6 +59,8 @@ jobs:
     name: Publish conda package (stable) and GitHub release
     needs: [check, ci]
     runs-on: ubuntu-latest
+    # Requires approval from the environment's reviewers
+    environment: conda
     permissions:
       contents: write # create the tag and release
       id-token: write # OIDC for AWS

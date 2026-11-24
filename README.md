@@ -97,9 +97,10 @@ section 5 for the full checklist, including validation.
    gh run watch
    ```
 
-   It checks the version, runs CI, publishes to the stable Conda channel, and then creates the
-   `vX.Y.Z` tag and GitHub release. If any step fails, nothing is tagged or released. Fix the
-   problem on `main` and run the workflow again.
+   It checks the version and runs CI. A reviewer of the `conda` environment then approves the
+   publish job, which publishes to the stable Conda channel and creates the `vX.Y.Z` tag and
+   GitHub release. If any step fails, nothing is tagged or released. Fix the problem on `main`
+   and run the workflow again.
 
 ## References
 
