@@ -1195,7 +1195,7 @@ requires-dist = [{ name = "lasrc", editable = "lasrc_py" }]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "boto3-stubs", extras = ["s3"], specifier = ">=1.44.3" },
+    { name = "boto3-stubs", extras = ["s3"], specifier = ">=1.44.4" },
     { name = "lasrc-ancillary", extras = ["gdas"], editable = "lasrc_ancillary" },
     { name = "moto", extras = ["s3"], specifier = ">=5.2.5" },
     { name = "mypy", specifier = ">=2.4.0" },

@@ -20,7 +20,7 @@ notebook = [
     "pandas>=2.3.3",
 ]
 dev = [
-    "boto3-stubs[s3]>=1.44.3",
+    "boto3-stubs[s3]>=1.44.4",
     "lasrc-ancillary[gdas]",
     "moto[s3]>=5.2.5",
     "mypy>=2.4.0",
