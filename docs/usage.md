@@ -99,7 +99,7 @@ GDAS_MISSING status=not-yet-published cycle=2026-11-15T06:00Z resolution=1p00 ac
 `status=not-yet-published` means a retry later can succeed. `status=missing-past-cutoff` means
 the cycle is still missing 24 hours after its time, most likely a gap in the archive, so it is the
 one to alert on. Both exit 1. Deciding when to retry is up to the wrapper (from Python, catch
-`GdasNotYetPublished` and `GdasMissing` from `lasrc_ancillary.gdas`).
+`GdasNotYetPublished` and `GdasMissing` from `lasrc_ancillary.providers.gdas`).
 
 Fetching uses the default AWS credential chain. The bucket is public, so credentials from any AWS
 account work. `--bucket` (or `LASRC_ANCILLARY_GDAS_BUCKET`) points it at another bucket with the
@@ -110,15 +110,15 @@ same key layout, for example a mirror holding known files for integration tests.
 A granule needs the GDAS cycle at or before its UTC acquisition time and the one 6 hours later.
 The later 0-hour file is published a median 6.8 hours after its cycle (95% within 7.6), so a
 granule's GDAS input is ready 7 to 13 hours after acquisition. The functions behind
-`lasrc-ancillary gdas` are also the lookup for an orchestration layer. `lasrc_ancillary.cycles`,
-`.estimate`, `.metadata` and `.nodd` use only the standard library, so a Lambda can install
+`lasrc-ancillary gdas` are also the lookup for an orchestration layer. `lasrc_ancillary.acquisition`
+and `lasrc_ancillary.providers.gdas` use only the standard library, so a Lambda can install
 `lasrc-ancillary` without extras.
 
 - **Orchestration**, knowing only the granule ID: estimate the acquisition time from the UTC date
   and the scene or tile center (`estimate_acquisition_windows`, with the Sentinel-2 datatake start
   as `not_before`), list every cycle the windows touch (`gdas_cycles_for_windows`), and trigger
   once `find_gdas` finds all of them.
-- **Processing**: `lasrc-ancillary gdas` (or `lasrc_ancillary.gdas.prepare_gdas` from
+- **Processing**: `lasrc-ancillary gdas` (or `lasrc_ancillary.providers.gdas.convert.prepare_gdas` from
   Python) uses the exact time from the metadata and finds the files itself, so a wrong estimate
   only costs a retry (`status=not-yet-published`, or `GdasNotYetPublished`).
 

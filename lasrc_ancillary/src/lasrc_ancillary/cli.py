@@ -16,10 +16,14 @@ import boto3
 import click
 from botocore.config import Config
 
-from lasrc_ancillary.gdas import GdasUnavailable, prepare_gdas
-from lasrc_ancillary.metadata import read_acquisition_time
-from lasrc_ancillary.nodd import NODD_BUCKET, RESOLUTIONS, Resolution
-from lasrc_ancillary.viirs_shaped import gdas_to_viirs_shaped
+from lasrc_ancillary.acquisition import read_acquisition_time
+from lasrc_ancillary.providers.gdas.convert import gdas_to_interchange, prepare_gdas
+from lasrc_ancillary.providers.gdas.fetch import (
+    NODD_BUCKET,
+    RESOLUTIONS,
+    GdasUnavailable,
+    Resolution,
+)
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
@@ -88,7 +92,7 @@ def gdas(
     grib: tuple[Path, ...],
     output: Path,
 ) -> None:
-    """GDAS water vapor and ozone as a VIIRS-shaped file for lasrc --wv-oz-hdf.
+    """GDAS water vapor and ozone as the interchange file for lasrc --wv-oz-hdf.
 
     GRIB is the two GDAS 0-hour files that bracket the acquisition time. Without them, they are
     fetched from the bucket.
@@ -104,7 +108,7 @@ def gdas(
         acquisition_time = read_acquisition_time(metadata)
 
     if grib:
-        gdas_to_viirs_shaped(list(grib), acquisition_time, output)
+        gdas_to_interchange(list(grib), acquisition_time, output)
         return
 
     with tempfile.TemporaryDirectory() as tmp:

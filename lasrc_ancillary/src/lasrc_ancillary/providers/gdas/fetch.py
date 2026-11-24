@@ -1,5 +1,9 @@
 """Find and fetch GDAS 0-hour files on the NOAA Open Data Dissemination (NODD) bucket.
 
+The orchestration decides when to run from the granule ID (``lasrc_ancillary.acquisition`` and
+``find_gdas``). The processing job works from the exact acquisition time and picks its own files
+(``fetch_gdas_pair``), so a wrong estimate costs a retry, never a wrong result.
+
 Standard library only, so the orchestration can run it in a Lambda. S3 access goes through any
 client with boto3's ``list_objects_v2`` and ``get_object``, passed in by the caller.
 """
@@ -8,11 +12,12 @@ from __future__ import annotations
 
 import datetime as dt
 import re
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, get_args
+from typing import TYPE_CHECKING, Literal, Self, get_args
 
-from lasrc_ancillary.cycles import to_utc
+from lasrc_ancillary.acquisition import to_utc
+from lasrc_ancillary.providers.gdas.cycles import gdas_cycles
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
@@ -21,6 +26,7 @@ NODD_BUCKET = "noaa-gfs-bdp-pds"
 Resolution = Literal["1p00", "0p25"]
 RESOLUTIONS: tuple[Resolution, ...] = get_args(Resolution)
 VARIABLES = ("PWAT", "TOZNE")
+RETRY_CUTOFF = dt.timedelta(hours=24)
 
 
 def _name_pattern(hh: str, resolution: Resolution) -> re.Pattern[str]:
@@ -141,3 +147,83 @@ def fetch_gdas(
             f.write(obj["Body"].read())
     partial.replace(dest)
     return dest
+
+
+def _iso_minutes(t: dt.datetime) -> str:
+    return to_utc(t).strftime("%Y-%m-%dT%H:%MZ")
+
+
+class GdasUnavailable(Exception):
+    """GDAS cycles an acquisition needs are not in the bucket.
+
+    The message has one ``GDAS_MISSING`` line per missing cycle, in ``key=value`` form for log
+    filters and alerts.
+    """
+
+    status = "unavailable"
+    cycles: tuple[dt.datetime, dt.datetime]
+    missing: list[dt.datetime]
+
+    @classmethod
+    def from_missing(
+        cls,
+        acquisition_time: dt.datetime,
+        cycles: tuple[dt.datetime, dt.datetime],
+        missing: list[dt.datetime],
+        bucket: str,
+        resolution: Resolution,
+    ) -> Self:
+        acquisition = to_utc(acquisition_time).strftime("%Y-%m-%dT%H:%M:%SZ")
+        message = "\n".join(
+            f"GDAS_MISSING status={cls.status} cycle={_iso_minutes(c)} "
+            f"resolution={resolution} acquisition={acquisition} "
+            f"searched=s3://{bucket}/{cycle_prefix(c)}"
+            for c in missing
+        )
+        error = cls(message)
+        error.cycles = cycles
+        error.missing = list(missing)
+        return error
+
+
+class GdasNotYetPublished(GdasUnavailable):
+    """Not published yet. Retry later."""
+
+    status = "not-yet-published"
+
+
+class GdasMissing(GdasUnavailable):
+    """Still missing ``RETRY_CUTOFF`` after the later cycle, so likely a gap in the archive."""
+
+    status = "missing-past-cutoff"
+
+
+def fetch_gdas_pair(
+    acquisition_time: dt.datetime,
+    s3_client: S3Client,
+    work_dir: Path,
+    *,
+    resolution: Resolution = "1p00",
+    bucket: str = NODD_BUCKET,
+    now: Callable[[], dt.datetime] | None = None,
+) -> list[Path]:
+    """Download the two GDAS cycles that bracket ``acquisition_time`` into ``work_dir``.
+
+    Raises ``GdasNotYetPublished`` while a cycle is not in the bucket yet, and ``GdasMissing`` once
+    it is still missing ``RETRY_CUTOFF`` after the later cycle.
+    """
+    cycles = gdas_cycles(acquisition_time)
+    located = locate_gdas(cycles, s3_client, resolution, bucket)
+    missing = [c for c, key in zip(cycles, located) if key is None]
+    if missing:
+        clock = now or (lambda: dt.datetime.now(dt.UTC))
+        error = (
+            GdasNotYetPublished if clock() < cycles[1] + RETRY_CUTOFF else GdasMissing
+        )
+        raise error.from_missing(acquisition_time, cycles, missing, bucket, resolution)
+
+    return [
+        fetch_gdas(key, work_dir / key.replace("/", "_"), s3_client, bucket)
+        for key in located
+        if key is not None
+    ]

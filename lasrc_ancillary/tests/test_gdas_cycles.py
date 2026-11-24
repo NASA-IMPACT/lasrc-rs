@@ -1,7 +1,7 @@
 import datetime as dt
 
 import pytest
-from lasrc_ancillary.cycles import cycle_weights, gdas_cycles
+from lasrc_ancillary.providers.gdas.cycles import cycle_weights, gdas_cycles
 
 
 def iso(s: str) -> dt.datetime:

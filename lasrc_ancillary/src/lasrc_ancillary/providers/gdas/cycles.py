@@ -6,15 +6,9 @@ the cycles a granule needs depend only on its UTC acquisition time.
 
 import datetime as dt
 
+from lasrc_ancillary.acquisition import to_utc
+
 CYCLE = dt.timedelta(hours=6)
-
-
-def to_utc(t: dt.datetime) -> dt.datetime:
-    """Return ``t`` in UTC. Naive datetimes are rejected."""
-    if t.tzinfo is None or t.utcoffset() is None:
-        raise ValueError(f"datetime must be timezone-aware (UTC), got naive {t!r}")
-
-    return t.astimezone(dt.UTC)
 
 
 def gdas_cycles(acquisition_time: dt.datetime) -> tuple[dt.datetime, dt.datetime]:
@@ -35,3 +29,16 @@ def cycle_weights(
 
     w2 = (t - t1) / (t2 - t1)
     return 1.0 - w2, w2
+
+
+def gdas_cycles_for_windows(
+    windows: list[tuple[dt.datetime, dt.datetime]],
+) -> list[dt.datetime]:
+    """Every GDAS cycle needed by an acquisition anywhere in any of the windows."""
+    cycles: set[dt.datetime] = set()
+    for start, end in windows:
+        cycle, last = gdas_cycles(start)[0], gdas_cycles(end)[1]
+        while cycle <= last:
+            cycles.add(cycle)
+            cycle += CYCLE
+    return sorted(cycles)

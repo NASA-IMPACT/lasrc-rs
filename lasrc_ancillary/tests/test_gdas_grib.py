@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import rasterio
-from lasrc_ancillary.grib import read_gdas
+from lasrc_ancillary.providers.gdas.grib import read_gdas
 from rasterio.transform import from_origin
 
 DATA = Path(__file__).parent / "data"

@@ -1,11 +1,19 @@
 import datetime as dt
 
+import h5py
 import numpy as np
 import pytest
-from lasrc_ancillary.grib import GRIDS, GdasField
-from lasrc_ancillary.interp import CMG_LAT, CMG_LON, interpolate_to_cmg
+from conftest import F00, F06
+from lasrc.aux import load_auxiliary_data
+from lasrc_ancillary.cmg import CMG_LAT, CMG_LON
+from lasrc_ancillary.providers.gdas.convert import (
+    gdas_to_interchange,
+    interpolate_to_cmg,
+)
+from lasrc_ancillary.providers.gdas.grib import GRIDS, GdasField
 
 T0 = dt.datetime(2026, 3, 14, 12, tzinfo=dt.UTC)
+T0_FIXTURE = dt.datetime(2026, 11, 15, 3, tzinfo=dt.UTC)
 T1 = T0 + dt.timedelta(hours=6)
 
 
@@ -127,3 +135,18 @@ def test_not_bracketing_message_names_files_and_cycles():
         "  18Z: valid 2026-03-14T18:00Z",
         "It needs the cycles 2026-03-14T18:00Z and 2026-03-15T00:00Z.",
     ]
+
+
+def test_gdas_files_load_in_lasrc(tmp_path):
+    out = gdas_to_interchange([F00, F06], T0_FIXTURE, tmp_path / "g.h5")
+    with h5py.File(out, "r") as f:
+        assert f.attrs["ANCILLARY_WATER_VAPOR"] == f.attrs["ANCILLARY_OZONE"] == "GDAS"
+        assert list(f.attrs["valid_times"]) == [
+            "2026-11-15T00:00:00Z",
+            "2026-11-15T06:00:00Z",
+        ]
+    aux = load_auxiliary_data(str(out), "VIIRS")
+    assert aux["wv"].shape == aux["oz"].shape == (3600 * 7200,)
+    # PWAT up to 100 kg m-2 is DN 1000, and 100 to 637.5 DU of ozone is DN 40 to 255
+    assert aux["wv"].min() >= 1 and aux["wv"].max() <= 1000
+    assert aux["oz"].min() >= 40 and aux["oz"].max() <= 255

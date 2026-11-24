@@ -10,7 +10,7 @@ from pathlib import Path
 import boto3
 from botocore import UNSIGNED
 from botocore.config import Config
-from lasrc_ancillary.nodd import fetch_gdas
+from lasrc_ancillary.providers.gdas.fetch import fetch_gdas
 
 HERE = Path(__file__).resolve().parent
 KEYS = {

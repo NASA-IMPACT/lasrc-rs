@@ -4,7 +4,7 @@ import h5py
 from click.testing import CliRunner
 from conftest import F00, F06, K00, K06
 from lasrc_ancillary.cli import main
-from lasrc_ancillary.viirs_shaped import WV_DATASET
+from lasrc_ancillary.interchange import WV_DATASET
 
 
 def utc(*args):
@@ -55,17 +55,10 @@ def test_one_grib_file_is_a_usage_error(tmp_path):
     assert result.exit_code == 2
 
 
-def mirror(s3):
-    s3.create_bucket(Bucket="my-mirror")
-    s3.put_object(Bucket="my-mirror", Key=K00, Body=F00.read_bytes())
-    s3.put_object(Bucket="my-mirror", Key=K06, Body=F06.read_bytes())
-    return s3
-
-
-def test_bucket_from_environment(s3, tmp_path):
+def test_bucket_from_environment(nodd, tmp_path):
     out = tmp_path / "g.h5"
     args = ["gdas", "--acquisition-time", "2026-11-15T03:00:00Z", str(out)]
-    mirror(s3)
+    nodd(K00, K06, bucket="my-mirror")
     result = CliRunner().invoke(
         main, args, env={"LASRC_ANCILLARY_GDAS_BUCKET": "my-mirror"}
     )

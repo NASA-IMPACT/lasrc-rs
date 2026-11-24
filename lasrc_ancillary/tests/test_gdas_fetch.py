@@ -1,7 +1,7 @@
 import datetime as dt
 
 import pytest
-from lasrc_ancillary.nodd import fetch_gdas, find_gdas, locate_gdas
+from lasrc_ancillary.providers.gdas.fetch import fetch_gdas, find_gdas, locate_gdas
 
 
 def iso(s: str) -> dt.datetime:
@@ -132,10 +132,8 @@ def test_fetch_requires_both_messages(s3, put, tmp_path):
         fetch_gdas(KEY, tmp_path / "g.grib2", s3)
 
 
-def test_other_bucket(s3, tmp_path):
-    s3.create_bucket(Bucket="my-mirror")
-    s3.put_object(Bucket="my-mirror", Key=KEY, Body=GRIB)
-    s3.put_object(Bucket="my-mirror", Key=KEY + ".idx", Body=IDX)
+def test_other_bucket(s3, put, tmp_path):
+    put({KEY: GRIB, KEY + ".idx": IDX}, bucket="my-mirror")
     assert find_gdas([iso("2026-03-14T12:00Z")], s3) is None
     assert find_gdas([iso("2026-03-14T12:00Z")], s3, bucket="my-mirror") == [KEY]
     out = fetch_gdas(KEY, tmp_path / "g.grib2", s3, bucket="my-mirror")

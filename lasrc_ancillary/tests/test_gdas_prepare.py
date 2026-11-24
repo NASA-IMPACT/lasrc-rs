@@ -3,7 +3,8 @@ import datetime as dt
 import h5py
 import pytest
 from conftest import K00, K06
-from lasrc_ancillary.gdas import GdasMissing, GdasNotYetPublished, prepare_gdas
+from lasrc_ancillary.providers.gdas.convert import prepare_gdas
+from lasrc_ancillary.providers.gdas.fetch import GdasMissing, GdasNotYetPublished
 
 T = dt.datetime(2026, 11, 15, 3, tzinfo=dt.UTC)
 

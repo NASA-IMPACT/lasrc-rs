@@ -1,11 +1,11 @@
 import datetime as dt
 
 import pytest
-from lasrc_ancillary.estimate import (
+from lasrc_ancillary.acquisition import (
     estimate_acquisition_time,
     estimate_acquisition_windows,
-    gdas_cycles_for_windows,
 )
+from lasrc_ancillary.providers.gdas.cycles import gdas_cycles_for_windows
 
 
 def iso(s: str) -> dt.datetime:
