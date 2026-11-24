@@ -68,11 +68,23 @@ scripts/lint           # check-only: cargo fmt --check, clippy -D warnings, ruff
 scripts/lint rust      # Rust checks only
 scripts/lint python    # Python checks only
 scripts/typecheck      # mypy on lasrc_py/python and lasrc_ancillary/src, stubtest on the extension stub
-scripts/check-versions # CHANGELOG algorithm version matches the code (VERSIONING.md)
 ```
 
 CI (`.github/workflows/ci.yml`) runs these same scripts in separate `rust` and `python` jobs, and
 builds and publishes the Conda package once they pass.
+
+### Make a release
+
+Releases are GitHub releases. The tag `vX.Y.Z` sets the version, and the release notes are the
+changelog. See [VERSIONING.md](VERSIONING.md) section 4 to choose the version and section 5 for
+the full checklist, including validation.
+
+1. Keep a draft release up to date as changes merge to `main`. Its notes are the changelog for
+   the next release (VERSIONING.md section 6).
+2. To release, set the draft's tag to `vX.Y.Z` on `main` and publish it.
+3. CI tests that commit. A reviewer of the `conda` environment then approves the publish job,
+   which publishes `X.Y.Z` to the stable Conda channel. If the job fails after the release is
+   published, fix the cause and re-run the job.
 
 ## References
 

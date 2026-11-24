@@ -11,3 +11,4 @@ rayon = "1.10"
 
 [lints]
 workspace = true
+

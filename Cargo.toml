@@ -2,9 +2,10 @@
 members = ["lasrc_core", "lasrc_py"]
 resolver = "2"
 
-# Single source of the release version: both crates and the Python package (via maturin) inherit it
+# Placeholder: release versions come from git tags (scripts/version, VERSIONING.md section 1), and
+# Conda builds set the Python package version from them. Local builds report this version.
 [workspace.package]
-version = "0.1.0"
+version = "0.0.0"
 
 # Ported numerical code mirrors the C function signatures and index-based loops
 [workspace.lints.clippy]
