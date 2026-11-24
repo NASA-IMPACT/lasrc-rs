@@ -1,10 +1,14 @@
 name: Conda
 
-# Every pull request builds the package. Pull requests from this repo then publish to the "dev"
-# channel once a reviewer approves the "conda" environment deployment. Published releases publish
-# to the "stable" channel.
+# - Every pull request builds the package.
+# - Pull requests from this repo then publish to the "dev" channel once a reviewer
+#   approves the "conda" environment deployment.
+# - Pushes to main publish to the "dev" channel.
+# - Published releases publish to the "stable" channel.
 on:
   pull_request:
+  push:
+    branches: [main]
   release:
     types: [published]
 
@@ -50,6 +54,27 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/conda-package
+        with:
+          channel: dev
+          bucket: ${{ vars.CONDA_CHANNEL_BUCKET }}
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+  publish-dev-main:
+    name: Publish conda package (dev, main)
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC for AWS
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Full history + tags for scripts/version
+          fetch-depth: 0
 
       - uses: ./.github/actions/conda-package
         with:

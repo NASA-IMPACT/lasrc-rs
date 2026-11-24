@@ -43,11 +43,11 @@ The Rust crates (`lasrc_core`, `lasrc_py`), the Python package (`lasrc`), and th
   build-metadata (`+...`) suffix, and CI rejects a tag that is not `vX.Y.Z`.
 - **Development builds:** Conda builds of any commit that is not a release tag carry the last
   release tag plus the commit, `X.Y.Z+g<sha>`, with `.dirty` appended when the checkout has
-  uncommitted changes. The Python package inside has the same version. Builds from pull requests
-  are published this way to the `dev` Conda channel after a reviewer approves the `conda`
-  environment deployment. Development builds of the same release do not
-  sort in commit order, so install them by exact version. Local `uv sync` installs report the
-  `Cargo.toml` version.
+  uncommitted changes. The Python package inside has the same version. Merges to `main`
+  are published this way to the `dev` Conda channel. Builds from pull requests are published
+  there too, after a reviewer approves the `conda` environment deployment. Development builds of
+  the same release do not sort in commit order, so install them by exact version. Local `uv sync`
+  installs report the `Cargo.toml` version.
 
 ### Public API
 
