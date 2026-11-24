@@ -34,8 +34,7 @@ released in lockstep.
 - **Source of truth:** the release tag `vX.Y.Z` of a published GitHub release (section 5).
   - `scripts/version` derives the version of a build from git tags. Conda builds use it for the
     Conda package and set both Python package versions from it. It is exposed as
-    `lasrc.__version__`, in the package metadata, and by the `lasrc-landsat` and `lasrc-sentinel`
-    `--version` option.
+    `lasrc.__version__`, in the package metadata, and by `lasrc --version`.
   - `[workspace.package] version` in the root `Cargo.toml` and `version` in
     `lasrc_ancillary/pyproject.toml` are fixed placeholders, `0.0.0`.
 - **Distribution:** releases are published only as a Conda package to the project's Conda channel.
@@ -55,7 +54,8 @@ released in lockstep.
 These are covered by SemVer:
 
 - The `lasrc` Python API and its type stubs
-- The CLI: the `lasrc-landsat` and `lasrc-sentinel` commands, their options, and exit codes
+- The CLI: the `lasrc` command and its `landsat` and `sentinel` subcommands, their options, and exit
+  codes
 - The output metadata schema. Adding fields is a minor change. Renaming or removing them is a
   major change.
 - Output behavior within the tolerance defined in section 2.3

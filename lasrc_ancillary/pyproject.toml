@@ -24,6 +24,10 @@ gdas = [
 [project.scripts]
 lasrc-ancillary = "lasrc_ancillary.cli:main"
 
+# Mounts this CLI as `lasrc ancillary` when lasrc is installed
+[project.entry-points."lasrc.commands"]
+ancillary = "lasrc_ancillary.cli:main"
+
 [tool.uv.build-backend]
 module-name = "lasrc_ancillary"
 

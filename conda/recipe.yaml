@@ -64,15 +64,15 @@ tests:
   - package_contents:
       files:
         exists:
-          - bin/lasrc-landsat
-          - bin/lasrc-sentinel
+          - bin/lasrc
           - bin/lasrc-ancillary
   - script:
-      - lasrc-landsat --help
-      - lasrc-sentinel --help
+      - lasrc landsat --help
+      - lasrc sentinel --help
       - lasrc-ancillary gdas --help
-      - lasrc-landsat --version
-      - test "$LASRC_ALGORITHM_VERSION" = "$(lasrc-landsat --algorithm-version)"
+      - lasrc ancillary gdas --help
+      - lasrc --version
+      - test "$LASRC_ALGORITHM_VERSION" = "$(lasrc --algorithm-version)"
   - python:
       imports:
         - lasrc.landsat

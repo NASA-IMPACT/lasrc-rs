@@ -328,7 +328,7 @@ production values (3x3 for Landsat, 6 for Sentinel-2). The 1x1 values are left i
 ## Using GDAS in lasrc-rs
 
 lasrc-rs follows the upstream approach of making GDAS look like VIIRS, with the conversion outside
-`lasrc` itself. `lasrc-ancillary gdas` (in `lasrc_ancillary/`) finds and fetches the two cycles,
+`lasrc` itself. `lasrc ancillary gdas` (in `lasrc_ancillary/`) finds and fetches the two cycles,
 interpolates them, and writes a file in the layout of a VIIRS `V*04ANC` file, which `lasrc` reads
 through `--wv-oz-hdf`. See [`usage.md`](usage.md) for how to run it.
 
