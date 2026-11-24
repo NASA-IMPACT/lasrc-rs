@@ -17,13 +17,8 @@ build:
       SOURCE_DATE_EPOCH: "0"
       MATURIN_PEP517_ARGS: "--locked"
     content:
-      # Both Python packages get the package version, e.g. X.Y.Z+g<sha>, in pyproject.toml (this
-      # source copy only). maturin would otherwise take it from the Cargo.toml placeholder, and
-      # lasrc_ancillary from its own fixed version.
-      - sed -i.bak 's/^dynamic = \["version"\]$/version = "${{ version }}"/' lasrc_py/pyproject.toml
-      - grep -qxF 'version = "${{ version }}"' lasrc_py/pyproject.toml
-      - sed -i.bak 's/^version = ".*"$/version = "${{ version }}"/' lasrc_ancillary/pyproject.toml
-      - grep -qxF 'version = "${{ version }}"' lasrc_ancillary/pyproject.toml
+      # Version both Python packages, e.g. X.Y.Z+g<sha> (this source copy only)
+      - bash conda/set-version "${{ version }}"
       # lasrc_py depends on ../lasrc_core by path, so build from the subdir of the full checkout
       - $PYTHON -m pip install ./lasrc_py --no-deps --no-build-isolation -vv
       - $PYTHON -m pip install ./lasrc_ancillary --no-deps --no-build-isolation -vv
