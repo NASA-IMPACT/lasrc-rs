@@ -27,32 +27,35 @@ outside this repo (other processing steps), so it is not tied to either version 
 
 ## 1. Package version (SemVer)
 
-The Rust crates (`lasrc_core`, `lasrc_py`), the Python package (`lasrc`), and the Conda package
-(`lasrc-rs`) share **one version** and are released in lockstep.
+The Rust crates (`lasrc_core`, `lasrc_py`), the Python packages (`lasrc`, `lasrc-ancillary`), and
+the Conda package (`lasrc-rs`), which contains both Python packages, share **one version** and are
+released in lockstep.
 
 - **Source of truth:** the release tag `vX.Y.Z` of a published GitHub release (section 5).
   - `scripts/version` derives the version of a build from git tags. Conda builds use it for the
-    Conda package and set the Python package version from it. It is exposed as
-    `lasrc.__version__`, in the package metadata, and by the CLI's `--version`.
-  - `[workspace.package] version` in the root `Cargo.toml` is a fixed placeholder, `0.0.0`.
+    Conda package and set both Python package versions from it. It is exposed as
+    `lasrc.__version__`, in the package metadata, and by `lasrc --version`.
+  - `[workspace.package] version` in the root `Cargo.toml` and `version` in
+    `lasrc_ancillary/pyproject.toml` are fixed placeholders, `0.0.0`.
 - **Distribution:** releases are published only as a Conda package to the project's Conda channel.
-  The crates and the Python package are not published to crates.io or PyPI.
+  The crates and the Python packages are not published to crates.io or PyPI.
 - **Scheme:** [SemVer 2.0.0](https://semver.org/). Releases have no pre-release (`-...`) or
   build-metadata (`+...`) suffix, and CI rejects a release tag that is not `vX.Y.Z`.
 - **Development builds:** Conda builds of any commit that is not a release tag carry the last
   release tag plus the commit, `X.Y.Z+g<sha>`, with `.dirty` appended when the checkout has
-  uncommitted changes. The Python package inside has the same version. Merges to `main` are
+  uncommitted changes. The Python packages inside have the same version. Merges to `main` are
   published this way to the `dev` Conda channel once CI passes on them. Builds from pull requests
   are published there too, after a reviewer approves the `conda` environment deployment.
   Development builds of the same release do not sort in commit order, so install them by exact
-  version. Local `uv sync` installs report the `Cargo.toml` placeholder, `0.0.0`.
+  version. Local `uv sync` installs report the placeholder, `0.0.0`.
 
 ### Public API
 
 These are covered by SemVer:
 
 - The `lasrc` Python API and its type stubs
-- The CLI: the `lasrc-landsat` and `lasrc-sentinel` commands, their options, and exit codes
+- The CLI: the `lasrc` command and its `landsat` and `sentinel` subcommands, their options, and exit
+  codes
 - The output metadata schema. Adding fields is a minor change. Renaming or removing them is a
   major change.
 - Output behavior within the tolerance defined in section 2.3

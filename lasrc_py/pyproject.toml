@@ -31,8 +31,7 @@ cache-keys = [
 ]
 
 [project.scripts]
-lasrc-landsat = "lasrc.cli:landsat"
-lasrc-sentinel = "lasrc.cli:sentinel"
+lasrc = "lasrc.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

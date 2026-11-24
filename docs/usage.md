@@ -5,7 +5,7 @@ Running LaSRC takes three steps:
 1. [Get the ancillary data](#1-ancillary-data): look-up tables, static grids, and a daily VIIRS
    atmosphere file for the scene date
 2. [Install `lasrc`](#2-install)
-3. [Run it](#3-run) with the `lasrc-landsat` / `lasrc-sentinel` CLIs or from Python
+3. [Run it](#3-run) with the `lasrc landsat` / `lasrc sentinel` CLI commands or from Python
 
 ## 1. Ancillary data
 
@@ -73,13 +73,17 @@ The examples below keep them under `lasrc_aux/LADS/<year>/`, but any path works.
 ### GDAS atmosphere files (opt-in)
 
 Instead of a VIIRS file, `--wv-oz-hdf` also takes water vapor and ozone from NOAA GDAS, converted
-by `lasrc-ancillary gdas` into a file with the same layout as a VIIRS file. `lasrc` reads it exactly
+by `lasrc ancillary gdas` into a file with the same layout as a VIIRS file. `lasrc` reads it exactly
 as it reads VIIRS. Unlike VIIRS, a GDAS file is made for one acquisition time, so each scene
 needs its own.
 
+The `lasrc-rs` Conda package includes `lasrc-ancillary` with its `gdas` dependencies, which adds the
+`lasrc ancillary` commands. Installed without `lasrc`, the same commands are `lasrc-ancillary`, for
+example `lasrc-ancillary gdas`. In a checkout of this repo:
+
 ```shell
 uv sync   # lasrc-ancillary[gdas] is part of the dev environment
-uv run lasrc-ancillary gdas --metadata $SCENE/LC09_..._MTL.txt gdas.h5
+uv run lasrc ancillary gdas --metadata $SCENE/LC09_..._MTL.txt gdas.h5
 # Sentinel-2: --metadata $SAFE/GRANULE/*/MTD_TL.xml
 ```
 
@@ -110,7 +114,7 @@ same key layout, for example a mirror holding known files for integration tests.
 A granule needs the GDAS cycle at or before its UTC acquisition time and the one 6 hours later.
 The later 0-hour file is published a median 6.8 hours after its cycle (95% within 7.6), so a
 granule's GDAS input is ready 7 to 13 hours after acquisition. The functions behind
-`lasrc-ancillary gdas` are also the lookup for an orchestration layer. `lasrc_ancillary.acquisition`
+`lasrc ancillary gdas` are also the lookup for an orchestration layer. `lasrc_ancillary.acquisition`
 and `lasrc_ancillary.providers.gdas` use only the standard library, so a Lambda can install
 `lasrc-ancillary` without extras.
 
@@ -118,7 +122,7 @@ and `lasrc_ancillary.providers.gdas` use only the standard library, so a Lambda 
   and the scene or tile center (`estimate_acquisition_windows`, with the Sentinel-2 datatake start
   as `not_before`), list every cycle the windows touch (`gdas_cycles_for_windows`), and trigger
   once `find_gdas` finds all of them.
-- **Processing**: `lasrc-ancillary gdas` (or `lasrc_ancillary.providers.gdas.convert.prepare_gdas` from
+- **Processing**: `lasrc ancillary gdas` (or `lasrc_ancillary.providers.gdas.convert.prepare_gdas` from
   Python) uses the exact time from the metadata and finds the files itself, so a wrong estimate
   only costs a retry (`status=not-yet-published`, or `GdasNotYetPublished`).
 
@@ -139,7 +143,7 @@ To install the CLIs as a standalone tool with [uv](https://docs.astral.sh/uv/):
 
 ```bash
 uv tool install "lasrc @ git+https://github.com/NASA-IMPACT/lasrc-rs#subdirectory=lasrc_py"
-lasrc-landsat --help
+lasrc landsat --help
 ```
 
 To use it as a library in your own project:
@@ -170,7 +174,7 @@ Landsat 8/9:
 AUX=./lasrc_aux
 LUT=$AUX/LDCMLUT
 
-lasrc-landsat \
+lasrc landsat \
     --input LC09_L1TP_001066_20260314_20260314_02_T1 \
     --output out/ \
     --angle-hdf  $LUT/ANGLE_NEW.hdf \
@@ -188,7 +192,7 @@ Sentinel-2:
 AUX=./lasrc_aux
 LUT=$AUX/MSILUT
 
-lasrc-sentinel \
+lasrc sentinel \
     --input S2B_MSIL1C_20260124T073109_N0511_R049_T38PNC_20260124T092241.SAFE \
     --output out/ \
     --angle-hdf  $LUT/ANGLE_NEW.hdf \

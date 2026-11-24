@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Write the package version into the Python packages' pyproject.toml files, for a build of a
+# source copy (see VERSIONING.md section 1). The Conda recipe runs it on rattler-build's copy.
+#
+# Not executable on purpose: it edits tracked files. Undo a local run with
+#   git checkout -- lasrc_py/pyproject.toml lasrc_ancillary/pyproject.toml
+#
+# Usage: bash conda/set-version VERSION     (e.g. 1.2.3 or 1.2.3+g<sha>)
+#
+#   - lasrc_py: maturin would take the version from the Cargo.toml placeholder, so the dynamic
+#     version becomes a static one. Cargo.toml and Cargo.lock stay as they are.
+#   - lasrc_ancillary: its placeholder version is replaced.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+if [[ $# -ne 1 || -z "$1" ]]; then
+    echo "usage: bash conda/set-version VERSION" >&2
+    exit 2
+fi
+version=$1
+
+# Replace the line matching PATTERN in FILE with `version = "VERSION"`, and check it took
+set_version() {
+    local file=$1 pattern=$2
+    sed -i.bak "s/$pattern/version = \"$version\"/" "$file"
+    rm "$file.bak"
+    if ! grep -qxF "version = \"$version\"" "$file"; then
+        echo "error: no version line matching '$pattern' in $file" >&2
+        exit 1
+    fi
+}
+
+set_version lasrc_py/pyproject.toml '^dynamic = \["version"\]$'
+set_version lasrc_ancillary/pyproject.toml '^version = ".*"$'

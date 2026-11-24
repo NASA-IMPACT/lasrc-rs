@@ -1,5 +1,8 @@
 """Command-line interfaces for LaSRC surface reflectance processing."""
 
+from importlib.metadata import entry_points
+from pathlib import Path
+
 import click
 
 from lasrc import __version__
@@ -25,9 +28,38 @@ _algorithm_version_option = click.option(
 )
 
 
-@click.command()
+PLUGIN_GROUP = "lasrc.commands"
+
+
+class _PluginGroup(click.Group):
+    """A group that also offers commands other packages register as ``lasrc.commands`` entry
+    points, such as ``lasrc ancillary`` from ``lasrc_ancillary``.
+
+    A plugin is imported only when its command runs or help lists it.
+    """
+
+    def list_commands(self, ctx: click.Context) -> list[str]:
+        plugins = {ep.name for ep in entry_points(group=PLUGIN_GROUP)}
+        return sorted({*super().list_commands(ctx), *plugins})
+
+    def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
+        command = super().get_command(ctx, cmd_name)
+        if command is not None:
+            return command
+        for ep in entry_points(group=PLUGIN_GROUP, name=cmd_name):
+            loaded: click.Command = ep.load()
+            return loaded
+        return None
+
+
+@click.group(cls=_PluginGroup)
 @click.version_option(__version__)
 @_algorithm_version_option
+def main() -> None:
+    """LaSRC surface reflectance and its ancillary inputs."""
+
+
+@main.command()
 @click.option(
     "--input",
     "input_path",
@@ -126,7 +158,7 @@ def landsat(
     aux_source,
     num_threads,
 ):
-    """LaSRC: Compute Landsat surface reflectance."""
+    """Compute Landsat surface reflectance."""
     from lasrc.landsat import AuxFilePaths, process_scene
 
     if sensor is None:
@@ -155,9 +187,7 @@ def landsat(
     click.echo(f"Output written to {output_path}")
 
 
-@click.command()
-@click.version_option(__version__)
-@_algorithm_version_option
+@main.command()
 @click.option(
     "--input",
     "input_path",
@@ -248,7 +278,7 @@ def sentinel(
     output_format,
     num_threads,
 ):
-    """LaSRC: Compute Sentinel-2 surface reflectance."""
+    """Compute Sentinel-2 surface reflectance."""
     from lasrc.sentinel import process_scene
 
     if sensor is None:
@@ -274,8 +304,6 @@ def sentinel(
 
 def _detect_landsat_sensor(input_path: str) -> str:
     """Auto-detect Landsat sensor from input path."""
-    from pathlib import Path
-
     name = Path(input_path).name.upper()
     if "LC08" in name or "LO08" in name:
         return "LANDSAT_8"
@@ -288,8 +316,6 @@ def _detect_landsat_sensor(input_path: str) -> str:
 
 def _detect_sentinel_sensor(input_path: str) -> str:
     """Auto-detect Sentinel sensor from input path."""
-    from pathlib import Path
-
     name = Path(input_path).name.upper()
     if "S2A" in name:
         return "SENTINEL_2A"
