@@ -1,0 +1,9 @@
+# cargo-release: `cargo release <major|minor|patch> --execute` sets the workspace version, rolls
+# CHANGELOG.md (see lasrc_core/Cargo.toml), and commits. The Release workflow tags and publishes.
+# See VERSIONING.md section 5.
+publish = false
+tag = false
+push = false
+# CI runs the tests
+verify = false
+pre-release-commit-message = "chore: release v{{version}}"
