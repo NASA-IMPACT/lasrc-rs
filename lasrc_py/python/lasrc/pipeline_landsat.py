@@ -1,4 +1,4 @@
-"""Top-level scene processing pipeline."""
+"""Landsat processing pipeline: Collection 2 Level-1 scene -> surface reflectance."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -49,7 +49,7 @@ def _espa_solar_zenith(sun_elevation: float) -> float:
     return float(np.float32(float(f"{zenith:f}")))
 
 
-def process_scene(
+def process_landsat_scene(
     input_path: str | Path,
     aux_files: AuxFilePaths,
     output_path: str | Path,
@@ -57,7 +57,7 @@ def process_scene(
     output_format: str = "cog",
     num_threads: int | None = None,
 ) -> SurfaceReflectanceResult:
-    """Process a scene from TOA to surface reflectance.
+    """Process a Landsat scene from TOA to surface reflectance.
 
     Parameters
     ----------
@@ -125,7 +125,7 @@ def process_scene(
     if profile["crs"].to_epsg() > 32700:
         utm_zone = -utm_zone  # Southern hemisphere
 
-    result = _lasrc.process_surface_reflectance(
+    result = _lasrc.process_landsat_surface_reflectance(
         sensor_name=sensor_name,
         toa_bands=scene["toa_bands"],
         bt_bands=scene["bt_bands"],

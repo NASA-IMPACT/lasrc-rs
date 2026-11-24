@@ -33,7 +33,7 @@ the C workflow because it needs no intermediate file conversions on input and ou
 |---|---|---|
 | `eae7bfe`, `683d014`, `dab50f0`, `c762b35`, `c1ca74a` | Rayon for aerosol retrieval, final correction, and climatological SR | CPU (wall clock) |
 | `5f1977a` | Parallelize pass 1 of `aero_avg_failed_sentinel` | CPU (wall clock) |
-| `ab14271` | Landsat: parallel `aerosol_interp`, climatological SR on demand, borrow the QA band | CPU and memory |
+| `ab14271` | Landsat: parallel `aerosol_interp_landsat`, climatological SR on demand, borrow the QA band | CPU and memory |
 | `34f2c95` | S2: climatological SR on demand instead of 13 full-scene bands (~6.3 GB) | Memory, some CPU |
 | `78c9a42` | S2: scale to `u16` in the final loop, dropping the `f64` staging buffer (~12.5 GB) | Memory |
 | `c1e1e1e` | Landsat: same change (~4 GB) | Memory |
@@ -284,7 +284,7 @@ the core count (see the [roadmap](roadmap.md#2-lower-compute-cost)).
 ### 14. Remaining serial sections
 
 These still run serially: `aerosol_interp_sentinel`, `ipflag_expand_failed_sentinel`, the result
-scatter after retrieval, `fix_invalid_aerosols`, and the `aero_avg_failed_sentinel` copy-back and
+scatter after retrieval, `fix_invalid_aerosols_landsat`, and the `aero_avg_failed_sentinel` copy-back and
 pass 2. Most are cheap or depend on scan order. Since utilization is already good, expect little
 except from `aerosol_interp_sentinel`, which item 7 addresses. Revisit if item 0 shows otherwise.
 

@@ -1,5 +1,5 @@
 //! Top-level correction orchestrator that ties together all compute modules
-//! into the main `compute_surface_reflectance` function.
+//! into the main `compute_landsat_surface_reflectance` function.
 //!
 //! Ported from the C LaSRC main processing loop.
 
@@ -8,8 +8,8 @@ use rayon::prelude::*;
 use rayon::ThreadPoolBuilder;
 
 use crate::aerosol::{
-    aero_avg_failed_sentinel, aerosol_interp, aerosol_interp_sentinel, fix_invalid_aerosols,
-    ipflag_expand_failed_sentinel, subaeroret_new,
+    aero_avg_failed_sentinel, aerosol_interp_landsat, aerosol_interp_sentinel,
+    fix_invalid_aerosols_landsat, ipflag_expand_failed_sentinel, subaeroret_new,
 };
 use crate::atmospheric::{atmcorlamb2, atmcorlamb2_new, AtmCorrCoefficients};
 use crate::constants::*;
@@ -46,7 +46,7 @@ pub struct AuxiliaryData {
 }
 
 /// Result from a single aerosol window-center retrieval, used for parallel collect-and-scatter.
-struct AerosolWindowResult {
+struct LandsatAerosolWindowResult {
     pix: usize,
     taero: f32,
     teps: f32,
@@ -486,7 +486,7 @@ fn precompute_coefficients(
 /// # Panics
 ///
 /// If `qa_band` is not in standard (C-contiguous) layout.
-pub fn compute_surface_reflectance(
+pub fn compute_landsat_surface_reflectance(
     sensor: &dyn Sensor,
     toa_bands: &[ArrayView2<f32>],
     bt_bands: &[ArrayView2<f32>],
@@ -647,7 +647,7 @@ pub fn compute_surface_reflectance(
     };
 
     // Parallel aerosol retrieval at window centers
-    let aero_results: Vec<AerosolWindowResult> = pool.install(|| {
+    let aero_results: Vec<LandsatAerosolWindowResult> = pool.install(|| {
         window_centers
             .par_iter()
             .map(|&(iline, isamp)| {
@@ -668,7 +668,7 @@ pub fn compute_surface_reflectance(
                     ) {
                         Some(loc) => loc,
                         None => {
-                            return AerosolWindowResult {
+                            return LandsatAerosolWindowResult {
                                 pix,
                                 taero: 0.0,
                                 teps: 0.0,
@@ -1020,7 +1020,7 @@ pub fn compute_surface_reflectance(
                     }
                 }
 
-                AerosolWindowResult {
+                LandsatAerosolWindowResult {
                     pix,
                     taero: result_taero,
                     teps: result_teps,
@@ -1038,7 +1038,7 @@ pub fn compute_surface_reflectance(
     }
 
     // ── Step 6: Fix invalid aerosols and interpolate ──
-    fix_invalid_aerosols(
+    fix_invalid_aerosols_landsat(
         &mut taero,
         &mut teps,
         &ipflag,
@@ -1053,7 +1053,7 @@ pub fn compute_surface_reflectance(
 
     // Interpolate taero, then teps (matching C: two separate calls)
     pool.install(|| {
-        aerosol_interp(
+        aerosol_interp_landsat(
             &mut taero,
             &mut ipflag,
             qa_flat,
@@ -1062,7 +1062,7 @@ pub fn compute_surface_reflectance(
             aero_window,
             half_aero_window,
         );
-        aerosol_interp(
+        aerosol_interp_landsat(
             &mut teps,
             &mut ipflag,
             qa_flat,
@@ -1229,7 +1229,7 @@ pub fn compute_surface_reflectance(
 
 /// Compute surface reflectance for a Sentinel-2 scene.
 ///
-/// Similar to `compute_surface_reflectance` (Landsat) but with key differences:
+/// Similar to `compute_landsat_surface_reflectance` but with key differences:
 /// - Scene-center scalar angles (not per-pixel grids)
 /// - Fill detection: ANY band with TOA == 0.0 marks pixel as fill
 /// - TOA is NOT divided by cos(SZA)

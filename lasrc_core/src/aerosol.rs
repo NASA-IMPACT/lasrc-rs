@@ -1,6 +1,6 @@
 //! Aerosol retrieval routines ported from C LaSRC code.
 //!
-//! Implements `subaeroret_new`, `aerosol_interp`, and `fix_invalid_aerosols`.
+//! Implements `subaeroret_new`, `aerosol_interp_landsat`, and `fix_invalid_aerosols_landsat`.
 
 use crate::atmospheric::{atmcorlamb2_new, AtmCorrCoefficients};
 use crate::constants::*;
@@ -281,7 +281,7 @@ pub fn subaeroret_new(
 }
 
 /// Window center and interpolation neighbor along one axis for
-/// `aerosol_interp`, computed as in C `aerosol_interp_landsat`.
+/// `aerosol_interp_landsat`, computed as in C.
 struct InterpAxis {
     /// C: center_line / center_samp
     center: usize,
@@ -321,7 +321,7 @@ impl InterpAxis {
     }
 }
 
-/// Read-only state for one `aerosol_interp` pass. `data` and `ipflag` are the
+/// Read-only state for one `aerosol_interp_landsat` pass. `data` and `ipflag` are the
 /// values from before the pass.
 struct InterpPass<'a> {
     data: &'a [f32],
@@ -392,7 +392,7 @@ impl InterpPass<'_> {
 /// end to have only `IPFLAG_FILL`.
 ///
 /// Lines run in parallel and give the same result as C's serial scan.
-pub fn aerosol_interp(
+pub fn aerosol_interp_landsat(
     data: &mut [f32],
     ipflag: &mut [u8],
     qa_band: &[u16],
@@ -456,7 +456,7 @@ pub fn aerosol_interp(
 /// * `fix_aero_window`      - Search window for fixing invalid retrievals (WxW)
 /// * `half_fix_aero_window` - Half of fix window
 /// * `min_clear_pix`        - Minimum number of clear neighbors required in pass 1
-pub fn fix_invalid_aerosols(
+pub fn fix_invalid_aerosols_landsat(
     taero: &mut [f32],
     teps: &mut [f32],
     ipflag: &[u8],
@@ -909,8 +909,8 @@ mod tests {
     }
 
     /// C `aerosol_interp_landsat` serial scan, as reference for the parallel
-    /// `aerosol_interp`.
-    fn aerosol_interp_serial(
+    /// `aerosol_interp_landsat`.
+    fn aerosol_interp_landsat_serial(
         data: &mut [f32],
         ipflag: &mut [u8],
         qa_band: &[u16],
@@ -1033,7 +1033,7 @@ mod tests {
     }
 
     #[test]
-    fn test_aerosol_interp_matches_serial_scan() {
+    fn test_aerosol_interp_landsat_matches_serial_scan() {
         let mut rng = XorShift(0x9e3779b97f4a7c15);
         // nsamps % 3 == 1 exercises the last-column read into the next line.
         // The scan reads past the end unless the last line is fill when
@@ -1080,7 +1080,7 @@ mod tests {
                 let mut want_data = data.clone();
                 let mut want_ipflag = ipflag.clone();
                 for _ in 0..2 {
-                    aerosol_interp_serial(
+                    aerosol_interp_landsat_serial(
                         &mut want_data,
                         &mut want_ipflag,
                         &qa,
@@ -1089,7 +1089,7 @@ mod tests {
                         LAERO_WINDOW,
                         LHALF_AERO_WINDOW,
                     );
-                    aerosol_interp(
+                    aerosol_interp_landsat(
                         &mut data,
                         &mut ipflag,
                         &qa,
@@ -1116,7 +1116,7 @@ mod tests {
     }
 
     #[test]
-    fn test_aerosol_interp_fills_gaps() {
+    fn test_aerosol_interp_landsat_fills_gaps() {
         let nlines = 9;
         let nsamps = 9;
         let npix = nlines * nsamps;
@@ -1132,8 +1132,8 @@ mod tests {
                 ipflag[pix] = 1 << IPFLAG_CLEAR;
             }
         }
-        aerosol_interp(&mut taero, &mut ipflag, &qa_band, nlines, nsamps, 3, 1);
-        aerosol_interp(&mut teps, &mut ipflag, &qa_band, nlines, nsamps, 3, 1);
+        aerosol_interp_landsat(&mut taero, &mut ipflag, &qa_band, nlines, nsamps, 3, 1);
+        aerosol_interp_landsat(&mut teps, &mut ipflag, &qa_band, nlines, nsamps, 3, 1);
         // Check that non-center pixels got interpolated values
         let non_center_pix = 0; // pixel (0,0)
         assert!(
@@ -1143,7 +1143,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fix_invalid_aerosols_fills() {
+    fn test_fix_invalid_aerosols_landsat_fills() {
         let nlines = 9;
         let nsamps = 9;
         let npix = nlines * nsamps;
@@ -1164,7 +1164,7 @@ mod tests {
         ipflag[bad_pix] = 0;
         taero[bad_pix] = 0.0;
 
-        fix_invalid_aerosols(
+        fix_invalid_aerosols_landsat(
             &mut taero, &mut teps, &ipflag, nlines, nsamps, 3, 1, 15, 7, 4,
         );
         // Landsat never sets IPFLAG_FIXED — but taero should be filled

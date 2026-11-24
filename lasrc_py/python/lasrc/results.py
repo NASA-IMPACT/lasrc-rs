@@ -7,7 +7,7 @@ from numpy.typing import NDArray
 
 
 class SurfaceReflectanceResult(TypedDict):
-    """Output of ``process_surface_reflectance`` / ``process_sentinel_surface_reflectance``.
+    """Output of ``process_landsat_surface_reflectance`` / ``process_sentinel_surface_reflectance``.
 
     Arrays are returned flattened (1-D, row-major); the pipelines reshape them to
     (nlines, nsamps) in place.

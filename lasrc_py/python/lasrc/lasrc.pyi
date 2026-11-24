@@ -17,8 +17,8 @@ __all__ = [
     "SR_FILL_VALUE",
     "PyAuxiliaryData",
     "PyLookupTables",
+    "process_landsat_surface_reflectance",
     "process_sentinel_surface_reflectance",
-    "process_surface_reflectance",
 ]
 
 ALGORITHM_VERSION: Final[str]
@@ -67,7 +67,7 @@ class PyAuxiliaryData:
         oz_default: float,
     ) -> PyAuxiliaryData: ...
 
-def process_surface_reflectance(
+def process_landsat_surface_reflectance(
     sensor_name: str,
     toa_bands: Sequence[NDArray[np.float32]],
     bt_bands: Sequence[NDArray[np.float32]],
